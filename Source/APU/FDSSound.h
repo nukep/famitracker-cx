@@ -1,11 +1,17 @@
 #ifndef _FDSSOUND_H_
 #define _FDSSOUND_H_
 
-void __fastcall FDSSoundReset(void);
-uint8 __fastcall FDSSoundRead(uint16 address);
-void __fastcall FDSSoundWrite(uint16 address, uint8 value);
-int32 __fastcall FDSSoundRender(void);
-void __fastcall FDSSoundVolume(unsigned int volume);
+#if defined(__i386__) || defined(_M_IX86)
+#define FDSCALL __fastcall
+#else
+#define FDSCALL
+#endif
+
+void FDSCALL FDSSoundReset(void);
+uint8 FDSCALL FDSSoundRead(uint16 address);
+void FDSCALL FDSSoundWrite(uint16 address, uint8 value);
+int32 FDSCALL FDSSoundRender(void);
+void FDSCALL FDSSoundVolume(unsigned int volume);
 void FDSSoundInstall3(void);
 
 #endif /* _FDSSOUND_H_ */

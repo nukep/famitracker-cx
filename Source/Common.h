@@ -20,14 +20,29 @@
 
 #pragma once
 
+#if defined _WIN32 || defined __CYGWIN__
+#	define WINDOWS
+#elif defined __linux__
+#	define LINUX
+#	include <stdint.h>
+#endif
+
 typedef unsigned char		uint8;
 typedef unsigned short		uint16;
 typedef unsigned long		uint32;
+#ifdef WINDOWS
 typedef unsigned __int64	uint64;
+#else
+typedef uint64_t uint64;
+#endif
 typedef signed char			int8;
 typedef signed short		int16;
 typedef signed long			int32;
+#ifdef WINDOWS
 typedef signed __int64		int64;
+#else
+typedef int64_t int64;
+#endif
 
 #define _MAIN_H_
 

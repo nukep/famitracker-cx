@@ -23,8 +23,8 @@
 #include "../stdafx.h"
 #include <cmath>
 #include <memory>
-#include "apu.h"
-#include "fds.h"
+#include "APU.H"
+#include "FDS.H"
 #include "FDSSound.h"
 
 // FDS interface 

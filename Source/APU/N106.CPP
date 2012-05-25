@@ -19,9 +19,9 @@
 */
 
 #include <memory>
-#include "../common.h"
-#include "APU.h"
-#include "N106.h"
+#include "../Common.h"
+#include "APU.H"
+#include "N106.H"
 
 //
 // N106

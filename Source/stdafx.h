@@ -24,6 +24,8 @@
 
 #pragma once
 
+#if defined _WIN32 || defined __CYGWIN__
+
 #define _CRTDBG_MAPALLOC
 
 // Get rid of warnings in VS 2005
@@ -69,6 +71,10 @@
 #include <afxdhtml.h>
 #include <afxdlgs.h>
 
+#define new DEBUG_NEW
+
+#endif
+
 // Releasing pointers
 #define SAFE_RELEASE(p) \
 	if (p != NULL) { \
@@ -82,4 +88,3 @@
 		p = NULL;	\
 	}	\
 
-#define new DEBUG_NEW

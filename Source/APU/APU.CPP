@@ -40,20 +40,22 @@
 #include "../stdafx.h"
 #include <cstdio>
 #include <memory>
-#include "apu.h"
+#include "APU.H"
 
-#include "square.h"
-#include "triangle.h"
-#include "noise.h"
-#include "dpcm.h"
+#include "Square.h"
+#include "Triangle.h"
+#include "Noise.h"
+#include "DPCM.H"
 
-#include "vrc6.h"
-#include "mmc5.h"
-#include "fds.h"
-#include "n106.h"
-#include "vrc7.h"
-#include "s5b.h"
+#include "VRC6.H"
+#include "MMC5.H"
+#include "FDS.H"
+#include "N106.H"
+#include "VRC7.H"
+#include "S5B.H"
 
+using std::min;
+using std::max;
 
 const int	 CAPU::SEQUENCER_PERIOD		= 7458;
 //const int	 CAPU::SEQUENCER_PERIOD_PAL	= 7458;			// ????
@@ -205,7 +207,7 @@ void CAPU::Process()
 		i = Time;
 		while (i > 0) {
 			uint32 Period = min(m_pSquare1->GetPeriod(), m_pSquare2->GetPeriod());
-			Period = min(max(Period, 7), i);
+			Period = min(max<uint32>(Period, 7), i);
 			m_pSquare1->Process(Period);
 			m_pSquare2->Process(Period);
 			i -= Period;
@@ -214,8 +216,8 @@ void CAPU::Process()
 		i = Time;
 		while (i > 0) {
 			uint32 Period = min(m_pTriangle->GetPeriod(), m_pNoise->GetPeriod());
-			Period = min(Period, m_pDPCM->GetPeriod());
-			Period = min(max(Period, 7), i);
+			Period = min<uint32>(Period, m_pDPCM->GetPeriod());
+			Period = min(max<uint32>(Period, 7), i);
 			m_pTriangle->Process(Period);
 			m_pNoise->Process(Period);
 			m_pDPCM->Process(Period);
