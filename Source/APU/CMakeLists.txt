@@ -14,11 +14,11 @@ set(SRC
 	FDS.CPP
 	MMC5.CPP
 	N106.CPP
-	S5B.CPP
+#	S5B.CPP
 	VRC6.CPP
-	VRC7.CPP
-	emu2149.c
-	emu2413.c
+#	VRC7.CPP
+#	emu2149.c
+#	emu2413.c
 	FDSSound.cpp
 
 	APU.H
@@ -32,12 +32,12 @@ set(SRC
 	FDS.H
 	MMC5.H
 	N106.H
-	S5B.H
+#	S5B.H
 	VRC6.H
-	VRC7.H
+#	VRC7.H
 	2413tone.h
-	emu2149.h
-	emu2413.h
+#	emu2149.h
+#	emu2413.h
 	FDSSound.h
 	vrc7tone.h
 )

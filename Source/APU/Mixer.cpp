@@ -56,8 +56,9 @@
 #include <stdlib.h>
 #include "Mixer.h"
 #include "APU.H"
-#include "emu2413.h"
-#include "emu2149.h"
+// TODO - dan
+//#include "emu2413.h"
+//#include "emu2149.h"
 
 //#define LINEAR_MIXING
 
@@ -109,7 +110,7 @@ void CMixer::UpdateSettings(int LowCut,	int HighCut, int HighDamp, int OverallVo
 {
 	float fVolume = float(OverallVol) / 100.0f;
 
-	if (m_iExternalChip & SNDCHIP_VRC7)
+	if (/*m_iExternalChip & SNDCHIP_VRC7*/ false)
 		// Decrease the internal audio when VRC7 is enabled to increase the headroom
 		m_fDamping = 0.34f;
 	else
@@ -182,7 +183,7 @@ int CMixer::SamplesAvail() const
 int CMixer::FinishBuffer(int t)
 {
 	BlipBuffer.end_frame(t);
-
+/*
 	// Get channel levels for VRC7
 	for (int i = 0; i < 6; ++i)
 		StoreChannelLevel(CHANID_VRC7_CH1 + i, OPLL_getchanvol(i) >> 6);
@@ -190,7 +191,7 @@ int CMixer::FinishBuffer(int t)
 	// Get channel levels for Sunsoft
 	for (int i = 0; i < 3; ++i)
 		StoreChannelLevel(CHANID_S5B_CH1 + i, PSG_getchanvol(i) >> 4);
-
+*/
 	for (int i = 0; i < CHANNELS; ++i) {
 		if (m_iChanLevelFallOff[i] > 0)
 			m_iChanLevelFallOff[i]--;

@@ -51,8 +51,8 @@
 #include "MMC5.H"
 #include "FDS.H"
 #include "N106.H"
-#include "VRC7.H"
-#include "S5B.H"
+//#include "VRC7.H"
+//#include "S5B.H"
 
 using std::min;
 using std::max;
@@ -89,10 +89,10 @@ CAPU::CAPU(ICallback *pCallback, CSampleMem *pSampleMem) :
 
 	m_pMMC5 = new CMMC5(m_pMixer);
 	m_pVRC6 = new CVRC6(m_pMixer);
-	m_pVRC7 = new CVRC7(m_pMixer);
+//	m_pVRC7 = new CVRC7(m_pMixer);
 	m_pFDS = new CFDS(m_pMixer);
 	m_pN106 = new CN106(m_pMixer);
-	m_pS5B = new CS5B(m_pMixer);
+//	m_pS5B = new CS5B(m_pMixer);
 
 #ifdef LOGGING
 	m_pLog = new CFile("apu_log.txt", CFile::modeCreate | CFile::modeWrite);
@@ -109,10 +109,10 @@ CAPU::~CAPU()
 
 	SAFE_RELEASE(m_pMMC5);
 	SAFE_RELEASE(m_pVRC6);
-	SAFE_RELEASE(m_pVRC7);
+//	SAFE_RELEASE(m_pVRC7);
 	SAFE_RELEASE(m_pFDS);
 	SAFE_RELEASE(m_pN106);
-	SAFE_RELEASE(m_pS5B);
+//	SAFE_RELEASE(m_pS5B);
 
 	SAFE_RELEASE(m_pMixer);
 
@@ -301,7 +301,7 @@ void CAPU::SetupMixer(int LowCut, int HighCut, int HighDamp, int Volume) const
 {
 	// New settings
 	m_pMixer->UpdateSettings(LowCut, HighCut, HighDamp, Volume);
-	m_pVRC7->SetVolume(Volume);
+//	m_pVRC7->SetVolume(Volume);
 }
 
 void CAPU::SetExternalSound(uint8 Chip)
@@ -314,16 +314,16 @@ void CAPU::SetExternalSound(uint8 Chip)
 
 	if (Chip & SNDCHIP_VRC6)
 		ExChips.push_back(m_pVRC6);
-	if (Chip & SNDCHIP_VRC7)
-		ExChips.push_back(m_pVRC7);
+//	if (Chip & SNDCHIP_VRC7)
+//		ExChips.push_back(m_pVRC7);
 	if (Chip & SNDCHIP_FDS)
 		ExChips.push_back(m_pFDS);
 	if (Chip & SNDCHIP_MMC5)
 		ExChips.push_back(m_pMMC5);
 	if (Chip & SNDCHIP_N106)
 		ExChips.push_back(m_pN106);
-	if (Chip & SNDCHIP_S5B)
-		ExChips.push_back(m_pS5B);
+//	if (Chip & SNDCHIP_S5B)
+//		ExChips.push_back(m_pS5B);
 
 	Reset();
 }
@@ -378,10 +378,10 @@ bool CAPU::SetupSound(int SampleRate, int NrChannels, int Machine)
 	ChangeMachine(Machine);
 
 	// VRC7 generates samples on it's own
-	m_pVRC7->SetSampleSpeed(SampleRate, BaseFreq, FrameRate);
+//	m_pVRC7->SetSampleSpeed(SampleRate, BaseFreq, FrameRate);
 
 	// Same for sunsoft
-	m_pS5B->SetSampleSpeed(SampleRate, BaseFreq, FrameRate);
+//	m_pS5B->SetSampleSpeed(SampleRate, BaseFreq, FrameRate);
 
 	// Numbers of cycles/audio frame
 	m_iFrameCycleCount = BaseFreq / FrameRate;
