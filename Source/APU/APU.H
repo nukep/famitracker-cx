@@ -77,7 +77,7 @@ public:
 	uint8	GetSamplePos() const;
 	uint8	GetDeltaCounter() const;
 	bool	DPCMPlaying() const;
-	uint8	GetReg(int Reg) const { return m_iRegs[Reg & 0x1F]; };
+	uint8	GetReg(int Reg) const { return m_iRegs[Reg & 0x1F]; }
 
 #ifdef LOGGING
 	void	Log();

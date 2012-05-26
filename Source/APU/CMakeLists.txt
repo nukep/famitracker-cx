@@ -2,6 +2,9 @@ project(apu)
 cmake_minimum_required(VERSION 2.6)
 
 set(SRC
+	../Blip_Buffer/Blip_Buffer.cpp
+	../Blip_Buffer/Blip_Buffer.h
+
 	APU.CPP
 	Mixer.cpp
 	DPCM.CPP
