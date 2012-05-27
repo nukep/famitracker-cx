@@ -277,7 +277,6 @@ bool FtmDocument::readNew_params(Document *doc)
 	else
 		m_iVibratoStyle = VIBRATO_OLD;
 
-	// BUG in original FamiTrackerDoc.cpp:1542 - depends on whether pMainFrm is NULL, potentially missing reads
 	if (block_ver > 3)
 	{
 		Highlight = doc->getBlockInt();
@@ -323,6 +322,7 @@ bool FtmDocument::readNew_header(Document *doc)
 	if (block_ver == 1)
 	{
 		// Single track
+		m_iTracks = 0;
 		SwitchToTrack(0);
 		for (unsigned int i=0;i<m_iChannelsAvailable;i++)
 		{
@@ -332,7 +332,7 @@ bool FtmDocument::readNew_header(Document *doc)
 			m_pSelectedTune->SetEffectColumnCount(i, doc->getBlockChar());
 		}
 	}
-	else if (block_ver == 2)
+	else if (block_ver >= 2)
 	{
 		// Multiple tracks
 		m_iTracks = doc->getBlockChar();
@@ -557,7 +557,6 @@ bool FtmDocument::readNew_frames(Document *doc)
 			if (block_ver == 3)
 			{
 				unsigned int Tempo = doc->getBlockInt();
-				ftm_Assert(Tempo > 0);
 				m_pTunes[y]->SetSongTempo(Tempo);
 				m_pTunes[y]->SetSongSpeed(speed);
 			}
@@ -1522,9 +1521,9 @@ CInstrument * FtmDocument::CreateInstrument(int type)
 	switch (type)
 	{
 		case INST_2A03: return new CInstrument2A03;
+		case INST_VRC6: return new CInstrumentVRC6;
 	// TODO - dan
-/*		case INST_VRC6: return new CInstrumentVRC6();
-		case INST_VRC7: return new CInstrumentVRC7();
+/*		case INST_VRC7: return new CInstrumentVRC7();
 		case INST_N106:	return new CInstrumentN106();
 		case INST_FDS: return new CInstrumentFDS();
 		case INST_S5B: return new CInstrumentS5B();*/

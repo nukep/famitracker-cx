@@ -116,9 +116,6 @@ private:
 
 class CInstrumentVRC6;
 
-// TODO - dan
-#if 0
-
 class CInstrumentVRC6 : public CInstrument {
 public:
 	CInstrumentVRC6();
@@ -127,11 +124,11 @@ public:
 	virtual CInstrument* Clone();
 	virtual void Store(Document *pDocFile);
 	virtual bool Load(Document *pDocFile);
-	virtual void SaveFile(IO *pFile, FtmDocument *pDoc);
+	virtual void SaveFile(IO *file, FtmDocument *doc);
 	virtual bool LoadFile(IO *pFile, int iVersion, FtmDocument *pDoc);
-	virtual int CompileSize(CCompiler *pCompiler);
-	virtual int Compile(CCompiler *pCompiler, int Index);
-	virtual bool CanRelease() const;
+//	virtual int CompileSize(CCompiler *pCompiler);
+//	virtual int Compile(CCompiler *pCompiler, int Index);
+	virtual bool CanRelease(FtmDocument *doc) const;
 public:
 	int		GetSeqEnable(int Index) const;
 	int		GetSeqIndex(int Index) const;
@@ -144,6 +141,9 @@ private:
 	int		m_iSeqEnable[SEQ_COUNT];
 	int		m_iSeqIndex[SEQ_COUNT];
 };
+
+// TODO - dan
+#if 0
 
 class CInstrumentVRC7 : public CInstrument {
 public:

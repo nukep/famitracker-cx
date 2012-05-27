@@ -1,5 +1,7 @@
-#include "MainWindow.hpp"
 #include <QFileDialog>
+#include "MainWindow.hpp"
+#include "gui.hpp"
+#include "../linux/FtmDocument.hpp"
 
 namespace gui
 {
@@ -16,11 +18,38 @@ namespace gui
 		QObject::connect(action_ViewControlpanel, SIGNAL(toggled(bool)), this, SLOT(viewControlpanel(bool)));
 		QObject::connect(toolBar, SIGNAL(visibilityChanged(bool)), action_ViewToolbar, SLOT(setChecked(bool)));
 		QObject::connect(controlPanel, SIGNAL(visibilityChanged(bool)), action_ViewControlpanel, SLOT(setChecked(bool)));
+
+		QObject::connect(songs, SIGNAL(activated(int)), this, SLOT(setSong(int)));
 	}
 
 	void MainWindow::open()
 	{
 		QString path = QFileDialog::getOpenFileName(this, tr("Open"), QString(), tr("FamiTracker files (*.ftm);;All files (*.*)"), 0, 0);
+		if (path.isEmpty())
+			return;
+
+		FileIO io(path, true);
+
+		gui::openDocument(&io, true);
+
+		FtmDocument *d = gui::activeDocument();
+
+		title->setText(d->GetSongName());
+		title->setCursorPosition(0);
+		author->setText(d->GetSongArtist());
+		author->setCursorPosition(0);
+		copyright->setText(d->GetSongCopyright());
+		copyright->setCursorPosition(0);
+
+		songs->clear();
+		int c = d->GetTrackCount();
+		for (int i=0;i<c;i++)
+		{
+			QString s(d->GetTrackTitle(i));
+			songs->addItem(s);
+		}
+
+		setSong(0);
 	}
 	void MainWindow::save()
 	{
@@ -47,5 +76,17 @@ namespace gui
 	void MainWindow::viewControlpanel(bool v)
 	{
 		this->controlPanel->setVisible(v);
+	}
+
+	void MainWindow::setSong(int i)
+	{
+		FtmDocument *d = gui::activeDocument();
+
+		d->SelectTrack(i);
+
+		speed->setValue(d->GetSongSpeed());
+		tempo->setValue(d->GetSongTempo());
+		rows->setValue(d->GetPatternLength());
+		frames->setValue(d->GetFrameCount());
 	}
 }

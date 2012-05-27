@@ -114,7 +114,7 @@
         </widget>
        </item>
        <item row="1" column="2">
-        <widget class="QCheckBox" name="checkBox">
+        <widget class="QCheckBox" name="changeAll">
          <property name="text">
           <string>Change all</string>
          </property>
@@ -147,7 +147,7 @@
            </widget>
           </item>
           <item row="0" column="1">
-           <widget class="QSpinBox" name="spinBox">
+           <widget class="QSpinBox" name="speed">
             <property name="minimum">
              <number>1</number>
             </property>
@@ -178,7 +178,7 @@
            </widget>
           </item>
           <item row="1" column="1">
-           <widget class="QSpinBox" name="spinBox_2">
+           <widget class="QSpinBox" name="tempo">
             <property name="minimum">
              <number>32</number>
             </property>
@@ -188,7 +188,7 @@
            </widget>
           </item>
           <item row="2" column="1">
-           <widget class="QSpinBox" name="spinBox_3">
+           <widget class="QSpinBox" name="rows">
             <property name="minimum">
              <number>1</number>
             </property>
@@ -198,7 +198,7 @@
            </widget>
           </item>
           <item row="3" column="1">
-           <widget class="QSpinBox" name="spinBox_4">
+           <widget class="QSpinBox" name="frames">
             <property name="minimum">
              <number>1</number>
             </property>
@@ -237,14 +237,14 @@
            </widget>
           </item>
           <item row="0" column="1">
-           <widget class="QSpinBox" name="spinBox_5">
+           <widget class="QSpinBox" name="step">
             <property name="maximum">
              <number>256</number>
             </property>
            </widget>
           </item>
           <item row="1" column="0" colspan="2">
-           <widget class="QCheckBox" name="checkBox_2">
+           <widget class="QCheckBox" name="keyRepetition">
             <property name="text">
              <string>Key repetition</string>
             </property>
@@ -267,21 +267,21 @@
            <number>0</number>
           </property>
           <item>
-           <widget class="QLineEdit" name="lineEdit">
+           <widget class="QLineEdit" name="title">
             <property name="placeholderText">
              <string>(title)</string>
             </property>
            </widget>
           </item>
           <item>
-           <widget class="QLineEdit" name="lineEdit_2">
+           <widget class="QLineEdit" name="author">
             <property name="placeholderText">
              <string>(author)</string>
             </property>
            </widget>
           </item>
           <item>
-           <widget class="QLineEdit" name="lineEdit_3">
+           <widget class="QLineEdit" name="copyright">
             <property name="placeholderText">
              <string>(copyright)</string>
             </property>
@@ -310,7 +310,7 @@
          </property>
          <layout class="QVBoxLayout" name="verticalLayout_7">
           <item>
-           <widget class="QComboBox" name="comboBox"/>
+           <widget class="QComboBox" name="songs"/>
           </item>
          </layout>
         </widget>
@@ -349,8 +349,6 @@
       </widget>
      </item>
     </layout>
-    <zorder>controlPanel</zorder>
-    <zorder>widget_3</zorder>
    </widget>
   </widget>
   <action name="actionNew">

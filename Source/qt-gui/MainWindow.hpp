@@ -11,6 +11,7 @@ namespace gui
 		Q_OBJECT
 	public:
 		MainWindow();
+
 	public slots:
 		void open();
 		void save();
@@ -19,6 +20,7 @@ namespace gui
 		void viewToolbar(bool);
 		void viewStatusBar(bool);
 		void viewControlpanel(bool);
+		void setSong(int i);
 	};
 }
 

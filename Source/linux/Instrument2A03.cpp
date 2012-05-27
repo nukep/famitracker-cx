@@ -18,16 +18,12 @@
 ** must bear this legend.
 */
 
-//#include "stdafx.h"
-//#include "FamiTracker.h"
-//#include "FamiTrackerDoc.h"
 #include <string.h>
 #include "Instrument.h"
 #include "Document.hpp"
 #include "FtmDocument.hpp"
 #include "Sequence.h"
 //#include "Compiler.h"
-//#include "DocumentFile.h"
 
 // 2A03 instruments
 

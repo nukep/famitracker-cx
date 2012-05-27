@@ -30,4 +30,4 @@ QT4_WRAP_UI(UI_SRC ${UI_FILES})
 QT4_WRAP_CPP(MOC_SRC ${MOC_INC})
 
 add_library(qt-gui ${SRC} ${MOC_SRC} ${MOC_INC} ${UI_SRC})
-
+target_link_libraries(qt-gui core)

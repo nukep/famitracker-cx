@@ -170,7 +170,7 @@ void Document::reallocateBlock()
 
 int Document::getBlockInt()
 {
-	const char *buf = m_pBlockData + m_iBlockPointer;
+	const unsigned char *buf = (const unsigned char*)m_pBlockData + m_iBlockPointer;
 	int Value = (buf[3] << 24) | (buf[2] << 16) | (buf[1] << 8) | buf[0];
 	m_iBlockPointer += 4;
 	return Value;
