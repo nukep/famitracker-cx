@@ -1,6 +1,7 @@
 #ifndef _DOCUMENT_HPP_
 #define _DOCUMENT_HPP_
 
+#include <string>
 #include "types.hpp"
 
 class IO
@@ -85,6 +86,8 @@ public:
 	void getBlock(void *buf, unsigned int size);
 	void writeBlock(const void *data, unsigned int size);
 	void createBlock(const char *id, int version);
+
+	std::string readString();
 private:
 	unsigned int m_iFileVersion;
 

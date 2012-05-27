@@ -129,6 +129,17 @@ void Document::createBlock(const char *id, int version)
 	init_pBlockData(m_iMaxBlockSize);
 }
 
+std::string Document::readString()
+{
+	std::string s;
+	char c;
+
+	while (c = getBlockChar())
+		s.push_back(c);
+
+	return s;
+}
+
 void Document::init_pBlockData(Quantity size)
 {
 	if (m_pBlockData != NULL)

@@ -215,9 +215,24 @@ bool FtmDocument::readNew(Document *doc, IO *io)
 			doc->getBlock(m_strArtist, 32);
 			doc->getBlock(m_strCopyright, 32);
 		}
+		else if (strcmp(id, FILE_BLOCK_HEADER) == 0)
+		{
+			if (!readNew_header(doc))
+				return false;
+		}
 		else if (strcmp(id, FILE_BLOCK_INSTRUMENTS) == 0)
 		{
 			if (!readNew_instruments(doc))
+				return false;
+		}
+		else if (strcmp(id, FILE_BLOCK_SEQUENCES) == 0)
+		{
+			if (!readNew_sequences(doc))
+				return false;
+		}
+		else if (strcmp(id, FILE_BLOCK_FRAMES) == 0)
+		{
+			if (!readNew_frames(doc))
 				return false;
 		}
 	}
@@ -283,6 +298,54 @@ bool FtmDocument::readNew_params(Document *doc)
 		else
 		{
 			m_pSelectedTune->SetSongTempo(m_iMachine == NTSC ? DEFAULT_TEMPO_NTSC : DEFAULT_TEMPO_PAL);
+		}
+	}
+	return true;
+}
+
+bool FtmDocument::readNew_header(Document *doc)
+{
+	unsigned int block_ver = doc->getBlockVersion();
+
+	if (block_ver == 1)
+	{
+		// Single track
+		SwitchToTrack(0);
+		for (unsigned int i=0;i<m_iChannelsAvailable;i++)
+		{
+			// Channel type (unused)
+			doc->getBlockChar();
+			// Effect columns
+			m_pSelectedTune->SetEffectColumnCount(i, doc->getBlockChar());
+		}
+	}
+	else if (block_ver == 2)
+	{
+		// Multiple tracks
+		m_iTracks = doc->getBlockChar();
+		ftm_Assert(m_iTracks <= MAX_TRACKS);
+
+		for (unsigned int i=0;i<=m_iTracks;i++)
+		{
+			AllocateSong(i);
+		}
+
+		// Track names
+		if (block_ver >= 3)
+		{
+			for (unsigned int i=0;i<=m_iTracks;i++)
+			{
+				m_sTrackNames[i] = doc->readString();
+			}
+		}
+
+		for (unsigned int i=0;i<m_iChannelsAvailable;i++)
+		{
+			/*unsigned char channelType = */doc->getBlockChar();	// Channel type (unused)
+			for (unsigned int j=0;j<=m_iTracks;j++)
+			{
+				m_pTunes[j]->SetEffectColumnCount(i, doc->getBlockChar());	// Effect columns
+			}
 		}
 	}
 	return true;
@@ -365,13 +428,13 @@ bool FtmDocument::readNew_sequences(Document *doc)
 	}
 	else if (block_ver >= 3)
 	{
-#if 0
 		int Indices[MAX_SEQUENCES * SEQ_COUNT];
 		int Types[MAX_SEQUENCES * SEQ_COUNT];
 
 		unsigned int loopPoint, releasePoint=-1, settings=0;
 
-		for (unsigned int i=0;i<count;++i) {
+		for (unsigned int i=0;i<count;i++)
+		{
 			index	  = doc->getBlockInt();
 			type	  = doc->getBlockInt();
 			seqCount  = doc->getBlockChar();
@@ -393,27 +456,33 @@ bool FtmDocument::readNew_sequences(Document *doc)
 			pSeq->SetItemCount(seqCount < MAX_SEQUENCE_ITEMS ? seqCount : MAX_SEQUENCE_ITEMS);
 			pSeq->SetLoopPoint(loopPoint);
 
-			if (Version == 4) {
+			if (block_ver == 4)
+			{
 				releasePoint = doc->getBlockInt();
 				settings = doc->getBlockInt();
 				pSeq->SetReleasePoint(releasePoint);
 				pSeq->SetSetting(settings);
 			}
 
-			for (x = 0; x < seqCount; ++x) {
-				Value = doc->getBlockChar();
+			for (unsigned int x=0;x<seqCount;x++)
+			{
+				value = doc->getBlockChar();
 				if (x <= MAX_SEQUENCE_ITEMS)
-					pSeq->SetItem(x, Value);
+					pSeq->SetItem(x, value);
 			}
 		}
 
-		if (Version == 5) {
+		if (block_ver == 5)
+		{
 			// Version 5 saved the release points incorrectly, this is fixed in ver 6
-			for (int i = 0; i < MAX_SEQUENCES; ++i) {
-				for (int x = 0; x < SEQ_COUNT; ++x) {
+			for (int i=0;i<MAX_SEQUENCES;i++)
+			{
+				for (int x=0;x<SEQ_COUNT;x++)
+				{
 					releasePoint = doc->getBlockInt();
 					settings = doc->getBlockInt();
-					if (GetSequenceItemCount(i, x) > 0) {
+					if (GetSequenceItemCount(i, x) > 0)
+					{
 						CSequence *pSeq = GetSequence(i, x);
 						pSeq->SetReleasePoint(releasePoint);
 						pSeq->SetSetting(settings);
@@ -421,9 +490,11 @@ bool FtmDocument::readNew_sequences(Document *doc)
 				}
 			}
 		}
-		else if (Version >= 6) {
+		else if (block_ver >= 6)
+		{
 			// Read release points correctly stored
-			for (i = 0; i < Count; ++i) {
+			for (unsigned int i=0;i<count;i++)
+			{
 				releasePoint = doc->getBlockInt();
 				settings = doc->getBlockInt();
 				index = Indices[i];
@@ -433,9 +504,83 @@ bool FtmDocument::readNew_sequences(Document *doc)
 				pSeq->SetSetting(settings);
 			}
 		}
-#endif
 	}
 	return true;
+}
+
+bool FtmDocument::readNew_frames(Document *doc)
+{
+	unsigned int block_ver = doc->getBlockVersion();
+
+	if (block_ver == 1)
+	{
+		unsigned int frameCount = doc->getBlockInt();
+		m_pSelectedTune->SetFrameCount(frameCount);
+		m_iChannelsAvailable = doc->getBlockInt();
+		ftm_Assert(frameCount <= MAX_FRAMES);
+		ftm_Assert(m_iChannelsAvailable <= MAX_CHANNELS);
+		for (unsigned i=0;i<frameCount;i++)
+		{
+			for (unsigned j=0;j<m_iChannelsAvailable;j++)
+			{
+				unsigned pattern = (unsigned)doc->getBlockChar();
+				ftm_Assert(pattern < MAX_FRAMES);
+				m_pSelectedTune->SetFramePattern(i, j, pattern);
+			}
+		}
+	}
+	else if (block_ver > 1)
+	{
+		for (unsigned y=0;y<=m_iTracks;y++)
+		{
+			unsigned int frameCount = doc->getBlockInt();
+			unsigned int speed = doc->getBlockInt();
+
+			ftm_Assert(frameCount > 0 && frameCount <= MAX_FRAMES);
+			ftm_Assert(speed > 0);
+
+			m_pTunes[y]->SetFrameCount(frameCount);
+
+			if (block_ver == 3)
+			{
+				unsigned int Tempo = doc->getBlockInt();
+				ftm_Assert(Tempo > 0);
+				m_pTunes[y]->SetSongTempo(Tempo);
+				m_pTunes[y]->SetSongSpeed(speed);
+			}
+			else
+			{
+				if (speed < 20)
+				{
+					unsigned int Tempo = (m_iMachine == NTSC) ? DEFAULT_TEMPO_NTSC : DEFAULT_TEMPO_PAL;
+					m_pTunes[y]->SetSongTempo(Tempo);
+					m_pTunes[y]->SetSongSpeed(speed);
+				}
+				else {
+					m_pTunes[y]->SetSongTempo(speed);
+					m_pTunes[y]->SetSongSpeed(DEFAULT_SPEED);
+				}
+			}
+
+			unsigned PatternLength = (unsigned)doc->getBlockInt();
+			ftm_Assert(PatternLength > 0 && PatternLength <= MAX_PATTERN_LENGTH);
+
+			m_pTunes[y]->SetPatternLength(PatternLength);
+
+			for (unsigned i=0;i<frameCount;i++)
+			{
+				for (unsigned j=0;j<m_iChannelsAvailable;j++)
+				{
+					// Read pattern index
+					unsigned pattern = (unsigned char)doc->getBlockChar();
+					ftm_Assert(pattern < MAX_PATTERN);
+					m_pTunes[y]->SetFramePattern(i, j, pattern);
+				}
+			}
+		}
+	}
+
+	return false;
 }
 
 void FtmDocument::write(IO *io)
@@ -562,7 +707,8 @@ void FtmDocument::SetPatternAtFrame(unsigned int Frame, unsigned int Channel, un
 
 int FtmDocument::GetFirstFreePattern(int Channel)
 {
-	for (int i=0;i<MAX_PATTERN;i++) {
+	for (int i=0;i<MAX_PATTERN;i++)
+	{
 		if (!m_pSelectedTune->IsPatternInUse(Channel, i) && m_pSelectedTune->IsPatternEmpty(Channel, i))
 			return i;
 
@@ -588,7 +734,8 @@ void FtmDocument::IncreasePattern(unsigned int Frame, unsigned int Channel, int 
 	int Current = m_pSelectedTune->GetFramePattern(Frame, Channel);
 
 	// Selects the next channel pattern
-	if ((Current + Count) < (MAX_PATTERN - 1)) {
+	if ((Current + Count) < (MAX_PATTERN - 1))
+	{
 		m_pSelectedTune->SetFramePattern(Frame, Channel, Current + Count);
 		SetModifiedFlag();
 		UpdateViews();
@@ -607,7 +754,8 @@ void FtmDocument::DecreasePattern(unsigned int Frame, unsigned int Channel, int 
 	int Current = m_pSelectedTune->GetFramePattern(Frame, Channel);
 
 	// Selects the previous channel pattern
-	if (Current > Count) {
+	if (Current > Count)
+	{
 		m_pSelectedTune->SetFramePattern(Frame, Channel, Current - Count);
 		SetModifiedFlag();
 		UpdateViews();
@@ -627,7 +775,8 @@ void FtmDocument::IncreaseInstrument(unsigned int Frame, unsigned int Channel, u
 
 	unsigned int Inst = m_pSelectedTune->GetPatternData(Channel, GET_PATTERN(Frame, Channel), Row)->Instrument;
 
-	if (Inst < MAX_INSTRUMENTS) {
+	if (Inst < MAX_INSTRUMENTS)
+	{
 		m_pSelectedTune->GetPatternData(Channel, GET_PATTERN(Frame, Channel), Row)->Instrument = Inst + 1;
 		SetModifiedFlag();
 		UpdateViews();
@@ -642,7 +791,8 @@ void FtmDocument::DecreaseInstrument(unsigned int Frame, unsigned int Channel, u
 
 	unsigned int Inst = m_pSelectedTune->GetPatternData(Channel, GET_PATTERN(Frame, Channel), Row)->Instrument;
 
-	if (Inst > 0) {
+	if (Inst > 0)
+	{
 		m_pSelectedTune->GetPatternData(Channel, GET_PATTERN(Frame, Channel), Row)->Instrument = Inst - 1;
 		SetModifiedFlag();
 		UpdateViews();
@@ -657,7 +807,8 @@ void FtmDocument::IncreaseVolume(unsigned int Frame, unsigned int Channel, unsig
 
 	unsigned int Vol = m_pSelectedTune->GetPatternData(Channel, GET_PATTERN(Frame, Channel), Row)->Vol;
 
-	if (Vol < 16) {
+	if (Vol < 16)
+	{
 		m_pSelectedTune->GetPatternData(Channel, GET_PATTERN(Frame, Channel), Row)->Vol = Vol + 1;
 		SetModifiedFlag();
 		UpdateViews();
@@ -672,7 +823,8 @@ void FtmDocument::DecreaseVolume(unsigned int Frame, unsigned int Channel, unsig
 
 	unsigned int Vol = m_pSelectedTune->GetPatternData(Channel, GET_PATTERN(Frame, Channel), Row)->Vol;
 
-	if (Vol > 1) {
+	if (Vol > 1)
+	{
 		m_pSelectedTune->GetPatternData(Channel, GET_PATTERN(Frame, Channel), Row)->Vol = Vol - 1;
 		SetModifiedFlag();
 		UpdateViews();
@@ -688,7 +840,8 @@ void FtmDocument::IncreaseEffect(unsigned int Frame, unsigned int Channel, unsig
 
 	unsigned int Effect = m_pSelectedTune->GetPatternData(Channel, GET_PATTERN(Frame, Channel), Row)->EffParam[Index];
 
-	if (Effect < 256) {
+	if (Effect < 256)
+	{
 		m_pSelectedTune->GetPatternData(Channel, GET_PATTERN(Frame, Channel), Row)->EffParam[Index] = Effect + 1;
 		SetModifiedFlag();
 		UpdateViews();
@@ -704,7 +857,8 @@ void FtmDocument::DecreaseEffect(unsigned int Frame, unsigned int Channel, unsig
 
 	unsigned int Effect = m_pSelectedTune->GetPatternData(Channel, GET_PATTERN(Frame, Channel), Row)->EffParam[Index];
 
-	if (Effect > 0) {
+	if (Effect > 0)
+	{
 		m_pSelectedTune->GetPatternData(Channel, GET_PATTERN(Frame, Channel), Row)->EffParam[Index] = Effect - 1;
 		SetModifiedFlag();
 		UpdateViews();
@@ -832,7 +986,8 @@ void FtmDocument::RemoveTrack(unsigned int Track)
 	delete m_pTunes[Track];
 
 	// Move down all other tracks
-	for (unsigned int i = Track; i < m_iTracks; ++i) {
+	for (unsigned int i = Track; i < m_iTracks;i++)
+	{
 		m_sTrackNames[i] = m_sTrackNames[i + 1];
 		m_pTunes[i] = m_pTunes[i + 1];
 	}
@@ -899,7 +1054,7 @@ CInstrument *FtmDocument::GetInstrument(int Index)
 int FtmDocument::GetInstrumentCount() const
 {
 	int count = 0;
-	for(int i = 0; i < MAX_INSTRUMENTS; ++i)
+	for(int i=0;i<MAX_INSTRUMENTS;i++)
 	{
 		if( IsInstrumentUsed( i ) ) ++count;
 	}
@@ -944,10 +1099,12 @@ int FtmDocument::AddInstrument(const char *Name, int ChipType)
 
 	// TODO: move this to instrument classes
 
-	switch (ChipType) {
+	switch (ChipType)
+	{
 		case SNDCHIP_NONE:
 		case SNDCHIP_MMC5:
-			for (int i = 0; i < SEQ_COUNT; ++i) {
+			for (int i=0;i<SEQ_COUNT;i++)
+			{
 				((CInstrument2A03*)m_pInstruments[Slot])->SetSeqEnable(i, 0);
 				((CInstrument2A03*)m_pInstruments[Slot])->SetSeqIndex(i, GetFreeSequence(i));
 			}
@@ -955,7 +1112,8 @@ int FtmDocument::AddInstrument(const char *Name, int ChipType)
 			// TODO - dan
 			/*
 		case SNDCHIP_VRC6:
-			for (int i = 0; i < SEQ_COUNT; ++i) {
+			for (int i=0;i<SEQ_COUNT;i++)
+			{
 				((CInstrumentVRC6*)m_pInstruments[Slot])->SetSeqEnable(i, 0);
 				((CInstrumentVRC6*)m_pInstruments[Slot])->SetSeqIndex(i, GetFreeSequenceVRC6(i));
 			}
@@ -999,8 +1157,10 @@ void FtmDocument::SetInstrumentName(unsigned int Index, const char *Name)
 	ftm_Assert(Index < MAX_INSTRUMENTS);
 	ftm_Assert(m_pInstruments[Index] != NULL);
 
-	if (m_pInstruments[Index] != NULL) {
-		if (strcmp(m_pInstruments[Index]->GetName(), Name) != 0) {
+	if (m_pInstruments[Index] != NULL)
+	{
+		if (strcmp(m_pInstruments[Index]->GetName(), Name) != 0)
+		{
 			m_pInstruments[Index]->SetName(Name);
 			SetModifiedFlag();
 		}
@@ -1016,7 +1176,8 @@ int FtmDocument::CloneInstrument(unsigned int Index)
 
 	int Slot = FindFreeInstrumentSlot();
 
-	if (Slot != -1) {
+	if (Slot != -1)
+	{
 		m_pInstruments[Slot] = GetInstrument(Index)->Clone();
 		SetModifiedFlag();
 		//UpdateAllViews(NULL, UPDATE_INSTRUMENTS);
@@ -1030,8 +1191,8 @@ CInstrument * FtmDocument::CreateInstrument(int type)
 	// Creates a new instrument of selected type
 	switch (type)
 	{
+		case INST_2A03: return new CInstrument2A03;
 	// TODO - dan
-//		case INST_2A03: return new CInstrument2A03;
 /*		case INST_VRC6: return new CInstrumentVRC6();
 		case INST_VRC7: return new CInstrumentVRC7();
 		case INST_N106:	return new CInstrumentN106();
@@ -1045,7 +1206,8 @@ CInstrument * FtmDocument::CreateInstrument(int type)
 int FtmDocument::FindFreeInstrumentSlot()
 {
 	// Returns a free instrument slot, or -1 if no free slots exists
-	for (int i = 0; i < MAX_INSTRUMENTS; ++i) {
+	for (int i=0;i<MAX_INSTRUMENTS;i++)
+	{
 		if (m_pInstruments[i] == NULL)
 			return i;
 	}
@@ -1162,7 +1324,8 @@ CSequence *FtmDocument::GetSequence(int Chip, int Index, int Type)
 {
 	ftm_Assert(Index >= 0 && Index < MAX_SEQUENCES && Type >= 0 && Type < SEQ_COUNT);
 
-	switch (Chip) {
+	switch (Chip)
+	{
 		case SNDCHIP_NONE:
 			return GetSequence(Index, Type);
 		case SNDCHIP_VRC6:
@@ -1198,7 +1361,8 @@ int FtmDocument::GetSequenceItemCount(int Index, int Type) const
 int FtmDocument::GetFreeSequence(int Type) const
 {
 	// Return a free sequence slot
-	for (int i = 0; i < MAX_SEQUENCES; ++i) {
+	for (int i=0;i<MAX_SEQUENCES;i++)
+	{
 		if (GetSequenceItemCount(i, Type) == 0)
 			return i;
 	}
@@ -1209,7 +1373,8 @@ int FtmDocument::GetSequenceCount(int Type) const
 {
 	// Return number of allocated sequences of Type
 	int Count = 0;
-	for (int i = 0; i < MAX_SEQUENCES; ++i) {
+	for (int i=0;i<MAX_SEQUENCES;i++)
+	{
 		if (GetSequenceItemCount(i, Type) > 0)
 			++Count;
 	}
@@ -1246,7 +1411,8 @@ int FtmDocument::GetSequenceItemCountVRC6(int Index, int Type) const
 
 int FtmDocument::GetFreeSequenceVRC6(int Type) const
 {
-	for (int i = 0; i < MAX_SEQUENCES; ++i) {
+	for (int i=0;i<MAX_SEQUENCES;i++)
+	{
 		if (GetSequenceItemCountVRC6(i, Type) == 0)
 			return i;
 	}
@@ -1264,7 +1430,8 @@ CDSample * FtmDocument::GetDSample(unsigned int Index)
 int FtmDocument::GetSampleCount() const
 {
 	int Count = 0;
-	for (int i = 0; i < MAX_DSAMPLES; ++i) {
+	for (int i=0;i<MAX_DSAMPLES;i++)
+	{
 		if (m_DSamples[i].SampleSize > 0)
 			++Count;
 	}
@@ -1273,8 +1440,10 @@ int FtmDocument::GetSampleCount() const
 
 int FtmDocument::GetFreeDSample() const
 {
-	for (int i = 0; i < MAX_DSAMPLES; ++i) {
-		if (m_DSamples[i].SampleSize == 0) {
+	for (int i=0;i<MAX_DSAMPLES;i++)
+	{
+		if (m_DSamples[i].SampleSize == 0)
+		{
 			return i;
 		}
 	}
@@ -1323,7 +1492,8 @@ int FtmDocument::GetTotalSampleSize() const
 {
 	// Return total size of all loaded samples
 	int Size = 0;
-	for (int i = 0; i < MAX_DSAMPLES; ++i) {
+	for (int i=0;i<MAX_DSAMPLES;i++)
+	{
 		Size += m_DSamples[i].SampleSize;
 	}
 	return Size;
@@ -1334,7 +1504,8 @@ void FtmDocument::ConvertSequence(stSequence *OldSequence, CSequence *NewSequenc
 	// This function is used to convert old version sequences (used by older file versions)
 	// to the current version
 
-	if (OldSequence->Count > 0 && OldSequence->Count < MAX_SEQUENCE_ITEMS) {
+	if (OldSequence->Count > 0 && OldSequence->Count < MAX_SEQUENCE_ITEMS)
+	{
 
 		// Save a pointer to this
 		int iLoopPoint = -1;
@@ -1344,17 +1515,22 @@ void FtmDocument::ConvertSequence(stSequence *OldSequence, CSequence *NewSequenc
 		// Store the sequence
 		int Count = OldSequence->Count;
 
-		for (int k = 0; k < Count; ++k) {
+		for (int k=0;k<Count;k++)
+		{
 			int Value	= OldSequence->Value[k];
 			int Length	= OldSequence->Length[k];
 
-			if (Length < 0) {
+			if (Length < 0)
+			{
 				iLoopPoint = 0;
-				for (int l = signed(OldSequence->Count) + Length - 1; l < signed(OldSequence->Count) - 1; l++)
+				for (int l=signed(OldSequence->Count)+Length-1; l<signed(OldSequence->Count)-1; l++)
+				{
 					iLoopPoint += (OldSequence->Length[l] + 1);
+				}
 			}
 			else {
-				for (int l = 0; l < Length + 1; l++) {
+				for (int l=0;l<Length+1;l++)
+				{
 					if ((Type == SEQ_PITCH || Type == SEQ_HIPITCH) && l > 0)
 						NewSequence->SetItem(ValPtr++, 0);
 					else
@@ -1364,7 +1540,8 @@ void FtmDocument::ConvertSequence(stSequence *OldSequence, CSequence *NewSequenc
 			}
 		}
 
-		if (iLoopPoint != -1) {
+		if (iLoopPoint != -1)
+		{
 			if (iLoopPoint > iLength)
 				iLoopPoint = iLength;
 			iLoopPoint = iLength - iLoopPoint;
@@ -1378,7 +1555,8 @@ void FtmDocument::ConvertSequence(stSequence *OldSequence, CSequence *NewSequenc
 void FtmDocument::AllocateSong(unsigned int Song)
 {
 	// Allocate a new song if not already done
-	if (m_pTunes[Song] == NULL) {
+	if (m_pTunes[Song] == NULL)
+	{
 		int Tempo = (m_iMachine == NTSC) ? DEFAULT_TEMPO_NTSC : DEFAULT_TEMPO_PAL;
 		m_pTunes[Song] = new CPatternData(DEFAULT_ROW_COUNT, DEFAULT_SPEED, Tempo);
 		m_sTrackNames[Song] = DEFAULT_TRACK_NAME;

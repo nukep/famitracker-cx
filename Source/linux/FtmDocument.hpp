@@ -198,8 +198,10 @@ private:
 	bool readNew(Document *doc, IO *io);
 
 	bool readNew_params(Document *doc);
+	bool readNew_header(Document *doc);
 	bool readNew_instruments(Document *doc);
 	bool readNew_sequences(Document *doc);
+	bool readNew_frames(Document *doc);
 
 	CTrackerChannel	*m_pChannels[CHANNELS];
 	int				m_iRegisteredChannels;
