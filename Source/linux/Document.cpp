@@ -142,7 +142,7 @@ std::string Document::readString()
 	std::string s;
 	char c;
 
-	while (c = getBlockChar())
+	while ((c = getBlockChar()) != 0)
 		s.push_back(c);
 
 	return s;

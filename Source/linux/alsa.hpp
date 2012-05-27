@@ -3,9 +3,10 @@
 
 #include "sound.hpp"
 
-class AlsaSound : public Sound
+class AlsaSound : public SoundSink
 {
-
+public:
+	void FlushBuffer(int16 *Buffer, uint32 Size);
 };
 
 #endif

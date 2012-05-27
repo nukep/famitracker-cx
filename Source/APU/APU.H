@@ -53,8 +53,13 @@ class CExternal;
 
 class CAPU {
 public:
-	CAPU(ICallback *pCallback, CSampleMem *pSampleMem);
+	CAPU(CSampleMem *pSampleMem);
 	~CAPU();
+
+	void	SetCallback(ICallback *callback)
+	{
+		m_pParent = callback;
+	}
 
 	void	Reset();
 	void	Process();

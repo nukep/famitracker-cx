@@ -26,7 +26,7 @@
 
 class CVRC6_Pulse : public CExChannel {
 public:
-	CVRC6_Pulse(CMixer *pMixer, int ID) : CExChannel(pMixer, SNDCHIP_VRC6, ID) {};
+	CVRC6_Pulse(CMixer *pMixer, int ID) : CExChannel(pMixer, SNDCHIP_VRC6, ID) {}
 	void Reset();
 	void Write(uint16 Address, uint8 Value);
 	void Process(int Time);
@@ -41,7 +41,7 @@ private:
 
 class CVRC6_Sawtooth : public CExChannel {
 public:
-	CVRC6_Sawtooth(CMixer *pMixer, int ID) : CExChannel(pMixer, SNDCHIP_VRC6, ID) {};
+	CVRC6_Sawtooth(CMixer *pMixer, int ID) : CExChannel(pMixer, SNDCHIP_VRC6, ID) {}
 	void Reset();
 	void Write(uint16 Address, uint8 Value);
 	void Process(int Time);

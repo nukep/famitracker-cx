@@ -99,4 +99,19 @@ namespace gui
 	{
 		return f->write((const char*)buf, sz);
 	}
+	bool FileIO::seek(int offset, SeekOrigin o)
+	{
+		switch(o)
+		{
+		case IO_SEEK_SET:
+			return f->seek(offset);
+			break;
+		case IO_SEEK_CUR:
+			return f->seek(f->pos() + offset);
+			break;
+		case IO_SEEK_END:
+			return f->seek(f->size());
+			break;
+		}
+	}
 }

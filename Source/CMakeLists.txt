@@ -4,7 +4,11 @@ cmake_minimum_required(VERSION 2.6)
 set(SRC
 	linux/alsa.cpp
 	linux/alsa.hpp
+	linux/wavoutput.cpp
+	linux/wavoutput.hpp
+	linux/sound.cpp
 	linux/sound.hpp
+
 	linux/App.cpp
 	linux/App.hpp
 	linux/Document.cpp
@@ -16,6 +20,7 @@ set(SRC
 	linux/Instrument.cpp
 	linux/Instrument.h
 	linux/Instrument2A03.cpp
+	linux/InstrumentVRC6.cpp
 	linux/PatternData.cpp
 	linux/PatternData.h
 	linux/Sequence.cpp
@@ -30,4 +35,4 @@ add_subdirectory("APU")
 add_subdirectory("qt-gui")
 
 add_library(core ${SRC})
-
+target_link_libraries(core apu)

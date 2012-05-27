@@ -73,8 +73,8 @@ const uint8 CAPU::LENGTH_TABLE[] = {
 
 static std::vector<CExternal*> ExChips;
 
-CAPU::CAPU(ICallback *pCallback, CSampleMem *pSampleMem) : 
-	m_pParent(pCallback),
+CAPU::CAPU(CSampleMem *pSampleMem) :
+	m_pParent(NULL),
 	m_iFrameCycles(0),
 	m_pSoundBuffer(NULL),
 	m_pMixer(new CMixer()),

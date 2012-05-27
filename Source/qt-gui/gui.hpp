@@ -26,6 +26,7 @@ namespace gui
 		~FileIO();
 		Quantity read(void *buf, Quantity sz);
 		Quantity write(const void *buf, Quantity sz);
+		bool seek(int offset, SeekOrigin o);
 	private:
 		QFile *f;
 	};

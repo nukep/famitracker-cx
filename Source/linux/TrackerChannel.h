@@ -21,6 +21,7 @@
 #pragma once
 
 #include <boost/thread/mutex.hpp>
+#include "PatternData.h"
 
 class CTrackerChannel
 {

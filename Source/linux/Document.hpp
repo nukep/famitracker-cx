@@ -4,11 +4,19 @@
 #include <string>
 #include "types.hpp"
 
+enum SeekOrigin
+{
+	IO_SEEK_SET=0,
+	IO_SEEK_CUR=1,
+	IO_SEEK_END=2
+};
+
 class IO
 {
 public:
 	virtual Quantity read(void *buf, Quantity sz) = 0;
 	virtual Quantity write(const void *buf, Quantity sz) = 0;
+	virtual bool seek(int offset, SeekOrigin o) = 0;
 	virtual ~IO(){ }
 
 	bool read_e(void *buf, Quantity sz)
@@ -59,6 +67,10 @@ public:
 	bool writeChar(char c)
 	{
 		return write_e(&c, 1);
+	}
+	bool writeShort(short c)
+	{
+		return write_e(&c, 2);
 	}
 };
 
