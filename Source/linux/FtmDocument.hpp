@@ -202,6 +202,9 @@ private:
 	bool readNew_instruments(Document *doc);
 	bool readNew_sequences(Document *doc);
 	bool readNew_frames(Document *doc);
+	bool readNew_patterns(Document *doc);
+	bool readNew_dsamples(Document *doc);
+	bool readNew_sequences_vrc6(Document *doc);
 
 	CTrackerChannel	*m_pChannels[CHANNELS];
 	int				m_iRegisteredChannels;

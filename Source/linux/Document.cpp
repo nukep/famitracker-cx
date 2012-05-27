@@ -4,6 +4,7 @@
 const unsigned int MAX_BLOCK_SIZE = 0x80000;
 const unsigned int BLOCK_SIZE = 0x10000;
 const char FILE_HEADER_ID[] = "FamiTracker Module";
+const char FILE_END_ID[] = "END";
 
 Document::Document()
 	: m_pBlockData(NULL), m_bFileDone(false)
@@ -43,6 +44,13 @@ bool Document::readBlock(IO *io)
 	memset(m_cBlockID, 0, 16);
 
 	Quantity bytesRead = io->read(m_cBlockID, 16);
+
+	if (strcmp(m_cBlockID, FILE_END_ID) == 0)
+	{
+		m_bFileDone = true;
+		return true;
+	}
+
 	bool read_v = io->readInt(&m_iBlockVersion);
 	bool read_s = io->readInt(&m_iBlockSize);
 	if (!read_v || !read_s)
@@ -103,7 +111,7 @@ void Document::writeBlock(const void *data, unsigned int size)
 
 void Document::writeBlockInt(int v)
 {
-	char d[4];
+	unsigned char d[4];
 	d[0] = v & 0xFF;
 	d[1] = (v>>8) & 0xFF;
 	d[2] = (v>>16) & 0xFF;

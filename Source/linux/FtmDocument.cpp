@@ -18,7 +18,6 @@ const int	DEFAULT_ROW_COUNT = 64;
 const char	NEW_INST_NAME[] = "New instrument";
 
 const char FILE_HEADER_ID[] = "FamiTracker Module";
-const char FILE_END_ID[] = "END";
 
 const char FILE_BLOCK_PARAMS[]		= "PARAMS";
 const char FILE_BLOCK_INFO[]		= "INFO";
@@ -198,44 +197,58 @@ bool FtmDocument::readNew(Document *doc, IO *io)
 		if (!doc->readBlock(io))
 			return false;
 
+		if (doc->isFileDone())
+			break;
+
 		const char *id = doc->blockID();
 
-		if (strcmp(id, FILE_END_ID) == 0)
-		{
-			break;
-		}
-		if (strcmp(id, FILE_BLOCK_PARAMS) == 0)
-		{
-			if (!readNew_params(doc))
-				return false;
-		}
-		else if (strcmp(id, FILE_BLOCK_INFO) == 0)
+#define CMP(token) (strcmp(id, token) == 0)
+
+		if (CMP(FILE_BLOCK_INFO))
 		{
 			doc->getBlock(m_strName, 32);
 			doc->getBlock(m_strArtist, 32);
 			doc->getBlock(m_strCopyright, 32);
 		}
-		else if (strcmp(id, FILE_BLOCK_HEADER) == 0)
+		else if (CMP(FILE_BLOCK_PARAMS))
 		{
-			if (!readNew_header(doc))
-				return false;
+			if (!readNew_params(doc)) return false;
 		}
-		else if (strcmp(id, FILE_BLOCK_INSTRUMENTS) == 0)
+		else if (CMP(FILE_BLOCK_HEADER))
 		{
-			if (!readNew_instruments(doc))
-				return false;
+			if (!readNew_header(doc)) return false;
 		}
-		else if (strcmp(id, FILE_BLOCK_SEQUENCES) == 0)
+		else if (CMP(FILE_BLOCK_INSTRUMENTS))
 		{
-			if (!readNew_sequences(doc))
-				return false;
+			if (!readNew_instruments(doc)) return false;
 		}
-		else if (strcmp(id, FILE_BLOCK_FRAMES) == 0)
+		else if (CMP(FILE_BLOCK_SEQUENCES))
 		{
-			if (!readNew_frames(doc))
-				return false;
+			if (!readNew_sequences(doc)) return false;
+		}
+		else if (CMP(FILE_BLOCK_FRAMES))
+		{
+			if (!readNew_frames(doc)) return false;
+		}
+		else if (CMP(FILE_BLOCK_PATTERNS))
+		{
+			if (!readNew_patterns(doc)) return false;
+		}
+		else if (CMP(FILE_BLOCK_DSAMPLES))
+		{
+			if (!readNew_dsamples(doc)) return false;
+		}
+		else if (CMP(FILE_BLOCK_SEQUENCES_VRC6))
+		{
+			if (!readNew_sequences_vrc6(doc)) return false;
+		}
+		else
+		{
+			ftm_Assert(0);
 		}
 	}
+
+#undef CMP
 
 	return true;
 }
@@ -519,7 +532,7 @@ bool FtmDocument::readNew_frames(Document *doc)
 		m_iChannelsAvailable = doc->getBlockInt();
 		ftm_Assert(frameCount <= MAX_FRAMES);
 		ftm_Assert(m_iChannelsAvailable <= MAX_CHANNELS);
-		for (unsigned i=0;i<frameCount;i++)
+		for (unsigned int i=0;i<frameCount;i++)
 		{
 			for (unsigned j=0;j<m_iChannelsAvailable;j++)
 			{
@@ -567,12 +580,12 @@ bool FtmDocument::readNew_frames(Document *doc)
 
 			m_pTunes[y]->SetPatternLength(PatternLength);
 
-			for (unsigned i=0;i<frameCount;i++)
+			for (unsigned int i=0;i<frameCount;i++)
 			{
 				for (unsigned j=0;j<m_iChannelsAvailable;j++)
 				{
 					// Read pattern index
-					unsigned pattern = (unsigned char)doc->getBlockChar();
+					unsigned int pattern = (unsigned char)doc->getBlockChar();
 					ftm_Assert(pattern < MAX_PATTERN);
 					m_pTunes[y]->SetFramePattern(i, j, pattern);
 				}
@@ -580,7 +593,324 @@ bool FtmDocument::readNew_frames(Document *doc)
 		}
 	}
 
-	return false;
+	return true;
+}
+
+bool FtmDocument::readNew_patterns(Document *doc)
+{
+	unsigned int block_ver = doc->getBlockVersion();
+
+	if (block_ver == 1)
+	{
+		int patternLen = doc->getBlockInt();
+		ftm_Assert(patternLen <= MAX_PATTERN_LENGTH);
+		m_pSelectedTune->SetPatternLength(patternLen);
+	}
+
+	while (!doc->blockDone())
+	{
+		unsigned int track;
+		if (block_ver > 1)
+			track = doc->getBlockInt();
+		else if (block_ver == 1)
+			track = 0;
+
+		unsigned int channel = doc->getBlockInt();
+		unsigned int pattern = doc->getBlockInt();
+		unsigned int items	= doc->getBlockInt();
+
+		if (channel > MAX_CHANNELS)
+			return true;
+
+		ftm_Assert(track < MAX_TRACKS);
+		ftm_Assert(channel < MAX_CHANNELS);
+		ftm_Assert(pattern < MAX_PATTERN);
+		ftm_Assert((items - 1) < MAX_PATTERN_LENGTH);
+
+		SwitchToTrack(track);
+
+		for (unsigned int i=0;i<items;i++)
+		{
+			unsigned row;
+			if (m_iFileVersion == 0x0200)
+				row = doc->getBlockChar();
+			else
+				row = doc->getBlockInt();
+
+			ftm_Assert(row < MAX_PATTERN_LENGTH);
+
+			stChanNote *note = m_pSelectedTune->GetPatternData(channel, pattern, row);
+			memset(note, 0, sizeof(stChanNote));
+
+			note->Note		 = doc->getBlockChar();
+			note->Octave	 = doc->getBlockChar();
+			note->Instrument = doc->getBlockChar();
+			note->Vol		 = doc->getBlockChar();
+
+			if (m_iFileVersion == 0x0200)
+			{
+				unsigned char EffectNumber, EffectParam;
+				EffectNumber = doc->getBlockChar();
+				EffectParam = doc->getBlockChar();
+				if (block_ver < 3)
+				{
+					if (EffectNumber == EF_PORTAOFF)
+					{
+						EffectNumber = EF_PORTAMENTO;
+						EffectParam = 0;
+					}
+					else if (EffectNumber == EF_PORTAMENTO)
+					{
+						if (EffectParam < 0xFF)
+							EffectParam++;
+					}
+				}
+
+				stChanNote *note = m_pSelectedTune->GetPatternData(channel, pattern, row);
+
+				note->EffNumber[0]	= EffectNumber;
+				note->EffParam[0]	= EffectParam;
+			}
+			else
+			{
+				for (int n=0;n<(m_pSelectedTune->GetEffectColumnCount(channel) + 1);n++)
+				{
+					unsigned char EffectNumber, EffectParam;
+					EffectNumber = doc->getBlockChar();
+					EffectParam = doc->getBlockChar();
+
+					if (block_ver < 3)
+					{
+						if (EffectNumber == EF_PORTAOFF)
+						{
+							EffectNumber = EF_PORTAMENTO;
+							EffectParam = 0;
+						}
+						else if (EffectNumber == EF_PORTAMENTO)
+						{
+							if (EffectParam < 0xFF)
+								EffectParam++;
+						}
+					}
+
+					note->EffNumber[n]	= EffectNumber;
+					note->EffParam[n] 	= EffectParam;
+				}
+			}
+
+			if (note->Vol > 0x10)
+				note->Vol &= 0x0F;
+
+			// Specific for version 2.0
+			if (m_iFileVersion == 0x0200)
+			{
+
+				if (note->EffNumber[0] == EF_SPEED && note->EffParam[0] < 20)
+					note->EffParam[0]++;
+
+				if (note->Vol == 0)
+				{
+					note->Vol = 0x10;
+				}
+				else
+				{
+					note->Vol--;
+					note->Vol &= 0x0F;
+				}
+
+				if (note->Note == 0)
+					note->Instrument = MAX_INSTRUMENTS;
+			}
+
+			if (block_ver == 3)
+			{
+				// Fix for VRC7 portamento
+				if (GetExpansionChip() == SNDCHIP_VRC7 && channel > 4)
+				{
+					for (int n=0;n<MAX_EFFECT_COLUMNS;n++)
+					{
+						switch (note->EffNumber[n])
+						{
+							case EF_PORTA_DOWN:
+								note->EffNumber[n] = EF_PORTA_UP;
+								break;
+							case EF_PORTA_UP:
+								note->EffNumber[n] = EF_PORTA_DOWN;
+								break;
+						}
+					}
+				}
+				// FDS pitch effect fix
+				else if (GetExpansionChip() == SNDCHIP_FDS && channel == 5)
+				{
+					for (int n=0;n<MAX_EFFECT_COLUMNS;n++)
+					{
+						switch (note->EffNumber[n])
+						{
+							case EF_PITCH:
+								if (note->EffParam[n] != 0x80)
+									note->EffParam[n] = (0x100 - note->EffParam[n]) & 0xFF;
+								break;
+						}
+					}
+				}
+			}
+#ifdef TRANSPOSE_FDS
+			if (version < 5)
+			{
+				// FDS octave
+				if (GetExpansionChip() == SNDCHIP_FDS && channel > 4 && note->Octave < 7) {
+					note->Octave++;
+				}
+			}
+#endif
+		}
+	}
+
+	return true;
+}
+
+bool FtmDocument::readNew_dsamples(Document *doc)
+{
+	/*int Version = */doc->getBlockVersion();
+
+	int count = doc->getBlockChar();
+	ftm_Assert(count <= MAX_DSAMPLES);
+
+	memset(m_DSamples, 0, sizeof(CDSample) * MAX_DSAMPLES);
+
+	for (int i=0;i<count;i++)
+	{
+		int item = doc->getBlockChar();
+		int len = doc->getBlockInt();
+		ftm_Assert(item < MAX_DSAMPLES);
+		ftm_Assert(len < 256);
+		doc->getBlock(m_DSamples[item].Name, len);
+		m_DSamples[item].Name[len] = 0;
+		int size = doc->getBlockInt();
+		ftm_Assert(size < 0x8000);
+		m_DSamples[item].SampleData = new char[size];
+		m_DSamples[item].SampleSize = size;
+		doc->getBlock(m_DSamples[item].SampleData, size);
+	}
+
+	return true;
+}
+
+bool FtmDocument::readNew_sequences_vrc6(Document *doc)
+{
+	unsigned int i, j, count = 0, index, type;
+	unsigned int loopPoint, releasePoint, settings;
+	unsigned char seqCount;
+	int block_ver = doc->getBlockVersion();
+	char Value;
+
+	count = doc->getBlockInt();
+	ftm_Assert(count < MAX_SEQUENCES);
+
+	if (block_ver < 4)
+	{
+		for (i=0;i<count;i++)
+		{
+			index	  = doc->getBlockInt();
+			type	  = doc->getBlockInt();
+			seqCount  = doc->getBlockChar();
+			loopPoint = doc->getBlockInt();
+//			if (SeqCount > MAX_SEQUENCE_ITEMS)
+//				SeqCount = MAX_SEQUENCE_ITEMS;
+			ftm_Assert(index < MAX_SEQUENCES);
+			ftm_Assert(type < SEQ_COUNT);
+//			ftm_Assert(SeqCount <= MAX_SEQUENCE_ITEMS);
+			CSequence *pSeq = GetSequenceVRC6(index, type);
+			pSeq->Clear();
+			pSeq->SetItemCount(seqCount < MAX_SEQUENCE_ITEMS ? seqCount : MAX_SEQUENCE_ITEMS);
+			pSeq->SetLoopPoint(loopPoint);
+			for (j=0;j<seqCount;j++)
+			{
+				Value = doc->getBlockChar();
+				if (j <= MAX_SEQUENCE_ITEMS)
+					pSeq->SetItem(j, Value);
+			}
+		}
+	}
+	else
+	{
+		int Indices[MAX_SEQUENCES];
+		int Types[MAX_SEQUENCES];
+
+		for (i=0;i<count;i++)
+		{
+			index	  = doc->getBlockInt();
+			type	  = doc->getBlockInt();
+			seqCount  = doc->getBlockChar();
+			loopPoint = doc->getBlockInt();
+
+			Indices[i] = index;
+			Types[i] = type;
+/*
+			if (SeqCount >= MAX_SEQUENCE_ITEMS)
+				SeqCount = MAX_SEQUENCE_ITEMS - 1;
+*/
+			ftm_Assert(index < MAX_SEQUENCES);
+			ftm_Assert(type < SEQ_COUNT);
+//			ftm_Assert(SeqCount <= MAX_SEQUENCE_ITEMS);
+
+			CSequence *pSeq = GetSequenceVRC6(index, type);
+
+			pSeq->Clear();
+			pSeq->SetItemCount(seqCount);
+			pSeq->SetLoopPoint(loopPoint);
+
+			if (block_ver == 4)
+			{
+				releasePoint = doc->getBlockInt();
+				settings = doc->getBlockInt();
+				pSeq->SetReleasePoint(releasePoint);
+				pSeq->SetSetting(settings);
+			}
+
+			for (j=0;j<seqCount;j++)
+			{
+				Value = doc->getBlockChar();
+				if (j <= MAX_SEQUENCE_ITEMS)
+					pSeq->SetItem(j, Value);
+			}
+		}
+
+		if (block_ver == 5)
+		{
+			// Version 5 saved the release points incorrectly, this is fixed in ver 6
+			for (int i=0;i<MAX_SEQUENCES;i++)
+			{
+				for (int j=0;j<SEQ_COUNT;j++)
+				{
+					releasePoint = doc->getBlockInt();
+					settings = doc->getBlockInt();
+					if (GetSequenceItemCountVRC6(i, j) > 0)
+					{
+						CSequence *pSeq = GetSequenceVRC6(i, j);
+						pSeq->SetReleasePoint(releasePoint);
+						pSeq->SetSetting(settings);
+					}
+				}
+			}
+		}
+		else if (block_ver >= 6)
+		{
+			for (i=0;i<count;i++)
+			{
+				releasePoint = doc->getBlockInt();
+				settings = doc->getBlockInt();
+				index = Indices[i];
+				type = Types[i];
+				CSequence *pSeq = GetSequenceVRC6(index, type);
+				pSeq->SetReleasePoint(releasePoint);
+				pSeq->SetSetting(settings);
+			}
+		}
+	}
+
+	return true;
 }
 
 void FtmDocument::write(IO *io)

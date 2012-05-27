@@ -30,7 +30,7 @@ public:
 
 	bool readInt(int *i)
 	{
-		char buf[4];
+		unsigned char buf[4];
 		if (!read_e(buf, 4))
 			return false;
 		*i = (buf[3] << 24) | (buf[2] << 16) | (buf[1] << 8) | buf[0];
@@ -75,6 +75,7 @@ public:
 	unsigned int getBlockVersion() const{ return m_iBlockVersion; }
 	int getBlockInt();
 	char getBlockChar();
+	bool blockDone() const{ return (m_iBlockPointer >= m_iBlockSize); }
 
 	bool isFileDone() const{ return m_bFileDone; }
 
