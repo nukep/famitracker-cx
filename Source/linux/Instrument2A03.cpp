@@ -337,7 +337,7 @@ bool CInstrument2A03::LoadFile(IO *file, int iVersion, FtmDocument *pDoc)
 			if (FreeSample != -1) {
 				if ((pDoc->GetTotalSampleSize() + Size) <= MAX_SAMPLE_SPACE) {
 					CDSample *Sample = pDoc->GetDSample(FreeSample);
-					strcpy(Sample->Name, SampleNames[Index]);
+					safe_strcpy(Sample->Name, SampleNames[Index], sizeof(Sample->Name));
 					Sample->SampleSize = Size;
 					Sample->SampleData = SampleData;
 					// Assign it

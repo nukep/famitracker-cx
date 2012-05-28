@@ -20,6 +20,8 @@
 
 #pragma once
 
+#include <string.h>
+
 #if defined _WIN32 || defined __CYGWIN__
 #	define WINDOWS
 #elif defined __linux__
@@ -71,14 +73,22 @@ class CSampleMem
 			if (Addr >= m_iMemSize)
 				return 0;
 			return m_pMemory[Addr];
-		};
+		}
 
 		void SetMem(char *Ptr, int Size) {
 			m_pMemory = (uint8*)Ptr;
 			m_iMemSize = Size;
-		};
+		}
 
 	private:
 		uint8  *m_pMemory;
 		uint16	m_iMemSize;
 };
+
+// Safe string copy, always null terminates.
+// dst_sz is the size of the entire dst buffer, including last null character
+static inline void safe_strcpy(char *dst, const char *src, size_t dst_sz)
+{
+	strncpy(dst, src, dst_sz-1);
+	dst[dst_sz-1] = 0;
+}

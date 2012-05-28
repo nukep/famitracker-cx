@@ -46,9 +46,12 @@ CPatternData::CPatternData(unsigned int PatternLength, unsigned int Speed, unsig
 CPatternData::~CPatternData()
 {
 	// Deallocate memory
-	for (int i = 0; i < MAX_CHANNELS; ++i) {
-		for (int j = 0; j < MAX_PATTERN; ++j) {
-			SAFE_RELEASE_ARRAY(m_pPatternData[i][j]);
+	for (int i=0;i<MAX_CHANNELS;i++)
+	{
+		for (int j=0;j<MAX_PATTERN;j++)
+		{
+			if (m_pPatternData[i][j] != NULL)
+				delete[] m_pPatternData[i][j];
 		}
 	}
 }
@@ -161,7 +164,11 @@ void CPatternData::ClearEverything()
 void CPatternData::ClearPattern(int Channel, int Pattern)
 {
 	// Deletes a specified pattern in a channel
-	SAFE_RELEASE_ARRAY(m_pPatternData[Channel][Pattern]);
+	if (m_pPatternData[Channel][Pattern] != NULL)
+	{
+		delete[] m_pPatternData[Channel][Pattern];
+		m_pPatternData[Channel][Pattern] = NULL;
+	}
 }
 
 unsigned short CPatternData::GetFramePattern(int Frame, int Channel) const

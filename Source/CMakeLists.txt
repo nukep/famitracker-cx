@@ -2,6 +2,10 @@ project(core)
 cmake_minimum_required(VERSION 2.6)
 
 set(SRC
+	linux/common.hpp
+	linux/exceptions.cpp
+	linux/exceptions.hpp
+
 	linux/alsa.cpp
 	linux/alsa.hpp
 	linux/wavoutput.cpp

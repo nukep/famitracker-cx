@@ -38,12 +38,12 @@ CInstrument::~CInstrument()
 
 void CInstrument::SetName(const char *Name)
 {
-	strncpy(m_cName, Name, sizeof(m_cName)-1);
+	safe_strcpy(m_cName, Name, sizeof(m_cName));
 }
 
 void CInstrument::GetName(char *Name, unsigned int sz) const
 {
-	strncpy(Name, m_cName, sz);
+	safe_strcpy(Name, m_cName, sz);
 }
 
 const char *CInstrument::GetName()

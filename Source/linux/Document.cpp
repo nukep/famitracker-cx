@@ -1,5 +1,6 @@
 #include <string.h>
 #include "Document.hpp"
+#include "common.hpp"
 
 const unsigned int MAX_BLOCK_SIZE = 0x80000;
 const unsigned int BLOCK_SIZE = 0x10000;
@@ -127,7 +128,7 @@ void Document::writeBlockChar(char v)
 void Document::createBlock(const char *id, int version)
 {
 	memset(m_cBlockID, 0, 16);
-	strcpy(m_cBlockID, id);
+	safe_strcpy(m_cBlockID, id, sizeof(m_cBlockID));
 
 	m_iBlockPointer = 0;
 	m_iBlockSize = 0;

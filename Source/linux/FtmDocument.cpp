@@ -54,15 +54,14 @@ CDSample::CDSample(CDSample &sample)
 	: SampleSize(sample.SampleSize), SampleData(new char[sample.SampleSize])
 {
 	memcpy(SampleData, sample.SampleData, SampleSize);
-	strncpy(Name, sample.Name, 256);
+	safe_strcpy(Name, sample.Name, sizeof(Name));
 }
 
 CDSample::~CDSample()
 {
 	if (SampleData != NULL)
 	{
-		delete [] SampleData;
-		SampleData = NULL;
+		delete[] SampleData;
 	}
 }
 
@@ -106,10 +105,55 @@ FtmDocument::FtmDocument()
 	memset(m_pSequences2A03, 0, sizeof(CSequence*) * MAX_SEQUENCES * SEQ_COUNT);
 	memset(m_pSequencesVRC6, 0, sizeof(CSequence*) * MAX_SEQUENCES * SEQ_COUNT);
 	memset(m_pSequencesN106, 0, sizeof(CSequence*) * MAX_SEQUENCES * SEQ_COUNT);
+
+	memset(m_strName, 0, sizeof(m_strName));
+	memset(m_strArtist, 0, sizeof(m_strArtist));
+	memset(m_strCopyright, 0, sizeof(m_strCopyright));
 }
 
 FtmDocument::~FtmDocument()
 {
+	// Clean up
+
+	// DPCM samples
+	for (int i=0;i<MAX_DSAMPLES;i++) {
+		if (m_DSamples[i].SampleData != NULL)
+		{
+			delete[] m_DSamples[i].SampleData;
+			m_DSamples[i].SampleData = NULL;
+			m_DSamples[i].SampleSize = 0;
+		}
+	}
+
+	// Patterns
+	for (int i=0;i<MAX_TRACKS;i++)
+	{
+		if (m_pTunes[i] != NULL)
+			delete m_pTunes[i];
+	}
+
+	// Instruments
+	for (int i=0;i<MAX_INSTRUMENTS;i++)
+	{
+		if (m_pInstruments[i] != NULL)
+			delete m_pInstruments[i];
+	}
+
+	// Sequences
+	for (int i=0;i<MAX_SEQUENCES;i++)
+	{
+		for (int j=0;j<SEQ_COUNT;j++)
+		{
+			if (m_pSequences2A03[i][j] != NULL)
+				delete m_pSequences2A03[i][j];
+
+			if (m_pSequencesVRC6[i][j] != NULL)
+				delete m_pSequencesVRC6[i][j];
+
+			if (m_pSequencesN106[i][j] != NULL)
+				delete m_pSequencesN106[i][j];
+		}
+	}
 }
 
 void FtmDocument::createEmpty()
@@ -1247,14 +1291,9 @@ void FtmDocument::SetSongInfo(const char *Name, const char *Artist, const char *
 	if (strcmp(Name, m_strName) || strcmp(Artist, m_strArtist) || strcmp(Copyright, m_strCopyright))
 		SetModifiedFlag();
 
-	strncpy(m_strName, Name, 32);
-	strncpy(m_strArtist, Artist, 32);
-	strncpy(m_strCopyright, Copyright, 32);
-
-	// Limit strings to 31 characters to make room for null-termination
-	m_strName[31] = 0;
-	m_strArtist[31] = 0;
-	m_strCopyright[31] = 0;
+	safe_strcpy(m_strName, Name, sizeof(m_strName));
+	safe_strcpy(m_strArtist, Artist, sizeof(m_strArtist));
+	safe_strcpy(m_strCopyright, Copyright, sizeof(m_strCopyright));
 }
 
 // Vibrato functions
@@ -1468,12 +1507,13 @@ void FtmDocument::RemoveInstrument(unsigned int Index)
 		return;
 
 	delete m_pInstruments[Index];
+	m_pInstruments[Index] = NULL;
 
 	SetModifiedFlag();
 	UpdateViews();
 }
 
-void FtmDocument::GetInstrumentName(unsigned int Index, char *Name, unsigned char sz) const
+void FtmDocument::GetInstrumentName(unsigned int Index, char *Name, unsigned int sz) const
 {
 	ftm_Assert(Index < MAX_INSTRUMENTS);
 	ftm_Assert(m_pInstruments[Index] != NULL);
@@ -1529,6 +1569,7 @@ CInstrument * FtmDocument::CreateInstrument(int type)
 		case INST_S5B: return new CInstrumentS5B();*/
 	}
 
+	ftm_Assert(0);
 	return NULL;
 }
 
@@ -1787,18 +1828,21 @@ void FtmDocument::RemoveDSample(unsigned int Index)
 	if (m_DSamples[Index].SampleSize != 0)
 	{
 		if (m_DSamples[Index].SampleData != NULL)
+		{
 			delete[] m_DSamples[Index].SampleData;
+			m_DSamples[Index].SampleData = NULL;
+		}
 
 		m_DSamples[Index].SampleSize = 0;
 		SetModifiedFlag();
 	}
 }
 
-void FtmDocument::GetSampleName(unsigned int Index, char *Name) const
+void FtmDocument::GetSampleName(unsigned int Index, char *Name, unsigned int sz) const
 {
 	ftm_Assert(Index < MAX_DSAMPLES);
 	ftm_Assert(m_DSamples[Index].SampleSize > 0);
-	strcpy(Name, m_DSamples[Index].Name);
+	safe_strcpy(Name, m_DSamples[Index].Name, sz);
 }
 
 int FtmDocument::GetSampleSize(unsigned int Sample)

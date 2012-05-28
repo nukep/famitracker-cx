@@ -152,7 +152,7 @@ public:
 	int				AddInstrument(CInstrument *pInst);
 	void			RemoveInstrument(unsigned int Index);						// Remove an instrument
 	void			SetInstrumentName(unsigned int Index, const char *Name);	// Set the name of an instrument
-	void			GetInstrumentName(unsigned int Index, char *Name, unsigned char sz) const;	// Get the name of an instrument
+	void			GetInstrumentName(unsigned int Index, char *Name, unsigned int sz) const;	// Get the name of an instrument
 	int				CloneInstrument(unsigned int Index);						// Create a copy of an instrument
 	CInstrument		*CreateInstrument(int InstType);							// Creates a new instrument of InstType
 	int				FindFreeInstrumentSlot();
@@ -177,7 +177,7 @@ public:
 	int				GetSampleCount() const;
 	int				GetFreeDSample() const;
 	void			RemoveDSample(unsigned int Index);
-	void			GetSampleName(unsigned int Index, char *Name) const;
+	void			GetSampleName(unsigned int Index, char *Name, unsigned int sz) const;
 	int				GetSampleSize(unsigned int Sample);
 	char			GetSampleData(unsigned int Sample, unsigned int Offset);
 	int				GetTotalSampleSize() const;
