@@ -50,7 +50,6 @@
 
 */
 
-#include "../stdafx.h"
 #include <memory>
 #include <string.h>
 #include <stdlib.h>

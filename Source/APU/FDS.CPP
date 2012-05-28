@@ -20,7 +20,6 @@
 
 // This code comes from nintendulator
 
-#include "../stdafx.h"
 #include <cmath>
 #include <memory>
 #include "APU.H"
