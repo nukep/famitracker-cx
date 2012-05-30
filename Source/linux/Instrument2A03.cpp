@@ -122,8 +122,6 @@ void CInstrument2A03::SaveFile(IO *file, FtmDocument *pDoc)
 	// Saves an 2A03 instrument
 	// Current version 2.2
 
-//	CFamiTrackerDoc *pDoc = (CFamiTrackerDoc*)theApp.GetFirstDocument();
-
 	// Sequences
 	unsigned char SeqCount = SEQUENCE_COUNT;
 	file->writeChar(SeqCount);
@@ -214,7 +212,6 @@ bool CInstrument2A03::LoadFile(IO *file, int iVersion, FtmDocument *pDoc)
 	// Reads an FTI file
 	//
 
-	//CFamiTrackerDoc *pDoc = (CFamiTrackerDoc*)theApp.GetFirstDocument();
 	char SampleNames[MAX_DSAMPLES][256];
 	stSequence OldSequence;
 

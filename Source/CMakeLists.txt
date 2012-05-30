@@ -15,6 +15,16 @@ set(SRC
 
 	linux/App.cpp
 	linux/App.hpp
+
+	linux/ChannelHandler.cpp
+	linux/ChannelHandler.h
+	linux/Channels2A03.cpp
+	linux/Channels2A03.h
+#	linux/ChannelsVRC6.cpp
+#	linux/ChannelsVRC6.h
+	linux/ChannelMap.cpp
+	linux/ChannelMap.h
+
 	linux/Document.cpp
 	linux/Document.hpp
 	linux/FtmDocument.cpp
@@ -32,6 +42,9 @@ set(SRC
 	linux/TrackerChannel.cpp
 	linux/TrackerChannel.h
 	linux/types.hpp
+
+	linux/Settings.cpp
+	linux/Settings.h
 )
 
 add_subdirectory("APU")

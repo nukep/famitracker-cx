@@ -1,13 +1,13 @@
 #ifndef _APP_HPP_
 #define _APP_HPP_
 
-class SoundGen;
+#include "ChannelMap.h"
+#include "Settings.h"
 
 namespace app
 {
-	SoundGen * soundGenerator();
-	void lockSoundGenerator();
-	void unlockSoundGenerator();
+	const CChannelMap * channelMap();
+	const CSettings * settings();
 }
 
 #endif

@@ -84,8 +84,6 @@ bool CInstrumentVRC6::Load(Document *doc)
 
 void CInstrumentVRC6::SaveFile(IO *file, FtmDocument *doc)
 {
-//	CFamiTrackerDoc *pDoc = (CFamiTrackerDoc*)theApp.GetFirstDocument();
-
 	// Sequences
 	unsigned char SeqCount = SEQUENCE_COUNT;
 	file->writeChar(SeqCount);

@@ -3,14 +3,16 @@
 
 namespace app
 {
-	SoundGen * soundGenerator()
+	static CChannelMap channel_map;
+	static CSettings app_settings;
+
+	const CChannelMap * channelMap()
 	{
-		return NULL;
+		return &channel_map;
 	}
-	void lockSoundGenerator()
+
+	const CSettings * settings()
 	{
-	}
-	void unlockSoundGenerator()
-	{
+		return &app_settings;
 	}
 }
