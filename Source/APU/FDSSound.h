@@ -2,7 +2,11 @@
 #define _FDSSOUND_H_
 
 #if defined(__i386__) || defined(_M_IX86)
-#define FDSCALL __fastcall
+#ifdef _MSC_VER
+#	define FDSCALL __fastcall
+#else
+#	define FDSCALL __attribute__((fastcall))
+#endif
 #else
 #define FDSCALL
 #endif
