@@ -91,7 +91,6 @@ void CDSample::Allocate(int iSize, char *pData)
 
 
 FtmDocument::FtmDocument()
-	: m_iRegisteredChannels(0)
 {
 	for (int i=0;i<MAX_DSAMPLES;i++)
 	{
@@ -959,7 +958,7 @@ bool FtmDocument::readNew_sequences_vrc6(Document *doc)
 void FtmDocument::write(IO *io)
 {
 }
-
+/*
 void FtmDocument::ResetChannels()
 {
 	// Clears all channels from the document
@@ -988,7 +987,7 @@ int FtmDocument::GetChannelType(int Channel) const
 	ftm_Assert(Channel < m_iRegisteredChannels);
 	return m_iChannelTypes[Channel];
 }
-
+*/
 void FtmDocument::SetFrameCount(unsigned int Count)
 {
 	ftm_Assert(Count <= MAX_FRAMES);
@@ -1052,7 +1051,7 @@ void FtmDocument::SetEffColumns(unsigned int Channel, unsigned int Columns)
 	ftm_Assert(Channel < MAX_CHANNELS);
 	ftm_Assert(Columns < MAX_EFFECT_COLUMNS);
 
-	GetChannel(Channel)->SetColumnCount(Columns);
+//	GetChannel(Channel)->SetColumnCount(Columns);
 	m_pSelectedTune->SetEffectColumnCount(Channel, Columns);
 
 	SetModifiedFlag();
@@ -1271,7 +1270,7 @@ void FtmDocument::SelectExpansionChip(unsigned char Chip)
 	// TODO - dan
 //	theApp.GetSoundGenerator()->RegisterChannels(Chip);
 
-	m_iChannelsAvailable = GetChannelCount();
+//	m_iChannelsAvailable = GetChannelCount();
 
 	SetModifiedFlag();
 	UpdateViews();
@@ -1460,8 +1459,7 @@ int FtmDocument::AddInstrument(const char *Name, int ChipType)
 	if (Slot == -1)
 		return -1;
 
-	// TODO - dan
-//	m_pInstruments[Slot] = theApp.GetChannelMap()->GetChipInstrument(ChipType);
+	m_pInstruments[Slot] = app::channelMap()->GetChipInstrument(ChipType);
 
 	ftm_Assert(m_pInstruments[Slot] != NULL);
 
@@ -1477,8 +1475,6 @@ int FtmDocument::AddInstrument(const char *Name, int ChipType)
 				((CInstrument2A03*)m_pInstruments[Slot])->SetSeqIndex(i, GetFreeSequence(i));
 			}
 			break;
-			// TODO - dan
-			/*
 		case SNDCHIP_VRC6:
 			for (int i=0;i<SEQ_COUNT;i++)
 			{
@@ -1486,7 +1482,6 @@ int FtmDocument::AddInstrument(const char *Name, int ChipType)
 				((CInstrumentVRC6*)m_pInstruments[Slot])->SetSeqIndex(i, GetFreeSequenceVRC6(i));
 			}
 			break;
-			*/
 	}
 
 	m_pInstruments[Slot]->SetName(Name);
@@ -1648,8 +1643,6 @@ int FtmDocument::LoadInstrument(IO *io)
 		return -1;
 	}
 
-	app::lockSoundGenerator();
-
 	// Type
 	char InstType;
 	io->readChar(InstType);
@@ -1672,8 +1665,6 @@ int FtmDocument::LoadInstrument(IO *io)
 	pInstrument->SetName(Text);
 
 	ftm_Assert(pInstrument->LoadFile(io, iInstVer, this));
-
-	app::unlockSoundGenerator();
 
 	return Slot;
 }

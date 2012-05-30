@@ -51,6 +51,8 @@ public:
 
 	bool doForceBackup() const{ return bForceBackup; }
 
+	// TODO - dan: Deperecate from FtmDocument and move to SoundGen
+/*
 	void			ResetChannels();
 	void			RegisterChannel(CTrackerChannel *pChannel, int ChannelType, int ChipType);
 	CTrackerChannel	*GetChannel(int Index) const;
@@ -58,7 +60,7 @@ public:
 	int				GetChannelType(int Channel) const;
 	int				GetChipType(int Channel) const;
 	int				GetChannelCount() const{ return m_iRegisteredChannels; }
-
+*/
 	// Local (song) data
 	void			SetFrameCount(unsigned int Count);
 	void			SetPatternLength(unsigned int Length);
@@ -206,11 +208,13 @@ private:
 	bool readNew_dsamples(Document *doc);
 	bool readNew_sequences_vrc6(Document *doc);
 
+	// TODO - dan: Deperecate from FtmDocument and move to SoundGen
+/*
 	CTrackerChannel	*m_pChannels[CHANNELS];
 	int				m_iRegisteredChannels;
 	int				m_iChannelTypes[CHANNELS];
 	int				m_iChannelChip[CHANNELS];
-
+*/
 	unsigned int	m_iFileVersion;			// Loaded file version
 	unsigned int	m_iTrack;				// Selected track
 
