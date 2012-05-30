@@ -1,21 +1,47 @@
 #include <QApplication>
 #include <QFile>
-#include <list>
+#include <vector>
 #include "gui.hpp"
 #include "MainWindow.hpp"
 #include "../linux/FtmDocument.hpp"
 
 namespace gui
 {
-	typedef std::list<FtmDocument*> DocsList;
+	DocInfo::DocInfo(FtmDocument *d)
+		: m_doc(d), m_currentChannel(0), m_currentFrame(0), m_currentRow(0)
+	{
+	}
+	void DocInfo::destroy()
+	{
+		delete m_doc;
+	}
+	void DocInfo::setCurrentFrame(unsigned int frame)
+	{
+		if (frame >= doc()->GetFrameCount())
+			frame = doc()->GetFrameCount()-1;
+
+		m_currentFrame = frame;
+	}
+	void DocInfo::setCurrentChannel(unsigned int chan)
+	{
+		m_currentChannel = chan;
+	}
+	void DocInfo::setCurrentRow(unsigned int row)
+	{
+		m_currentRow = row;
+	}
+
+	typedef std::vector<DocInfo> DocsList;
 	DocsList loaded_documents;
-	FtmDocument * active_document;
+	int active_doc_index;
 
 	QApplication *app;
 	MainWindow *mw;
 	void init(int &argc, char **argv)
 	{
-		active_document = NULL;
+		active_doc_index = -1;
+
+		newDocument(false);
 
 		app = new QApplication(argc, argv);
 		app->setApplicationName(QApplication::tr("Famitracker"));
@@ -34,36 +60,39 @@ namespace gui
 		app->exec();
 	}
 
+	void updateFrameChannel()
+	{
+		mw->updateFrameChannel();
+	}
+
 	unsigned int loadedDocuments()
 	{
 		return loaded_documents.size();
 	}
 	FtmDocument * activeDocument()
 	{
-		return active_document;
+		if (active_doc_index < 0)
+			return NULL;
+
+		return loaded_documents[active_doc_index].doc();
 	}
+	DocInfo * activeDocInfo()
+	{
+		if (active_doc_index < 0)
+			return NULL;
+
+		return &loaded_documents[active_doc_index];
+	}
+
 	void closeActiveDocument()
 	{
-		if (active_document == NULL)
+		if (active_doc_index < 0)
 			return;
 
-		for (DocsList::iterator it=loaded_documents.begin();it!=loaded_documents.end();++it)
-		{
-			if (*it == active_document)
-			{
-				loaded_documents.erase(it);
-				break;
-			}
-		}
+		loaded_documents[active_doc_index].destroy();
+		loaded_documents.erase(loaded_documents.begin()+active_doc_index);
 
-		if (loaded_documents.empty())
-		{
-			active_document = NULL;
-		}
-		else
-		{
-			active_document = loaded_documents.back();
-		}
+		active_doc_index--;
 	}
 
 	void openDocument(FileIO *io, bool close_active)
@@ -74,8 +103,23 @@ namespace gui
 		FtmDocument *d = new FtmDocument;
 		d->read(io);
 
-		loaded_documents.push_back(d);
-		active_document = d;
+		DocInfo a(d);
+
+		loaded_documents.push_back(a);
+		active_doc_index = loaded_documents.size()-1;
+	}
+	void newDocument(bool close_active)
+	{
+		if (close_active)
+			closeActiveDocument();
+
+		FtmDocument *d = new FtmDocument;
+		d->createEmpty();
+
+		DocInfo a(d);
+
+		loaded_documents.push_back(a);
+		active_doc_index = loaded_documents.size()-1;
 	}
 
 	FileIO::FileIO(const QString &name, bool reading)

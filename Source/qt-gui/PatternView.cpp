@@ -1,7 +1,10 @@
-#include "PatternView.hpp"
 #include <QPainter>
 #include <QVBoxLayout>
 #include <QScrollBar>
+#include <QPainter>
+#include "PatternView.hpp"
+#include "gui.hpp"
+#include "../linux/FtmDocument.hpp"
 
 namespace gui
 {
@@ -18,7 +21,22 @@ namespace gui
 	PatternView::PatternView(QWidget *parent)
 		: QAbstractScrollArea(parent)
 	{
-		verticalScrollBar()->setRange(0, 31);
-		horizontalScrollBar()->setRange(0,34);
+		setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOn);
+		setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOn);
+	}
+
+	void PatternView::paintEvent(QPaintEvent *)
+	{
+		QPainter p;
+		p.begin(viewport());
+
+		p.end();
+	}
+
+	void PatternView::update()
+	{
+		FtmDocument *d = gui::activeDocument();
+		if (d == NULL)
+			return;
 	}
 }

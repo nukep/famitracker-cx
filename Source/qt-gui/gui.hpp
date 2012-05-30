@@ -13,11 +13,36 @@ namespace gui
 	void destroy();
 	void spin();
 
+	void updateFrameChannel();
+
+	class DocInfo;
+
 	unsigned int loadedDocuments();
 	FtmDocument * activeDocument();
+	DocInfo * activeDocInfo();
 	void closeActiveDocument();
 	class FileIO;
 	void openDocument(FileIO *io, bool close_active);
+	void newDocument(bool close_active);
+
+	class DocInfo
+	{
+		friend void gui::closeActiveDocument();
+	public:
+		DocInfo(FtmDocument *d);
+		FtmDocument * doc() const{ return m_doc; }
+		void setCurrentFrame(unsigned int frame);
+		void setCurrentChannel(unsigned int chan);
+		void setCurrentRow(unsigned int row);
+		unsigned int currentFrame() const{ return m_currentFrame; }
+		unsigned int currentChannel() const{ return m_currentChannel; }
+		unsigned int currentRow() const{ return m_currentRow; }
+	protected:
+		FtmDocument * m_doc;
+		unsigned int m_currentFrame, m_currentChannel, m_currentRow;
+
+		void destroy();
+	};
 
 	class FileIO : public IO
 	{

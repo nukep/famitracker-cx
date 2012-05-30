@@ -6,11 +6,13 @@ set(SRC
 
 	MainWindow.cpp
 	PatternView.cpp
-	PatternView.hpp
+	FrameView.cpp
 )
 
 set(MOC_INC
 	MainWindow.hpp
+	PatternView.hpp
+	FrameView.hpp
 )
 
 set(UI_FILES

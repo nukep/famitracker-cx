@@ -12,7 +12,11 @@ namespace gui
 	public:
 		MainWindow();
 
+		void updateFrameChannel();
+	private:
+		void updateDocument();
 	public slots:
+		void newDoc();
 		void open();
 		void save();
 		void saveAs();
@@ -21,6 +25,10 @@ namespace gui
 		void viewStatusBar(bool);
 		void viewControlpanel(bool);
 		void setSong(int i);
+		void incrementPattern();
+		void decrementPattern();
+		void instrumentSelect();
+		void instrumentNameChange(QString);
 	};
 }
 
