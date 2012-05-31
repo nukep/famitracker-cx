@@ -49,7 +49,8 @@ void CTriangle::Reset()
 
 void CTriangle::Write(uint16 Address, uint8 Value)
 {
-	switch (Address) {
+	switch (Address)
+	{
 		case 0x00:
 			m_iLinearLoad = Value & 0x7F;
 			m_iLoop = Value & 0x80;
@@ -88,11 +89,13 @@ void CTriangle::Process(uint32 Time)
 	// It takes to much CPU and it wouldn't be possible to hear anyway
 	//
 
-	if (!m_iLinearCounter || !m_iLengthCounter || !m_iEnabled) {
+	if (!m_iLinearCounter || !m_iLengthCounter || !m_iEnabled)
+	{
 		m_iTime += Time;
 		return;
 	}
-	else if (m_iPeriod <= 1) {
+	else if (m_iPeriod <= 1)
+	{
 		// Frequency is too high to be audible
 		m_iTime += Time;
 		m_iStepGen = 7;
@@ -100,7 +103,8 @@ void CTriangle::Process(uint32 Time)
 		return;
 	}
 
-	while (Time >= m_iCounter) {
+	while (Time >= m_iCounter)
+	{
 		Time	  -= m_iCounter;
 		m_iTime   += m_iCounter;
 		m_iCounter = m_iPeriod + 1;

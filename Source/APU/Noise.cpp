@@ -57,7 +57,8 @@ void CNoise::Reset()
 
 void CNoise::Write(uint16 Address, uint8 Value)
 {
-	switch (Address) {
+	switch (Address)
+	{
 	case 0x00:
 		m_iLooping = Value & 0x20;
 		m_iEnvelopeFix = Value & 0x10;
@@ -96,7 +97,8 @@ void CNoise::Process(uint32 Time)
 {
 	bool Valid = m_iEnabled && (m_iLengthCounter > 0);
 
-	while (Time >= m_iCounter) {
+	while (Time >= m_iCounter)
+	{
 		Time	  -= m_iCounter;
 		m_iTime	  += m_iCounter;
 		m_iCounter = m_iPeriod;
@@ -117,9 +119,11 @@ void CNoise::LengthCounterUpdate()
 
 void CNoise::EnvelopeUpdate()
 {
-	if (--m_iEnvelopeCounter == 0) {
+	if (--m_iEnvelopeCounter == 0)
+	{
 		m_iEnvelopeCounter = m_iEnvelopeSpeed;
-		if (!m_iEnvelopeFix) {
+		if (!m_iEnvelopeFix)
+		{
 			if (m_iLooping)
 				m_iEnvelopeVolume = (m_iEnvelopeVolume - 1) & 0x0F;
 			else if (m_iEnvelopeVolume > 0)

@@ -34,7 +34,8 @@ void CVRC6_Pulse::Reset()
 
 void CVRC6_Pulse::Write(uint16 Address, uint8 Value)
 {
-	switch (Address) {
+	switch (Address)
+	{
 		case 0x00:
             Gate = Value & 0x80;
             DutyCycle = ((Value & 0x70) >> 4) + 1;
@@ -56,12 +57,14 @@ void CVRC6_Pulse::Write(uint16 Address, uint8 Value)
 
 void CVRC6_Pulse::Process(int Time)
 {
-	if (!Enabled || Frequency == 0) {
+	if (!Enabled || Frequency == 0)
+	{
 		m_iTime += Time;
 		return;
 	}
 
-	while (Time >= Counter) {
+	while (Time >= Counter)
+	{
 		Time    -= Counter;
 		m_iTime	+= Counter;
 		Counter	 = Frequency + 1;
@@ -84,7 +87,8 @@ void CVRC6_Sawtooth::Reset()
 
 void CVRC6_Sawtooth::Write(uint16 Address, uint8 Value)
 {
-	switch (Address) {
+	switch (Address)
+	{
 		case 0x00:
             PhaseInput = (Value & 0x3F);
 			break;
@@ -102,12 +106,14 @@ void CVRC6_Sawtooth::Write(uint16 Address, uint8 Value)
 
 void CVRC6_Sawtooth::Process(int Time)
 {
-	if (!Enabled || !Frequency) {
+	if (!Enabled || !Frequency)
+	{
 		m_iTime += Time;
 		return;
 	}
 
-	while (Time >= Counter) {
+	while (Time >= Counter)
+	{
 		Time 	-= Counter;
 		m_iTime	+= Counter;
 		Counter	 = Frequency;
@@ -117,7 +123,8 @@ void CVRC6_Sawtooth::Process(int Time)
 
 		ResetReg++;
 
-		if (ResetReg == 14) {
+		if (ResetReg == 14)
+		{
 			PhaseAccumulator = 0;
 			ResetReg = 0;
 		}
@@ -158,7 +165,8 @@ void CVRC6::Reset()
 
 void CVRC6::Write(uint16 Address, uint8 Value)
 {
-	switch (Address) {
+	switch (Address)
+	{
 		case 0x9000:
 		case 0x9001:
 		case 0x9002:

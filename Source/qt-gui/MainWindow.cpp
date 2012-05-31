@@ -58,7 +58,7 @@ namespace gui
 
 		songs->clear();
 		int c = d->GetTrackCount();
-		for (int i=0;i<c;i++)
+		for (int i = 0; i < c; i++)
 		{
 			QString s(d->GetTrackTitle(i));
 			songs->addItem(s);
@@ -69,7 +69,7 @@ namespace gui
 
 		instruments->clear();
 		int instc = d->GetInstrumentCount();
-		for (int i=0;i<64;i++)
+		for (int i = 0; i < 64; i++)
 		{
 			if (!d->IsInstrumentUsed(i))
 				continue;
@@ -163,7 +163,7 @@ namespace gui
 		int current_channel = info->currentChannel();
 		if (changeAll->checkState() == Qt::Checked)
 		{
-			for (int i=0;i<doc->GetAvailableChannels();i++)
+			for (int i = 0; i < doc->GetAvailableChannels(); i++)
 			{
 				doc->IncreasePattern(current_frame, i, 1);
 			}
@@ -182,7 +182,7 @@ namespace gui
 		int current_channel = info->currentChannel();
 		if (changeAll->checkState() == Qt::Checked)
 		{
-			for (int i=0;i<doc->GetAvailableChannels();i++)
+			for (int i = 0; i < doc->GetAvailableChannels(); i++)
 			{
 				doc->DecreasePattern(current_frame, i, 1);
 			}

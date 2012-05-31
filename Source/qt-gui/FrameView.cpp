@@ -129,7 +129,7 @@ namespace gui
 
 		int viewport_height = viewport()->height();
 
-		for (int i=0;i<num_frames;i++)
+		for (int i = 0; i < num_frames; i++)
 		{
 			int y = px_vspace*i+frame_y_offset;
 			if (y+px_vspace < 0)
@@ -145,20 +145,20 @@ namespace gui
 
 		unsigned int active_patterns[MAX_CHANNELS];
 
-		for (int i=0;i<chans;i++)
+		for (int i = 0; i < chans; i++)
 		{
 			active_patterns[i] = d->GetPatternAtFrame(currentFrame, i);
 		}
 
 
-		for (int i=0;i<num_frames;i++)
+		for (int i = 0; i < num_frames; i++)
 		{
 			int y = px_vspace*i+frame_y_offset;
 			if (y+px_vspace < 0)
 				continue;
 			if (y > viewport_height)
 				break;
-			for (int x=0;x<chans;x++)
+			for (int x = 0; x < chans; x++)
 			{
 				char buf[6];
 				int pattern = d->GetPatternAtFrame(i, x);

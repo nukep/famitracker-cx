@@ -184,18 +184,20 @@ int CMixer::FinishBuffer(int t)
 	BlipBuffer.end_frame(t);
 /*
 	// Get channel levels for VRC7
-	for (int i = 0; i < 6; ++i)
+	for (int i = 0; i < 6; i++)
 		StoreChannelLevel(CHANID_VRC7_CH1 + i, OPLL_getchanvol(i) >> 6);
 
 	// Get channel levels for Sunsoft
-	for (int i = 0; i < 3; ++i)
+	for (int i = 0; i < 3; i++)
 		StoreChannelLevel(CHANID_S5B_CH1 + i, PSG_getchanvol(i) >> 4);
 */
-	for (int i = 0; i < CHANNELS; ++i) {
+	for (int i = 0; i < CHANNELS; i++)
+	{
 		if (m_iChanLevelFallOff[i] > 0)
 			m_iChanLevelFallOff[i]--;
 		else {
-			if (m_fChannelLevels[i] > 0) {
+			if (m_fChannelLevels[i] > 0)
+			{
 				m_fChannelLevels[i] -= LEVEL_FALL_OFF_RATE;
 				if (m_fChannelLevels[i] < 0)
 					m_fChannelLevels[i] = 0;
@@ -279,9 +281,11 @@ void CMixer::AddValue(int ChanID, int Chip, int Value, int AbsValue, int FrameCy
 	StoreChannelLevel(ChanID, AbsValue);
 	m_iChannels[ChanID] = Value;
 
-	switch (Chip) {
+	switch (Chip)
+	{
 		case SNDCHIP_NONE:
-			switch (ChanID) {
+			switch (ChanID)
+			{
 				case CHANID_SQUARE1:
 				case CHANID_SQUARE2:
 					MixInternal1(FrameCycles);
@@ -335,7 +339,8 @@ void CMixer::StoreChannelLevel(int Channel, int Value)
 	if (Channel >= CHANID_N106_CHAN1 && Channel <= CHANID_N106_CHAN8)
 		AbsVol /= 15;
 
-	if (float(AbsVol) >= m_fChannelLevels[Channel]) {
+	if (float(AbsVol) >= m_fChannelLevels[Channel])
+	{
 		m_fChannelLevels[Channel] = float(AbsVol);
 		m_iChanLevelFallOff[Channel] = LEVEL_FALL_OFF_DELAY;
 	}

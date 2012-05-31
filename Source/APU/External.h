@@ -25,9 +25,9 @@ class CMixer;
 
 class CExternal {
 public:
-	CExternal() {};
-	CExternal(CMixer *pMixer) : m_pMixer(pMixer) {};
-	virtual ~CExternal() {};
+	CExternal() {}
+	CExternal(CMixer *pMixer) : m_pMixer(pMixer) {}
+	virtual ~CExternal() {}
 
 	virtual void	Reset() = 0;
 	virtual void	Process(uint32 Time) = 0;

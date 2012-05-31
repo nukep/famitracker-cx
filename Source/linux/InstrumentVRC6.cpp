@@ -33,7 +33,8 @@ const int CInstrumentVRC6::SEQUENCE_TYPES[] = {SEQ_VOLUME, SEQ_ARPEGGIO, SEQ_PIT
 
 CInstrumentVRC6::CInstrumentVRC6()
 {
-	for (int i = 0; i < SEQUENCE_COUNT; i++) {
+	for (int i = 0; i < SEQUENCE_COUNT; i++)
+	{
 		m_iSeqEnable[i] = 0;
 		m_iSeqIndex[i] = 0;
 	}	
@@ -43,7 +44,8 @@ CInstrument *CInstrumentVRC6::Clone()
 {
 	CInstrumentVRC6 *pNew = new CInstrumentVRC6();
 
-	for (int i = 0; i < SEQUENCE_COUNT; i++) {
+	for (int i = 0; i < SEQUENCE_COUNT; i++)
+	{
 		pNew->SetSeqEnable(i, GetSeqEnable(i));
 		pNew->SetSeqIndex(i, GetSeqIndex(i));
 	}
@@ -57,7 +59,8 @@ void CInstrumentVRC6::Store(Document *doc)
 {
 	doc->writeBlockInt(SEQUENCE_COUNT);
 
-	for (int i = 0; i < SEQUENCE_COUNT; i++) {
+	for (int i = 0; i < SEQUENCE_COUNT; i++)
+	{
 		doc->writeBlockChar(GetSeqEnable(i));
 		doc->writeBlockChar(GetSeqIndex(i));
 	}
@@ -65,14 +68,15 @@ void CInstrumentVRC6::Store(Document *doc)
 
 bool CInstrumentVRC6::Load(Document *doc)
 {
-	int i, Index;
+	int Index;
 	int SeqCnt = doc->getBlockInt();
 
 	ftm_Assert(SeqCnt < (SEQUENCE_COUNT + 1));
 
 	SeqCnt = SEQUENCE_COUNT;//SEQ_COUNT;
 
-	for (i = 0; i < SeqCnt; i++) {
+	for (int i = 0; i < SeqCnt; i++)
+	{
 		SetSeqEnable(i, doc->getBlockChar());
 		Index = doc->getBlockChar();
 		ftm_Assert(Index < MAX_SEQUENCES);
@@ -88,9 +92,11 @@ void CInstrumentVRC6::SaveFile(IO *file, FtmDocument *doc)
 	unsigned char SeqCount = SEQUENCE_COUNT;
 	file->writeChar(SeqCount);
 
-	for (int i = 0; i < SEQUENCE_COUNT; ++i) {
+	for (int i = 0; i < SEQUENCE_COUNT; i++)
+	{
 		int Sequence = GetSeqIndex(i);
-		if (GetSeqEnable(i)) {
+		if (GetSeqEnable(i))
+		{
 			CSequence *pSeq = doc->GetSequence(SNDCHIP_VRC6, Sequence, i);
 
 			char Enabled = 1;
@@ -105,7 +111,8 @@ void CInstrumentVRC6::SaveFile(IO *file, FtmDocument *doc)
 			file->writeInt(ReleasePoint);
 			file->writeInt(Setting);
 
-			for (int j = 0; j < ItemCount; ++j) {
+			for (int j = 0; j < ItemCount; j++)
+			{
 				signed char Value = pSeq->GetItem(j);
 				file->writeChar(Value);
 			}
@@ -129,9 +136,11 @@ bool CInstrumentVRC6::LoadFile(IO *file, int iVersion, FtmDocument *doc)
 	file->readChar(SeqCount);
 
 	// Loop through all instrument effects
-	for (int i = 0; i < SeqCount; ++i) {
+	for (int i = 0; i < SeqCount; i++)
+	{
 		file->readChar(Enabled);
-		if (Enabled == 1) {
+		if (Enabled == 1)
+		{
 			// Read the sequence
 
 			file->readInt(&Count);
@@ -139,9 +148,11 @@ bool CInstrumentVRC6::LoadFile(IO *file, int iVersion, FtmDocument *doc)
 
 			CSequence *pSeq = doc->GetSequence(SNDCHIP_VRC6, Index, i);
 
-			if (iVersion < 20) {
+			if (iVersion < 20)
+			{
 				OldSequence.Count = Count;
-				for (int j = 0; j < Count; ++j) {
+				for (int j = 0; j < Count; j++)
+				{
 					file->readChar(OldSequence.Length[j]);
 					file->readChar(OldSequence.Value[j]);
 				}
@@ -151,15 +162,18 @@ bool CInstrumentVRC6::LoadFile(IO *file, int iVersion, FtmDocument *doc)
 				pSeq->SetItemCount(Count);
 				file->readInt(&LoopPoint);
 				pSeq->SetLoopPoint(LoopPoint);
-				if (iVersion > 20) {
+				if (iVersion > 20)
+				{
 					file->readInt(&ReleasePoint);
 					pSeq->SetReleasePoint(ReleasePoint);
 				}
-				if (iVersion >= 22) {
+				if (iVersion >= 22)
+				{
 					file->readInt(&Setting);
 					pSeq->SetSetting(Setting);
 				}
-				for (int j = 0; j < Count; ++j) {
+				for (int j = 0; j < Count; j++)
+				{
 					char Val;
 					file->readChar(Val);
 					pSeq->SetItem(j, Val);
@@ -182,7 +196,7 @@ int CInstrumentVRC6::CompileSize(CCompiler *pCompiler)
 	int Size = 1;
 	CFamiTrackerDoc *pDoc = pCompiler->GetDocument();
 
-	for (int i = 0; i < SEQUENCE_COUNT; ++i)
+	for (int i = 0; i < SEQUENCE_COUNT; i++)
 		if (GetSeqEnable(i) && pDoc->GetSequence(SNDCHIP_VRC6, GetSeqIndex(i), i)->GetItemCount() > 0)
 			Size += 2;
 
@@ -201,7 +215,8 @@ int CInstrumentVRC6::Compile(CCompiler *pCompiler, int Index)
 	pCompiler->writeLog("VRC6 {");
 	ModSwitch = 0;
 
-	for (i = 0; i < SEQUENCE_COUNT; i++) {
+	for (i = 0; i < SEQUENCE_COUNT; i++)
+	{
 		ModSwitch = (ModSwitch >> 1) | (GetSeqEnable(i) && (pDoc->GetSequence(SNDCHIP_VRC6, GetSeqIndex(i), i)->GetItemCount() > 0) ? 0x10 : 0);
 	}
 
@@ -209,9 +224,11 @@ int CInstrumentVRC6::Compile(CCompiler *pCompiler, int Index)
 	pCompiler->writeLog("%02X ", ModSwitch);
 	StoredBytes++;
 
-	for (i = 0; i < SEQUENCE_COUNT; i++) {
+	for (i = 0; i < SEQUENCE_COUNT; i++)
+	{
 		iAddress = (GetSeqEnable(i) == 0 || (pDoc->GetSequence(SNDCHIP_VRC6, GetSeqIndex(i), i)->GetItemCount() == 0)) ? 0 : pCompiler->GetSequenceAddressVRC6(GetSeqIndex(i), i);
-		if (iAddress > 0) {
+		if (iAddress > 0)
+		{
 			pCompiler->StoreShort(iAddress);
 			pCompiler->writeLog("%04X ", iAddress);
 			StoredBytes += 2;
@@ -223,7 +240,8 @@ int CInstrumentVRC6::Compile(CCompiler *pCompiler, int Index)
 */
 bool CInstrumentVRC6::CanRelease(FtmDocument *doc) const
 {
-	if (GetSeqEnable(0) != 0) {
+	if (GetSeqEnable(0) != 0)
+	{
 		int index = GetSeqIndex(SEQ_VOLUME);
 		return doc->GetSequence(SNDCHIP_VRC6, index, SEQ_VOLUME)->GetReleasePoint() != -1;
 	}

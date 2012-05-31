@@ -49,7 +49,7 @@ CSettings::CSettings() : m_iAddedSettings(0)
 CSettings::~CSettings()
 {
 	// Release all settings
-	for (int i=0;i<m_iAddedSettings;i++)
+	for (int i = 0; i < m_iAddedSettings; i++)
 	{
 		SAFE_RELEASE(m_pSettings[i]);
 	}
@@ -160,7 +160,7 @@ void CSettings::AddSetting(CSettingBase *pSetting)
 
 void CSettings::DefaultSettings()
 {
-	for (int i=0; i<m_iAddedSettings;i++)
+	for (int i = 0; i < m_iAddedSettings; i++)
 	{
 		m_pSettings[i]->Default();
 	}

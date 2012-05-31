@@ -64,8 +64,9 @@ void CFDS::Process(uint32 Time)
 	if (!Time)
 		return;
 
-	while (Time--) {
+	while (Time--)
+	{
 		Mix(FDSSoundRender() >> 12);
-		++m_iTime;
+		m_iTime++;
 	}
 }

@@ -39,16 +39,16 @@ CPatternData::CPatternData(unsigned int PatternLength, unsigned int Speed, unsig
 	m_iSongTempo	 = Tempo;
 
 	// Pre-allocate pattern 0 for all channels
-	for (int i = 0; i < MAX_CHANNELS; ++i)
+	for (int i = 0; i < MAX_CHANNELS; i++)
 		AllocatePattern(i, 0);
 }
 
 CPatternData::~CPatternData()
 {
 	// Deallocate memory
-	for (int i=0;i<MAX_CHANNELS;i++)
+	for (int i = 0; i < MAX_CHANNELS; i++)
 	{
-		for (int j=0;j<MAX_PATTERN;j++)
+		for (int j = 0; j < MAX_PATTERN; j++)
 		{
 			if (m_pPatternData[i][j] != NULL)
 				delete[] m_pPatternData[i][j];
@@ -97,7 +97,8 @@ bool CPatternData::IsCellFree(unsigned int Channel, unsigned int Pattern, unsign
 bool CPatternData::IsPatternEmpty(unsigned int Channel, unsigned int Pattern)
 {
 	// Check if pattern is empty
-	for (unsigned int i = 0; i < m_iPatternLength; i++) {
+	for (unsigned int i = 0; i < m_iPatternLength; i++)
+	{
 		if (!IsCellFree(Channel, Pattern, i))
 			return false;
 	}
@@ -107,7 +108,8 @@ bool CPatternData::IsPatternEmpty(unsigned int Channel, unsigned int Pattern)
 bool CPatternData::IsPatternInUse(unsigned int Channel, unsigned int Pattern)
 {
 	// Check if pattern is addressed in frame list
-	for (unsigned i = 0; i < m_iFrameCount; ++i) {
+	for (unsigned i = 0; i < m_iFrameCount; i++)
+	{
 		if (m_iFrameList[i][Channel] == Pattern)
 			return true;
 	}
@@ -128,13 +130,15 @@ void CPatternData::AllocatePattern(int Channel, int Pattern)
 	m_pPatternData[Channel][Pattern] = new stChanNote[MAX_PATTERN_LENGTH];
 
 	// Clear memory
-	for (int i = 0; i < MAX_PATTERN_LENGTH; i++) {
+	for (int i = 0; i < MAX_PATTERN_LENGTH; i++)
+	{
 		stChanNote *pNote = m_pPatternData[Channel][Pattern] + i;
 		pNote->Note		  = 0;
 		pNote->Octave	  = 0;
 		pNote->Instrument = MAX_INSTRUMENTS;
 		pNote->Vol		  = 0x10;
-		for (int n = 0; n < MAX_EFFECT_COLUMNS; n++) {
+		for (int n = 0; n < MAX_EFFECT_COLUMNS; n++)
+		{
 			pNote->EffNumber[n] = 0;
 			pNote->EffParam[n] = 0;
 		}
@@ -149,9 +153,12 @@ void CPatternData::ClearEverything()
 	memset(m_iFrameList, 0, sizeof(short) * MAX_FRAMES * MAX_CHANNELS);
 	
 	// Patterns, deallocate everything
-	for (int i = 0; i < MAX_CHANNELS; i++) {
-		for (int j = 0; j < MAX_PATTERN; j++) {
-			if (m_pPatternData[i][j]) {
+	for (int i = 0; i < MAX_CHANNELS; i++)
+	{
+		for (int j = 0; j < MAX_PATTERN; j++)
+		{
+			if (m_pPatternData[i][j])
+			{
 				delete [] m_pPatternData[i][j];
 				m_pPatternData[i][j] = NULL;
 			}

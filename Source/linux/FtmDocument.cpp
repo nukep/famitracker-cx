@@ -92,7 +92,7 @@ void CDSample::Allocate(int iSize, char *pData)
 
 FtmDocument::FtmDocument()
 {
-	for (int i=0;i<MAX_DSAMPLES;i++)
+	for (int i = 0; i < MAX_DSAMPLES; i++)
 	{
 		m_DSamples[i].SampleSize = 0;
 		m_DSamples[i].SampleData = NULL;
@@ -115,7 +115,8 @@ FtmDocument::~FtmDocument()
 	// Clean up
 
 	// DPCM samples
-	for (int i=0;i<MAX_DSAMPLES;i++) {
+	for (int i = 0; i < MAX_DSAMPLES; i++)
+	{
 		if (m_DSamples[i].SampleData != NULL)
 		{
 			delete[] m_DSamples[i].SampleData;
@@ -125,23 +126,23 @@ FtmDocument::~FtmDocument()
 	}
 
 	// Patterns
-	for (int i=0;i<MAX_TRACKS;i++)
+	for (int i = 0; i < MAX_TRACKS; i++)
 	{
 		if (m_pTunes[i] != NULL)
 			delete m_pTunes[i];
 	}
 
 	// Instruments
-	for (int i=0;i<MAX_INSTRUMENTS;i++)
+	for (int i = 0; i < MAX_INSTRUMENTS; i++)
 	{
 		if (m_pInstruments[i] != NULL)
 			delete m_pInstruments[i];
 	}
 
 	// Sequences
-	for (int i=0;i<MAX_SEQUENCES;i++)
+	for (int i = 0; i < MAX_SEQUENCES; i++)
 	{
-		for (int j=0;j<SEQ_COUNT;j++)
+		for (int j = 0; j < SEQ_COUNT; j++)
 		{
 			if (m_pSequences2A03[i][j] != NULL)
 				delete m_pSequences2A03[i][j];
@@ -367,7 +368,7 @@ bool FtmDocument::readNew_header(Document *doc)
 		// Single track
 		m_iTracks = 0;
 		SwitchToTrack(0);
-		for (unsigned int i=0;i<m_iChannelsAvailable;i++)
+		for (unsigned int i = 0; i < m_iChannelsAvailable; i++)
 		{
 			// Channel type (unused)
 			doc->getBlockChar();
@@ -381,7 +382,7 @@ bool FtmDocument::readNew_header(Document *doc)
 		m_iTracks = doc->getBlockChar();
 		ftm_Assert(m_iTracks <= MAX_TRACKS);
 
-		for (unsigned int i=0;i<=m_iTracks;i++)
+		for (unsigned int i = 0; i <= m_iTracks; i++)
 		{
 			AllocateSong(i);
 		}
@@ -389,16 +390,16 @@ bool FtmDocument::readNew_header(Document *doc)
 		// Track names
 		if (block_ver >= 3)
 		{
-			for (unsigned int i=0;i<=m_iTracks;i++)
+			for (unsigned int i = 0; i <= m_iTracks; i++)
 			{
 				m_sTrackNames[i] = doc->readString();
 			}
 		}
 
-		for (unsigned int i=0;i<m_iChannelsAvailable;i++)
+		for (unsigned int i = 0; i < m_iChannelsAvailable; i++)
 		{
 			/*unsigned char channelType = */doc->getBlockChar();	// Channel type (unused)
-			for (unsigned int j=0;j<=m_iTracks;j++)
+			for (unsigned int j = 0; j <= m_iTracks; j++)
 			{
 				m_pTunes[j]->SetEffectColumnCount(i, doc->getBlockChar());	// Effect columns
 			}
@@ -412,7 +413,7 @@ bool FtmDocument::readNew_instruments(Document *doc)
 	int count = doc->getBlockInt();
 	ftm_Assert(count <= MAX_INSTRUMENTS);
 
-	for (int i=0;i<count;i++)
+	for (int i = 0; i < count; i++)
 	{
 		int index = doc->getBlockInt();
 		ftm_Assert(index <= MAX_INSTRUMENTS);
@@ -448,14 +449,14 @@ bool FtmDocument::readNew_sequences(Document *doc)
 
 	if (block_ver == 1)
 	{
-		for (unsigned int i=0;i<count;i++)
+		for (unsigned int i = 0; i < count; i++)
 		{
 			index = doc->getBlockInt();
 			seqCount = doc->getBlockChar();
 			ftm_Assert(index < MAX_SEQUENCES);
 			ftm_Assert(seqCount < MAX_SEQUENCE_ITEMS);
 			m_TmpSequences[index].Count = seqCount;
-			for (unsigned int x=0;x<seqCount;x++)
+			for (unsigned int x = 0; x < seqCount; x++)
 			{
 				m_TmpSequences[index].Value[x] = doc->getBlockChar();
 				m_TmpSequences[index].Length[x] = doc->getBlockChar();
@@ -464,7 +465,7 @@ bool FtmDocument::readNew_sequences(Document *doc)
 	}
 	else if (block_ver == 2)
 	{
-		for (unsigned int i=0;i<count;i++)
+		for (unsigned int i = 0; i < count; i++)
 		{
 			index = doc->getBlockInt();
 			type = doc->getBlockInt();
@@ -473,7 +474,7 @@ bool FtmDocument::readNew_sequences(Document *doc)
 			ftm_Assert(type < SEQ_COUNT);
 			ftm_Assert(seqCount < MAX_SEQUENCE_ITEMS);
 			m_Sequences[index][type].Count = seqCount;
-			for (unsigned int x=0;x<seqCount;x++)
+			for (unsigned int x = 0; x < seqCount; x++)
 			{
 				value = doc->getBlockChar();
 				length = doc->getBlockChar();
@@ -489,7 +490,7 @@ bool FtmDocument::readNew_sequences(Document *doc)
 
 		unsigned int loopPoint, releasePoint=-1, settings=0;
 
-		for (unsigned int i=0;i<count;i++)
+		for (unsigned int i = 0; i < count; i++)
 		{
 			index	  = doc->getBlockInt();
 			type	  = doc->getBlockInt();
@@ -520,7 +521,7 @@ bool FtmDocument::readNew_sequences(Document *doc)
 				pSeq->SetSetting(settings);
 			}
 
-			for (unsigned int x=0;x<seqCount;x++)
+			for (unsigned int x = 0; x < seqCount; x++)
 			{
 				value = doc->getBlockChar();
 				if (x <= MAX_SEQUENCE_ITEMS)
@@ -531,9 +532,9 @@ bool FtmDocument::readNew_sequences(Document *doc)
 		if (block_ver == 5)
 		{
 			// Version 5 saved the release points incorrectly, this is fixed in ver 6
-			for (int i=0;i<MAX_SEQUENCES;i++)
+			for (int i = 0; i < MAX_SEQUENCES; i++)
 			{
-				for (int x=0;x<SEQ_COUNT;x++)
+				for (int x = 0; x < SEQ_COUNT; x++)
 				{
 					releasePoint = doc->getBlockInt();
 					settings = doc->getBlockInt();
@@ -549,7 +550,7 @@ bool FtmDocument::readNew_sequences(Document *doc)
 		else if (block_ver >= 6)
 		{
 			// Read release points correctly stored
-			for (unsigned int i=0;i<count;i++)
+			for (unsigned int i = 0; i < count; i++)
 			{
 				releasePoint = doc->getBlockInt();
 				settings = doc->getBlockInt();
@@ -575,9 +576,9 @@ bool FtmDocument::readNew_frames(Document *doc)
 		m_iChannelsAvailable = doc->getBlockInt();
 		ftm_Assert(frameCount <= MAX_FRAMES);
 		ftm_Assert(m_iChannelsAvailable <= MAX_CHANNELS);
-		for (unsigned int i=0;i<frameCount;i++)
+		for (unsigned int i = 0; i < frameCount; i++)
 		{
-			for (unsigned j=0;j<m_iChannelsAvailable;j++)
+			for (unsigned j = 0; j < m_iChannelsAvailable; j++)
 			{
 				unsigned pattern = (unsigned)doc->getBlockChar();
 				ftm_Assert(pattern < MAX_FRAMES);
@@ -587,7 +588,7 @@ bool FtmDocument::readNew_frames(Document *doc)
 	}
 	else if (block_ver > 1)
 	{
-		for (unsigned y=0;y<=m_iTracks;y++)
+		for (unsigned y = 0; y <= m_iTracks; y++)
 		{
 			unsigned int frameCount = doc->getBlockInt();
 			unsigned int speed = doc->getBlockInt();
@@ -622,9 +623,9 @@ bool FtmDocument::readNew_frames(Document *doc)
 
 			m_pTunes[y]->SetPatternLength(PatternLength);
 
-			for (unsigned int i=0;i<frameCount;i++)
+			for (unsigned int i = 0; i < frameCount; i++)
 			{
-				for (unsigned j=0;j<m_iChannelsAvailable;j++)
+				for (unsigned j = 0; j < m_iChannelsAvailable; j++)
 				{
 					// Read pattern index
 					unsigned int pattern = (unsigned char)doc->getBlockChar();
@@ -671,7 +672,7 @@ bool FtmDocument::readNew_patterns(Document *doc)
 
 		SwitchToTrack(track);
 
-		for (unsigned int i=0;i<items;i++)
+		for (unsigned int i = 0; i < items; i++)
 		{
 			unsigned row;
 			if (m_iFileVersion == 0x0200)
@@ -715,7 +716,7 @@ bool FtmDocument::readNew_patterns(Document *doc)
 			}
 			else
 			{
-				for (int n=0;n<(m_pSelectedTune->GetEffectColumnCount(channel) + 1);n++)
+				for (int n = 0; n < (m_pSelectedTune->GetEffectColumnCount(channel) + 1); n++)
 				{
 					unsigned char EffectNumber, EffectParam;
 					EffectNumber = doc->getBlockChar();
@@ -769,7 +770,7 @@ bool FtmDocument::readNew_patterns(Document *doc)
 				// Fix for VRC7 portamento
 				if (GetExpansionChip() == SNDCHIP_VRC7 && channel > 4)
 				{
-					for (int n=0;n<MAX_EFFECT_COLUMNS;n++)
+					for (int n = 0; n < MAX_EFFECT_COLUMNS; n++)
 					{
 						switch (note->EffNumber[n])
 						{
@@ -785,7 +786,7 @@ bool FtmDocument::readNew_patterns(Document *doc)
 				// FDS pitch effect fix
 				else if (GetExpansionChip() == SNDCHIP_FDS && channel == 5)
 				{
-					for (int n=0;n<MAX_EFFECT_COLUMNS;n++)
+					for (int n = 0; n < MAX_EFFECT_COLUMNS; n++)
 					{
 						switch (note->EffNumber[n])
 						{
@@ -801,7 +802,8 @@ bool FtmDocument::readNew_patterns(Document *doc)
 			if (version < 5)
 			{
 				// FDS octave
-				if (GetExpansionChip() == SNDCHIP_FDS && channel > 4 && note->Octave < 7) {
+				if (GetExpansionChip() == SNDCHIP_FDS && channel > 4 && note->Octave < 7)
+				{
 					note->Octave++;
 				}
 			}
@@ -821,7 +823,7 @@ bool FtmDocument::readNew_dsamples(Document *doc)
 
 	memset(m_DSamples, 0, sizeof(CDSample) * MAX_DSAMPLES);
 
-	for (int i=0;i<count;i++)
+	for (int i = 0; i < count; i++)
 	{
 		int item = doc->getBlockChar();
 		int len = doc->getBlockInt();
@@ -841,7 +843,7 @@ bool FtmDocument::readNew_dsamples(Document *doc)
 
 bool FtmDocument::readNew_sequences_vrc6(Document *doc)
 {
-	unsigned int i, j, count = 0, index, type;
+	unsigned int count = 0, index, type;
 	unsigned int loopPoint, releasePoint, settings;
 	unsigned char seqCount;
 	int block_ver = doc->getBlockVersion();
@@ -852,7 +854,7 @@ bool FtmDocument::readNew_sequences_vrc6(Document *doc)
 
 	if (block_ver < 4)
 	{
-		for (i=0;i<count;i++)
+		for (unsigned int i = 0; i < count; i++)
 		{
 			index	  = doc->getBlockInt();
 			type	  = doc->getBlockInt();
@@ -867,7 +869,7 @@ bool FtmDocument::readNew_sequences_vrc6(Document *doc)
 			pSeq->Clear();
 			pSeq->SetItemCount(seqCount < MAX_SEQUENCE_ITEMS ? seqCount : MAX_SEQUENCE_ITEMS);
 			pSeq->SetLoopPoint(loopPoint);
-			for (j=0;j<seqCount;j++)
+			for (unsigned int j = 0; j < seqCount; j++)
 			{
 				Value = doc->getBlockChar();
 				if (j <= MAX_SEQUENCE_ITEMS)
@@ -880,7 +882,7 @@ bool FtmDocument::readNew_sequences_vrc6(Document *doc)
 		int Indices[MAX_SEQUENCES];
 		int Types[MAX_SEQUENCES];
 
-		for (i=0;i<count;i++)
+		for (unsigned int i = 0; i < count; i++)
 		{
 			index	  = doc->getBlockInt();
 			type	  = doc->getBlockInt();
@@ -911,7 +913,7 @@ bool FtmDocument::readNew_sequences_vrc6(Document *doc)
 				pSeq->SetSetting(settings);
 			}
 
-			for (j=0;j<seqCount;j++)
+			for (unsigned int j = 0; j < seqCount; j++)
 			{
 				Value = doc->getBlockChar();
 				if (j <= MAX_SEQUENCE_ITEMS)
@@ -922,9 +924,9 @@ bool FtmDocument::readNew_sequences_vrc6(Document *doc)
 		if (block_ver == 5)
 		{
 			// Version 5 saved the release points incorrectly, this is fixed in ver 6
-			for (int i=0;i<MAX_SEQUENCES;i++)
+			for (int i = 0; i < MAX_SEQUENCES; i++)
 			{
-				for (int j=0;j<SEQ_COUNT;j++)
+				for (int j = 0; j < SEQ_COUNT; j++)
 				{
 					releasePoint = doc->getBlockInt();
 					settings = doc->getBlockInt();
@@ -939,7 +941,7 @@ bool FtmDocument::readNew_sequences_vrc6(Document *doc)
 		}
 		else if (block_ver >= 6)
 		{
-			for (i=0;i<count;i++)
+			for (unsigned int i = 0; i < count; i++)
 			{
 				releasePoint = doc->getBlockInt();
 				settings = doc->getBlockInt();
@@ -1079,7 +1081,7 @@ void FtmDocument::SetPatternAtFrame(unsigned int Frame, unsigned int Channel, un
 
 int FtmDocument::GetFirstFreePattern(int Channel)
 {
-	for (int i=0;i<MAX_PATTERN;i++)
+	for (int i = 0; i < MAX_PATTERN; i++)
 	{
 		if (!m_pSelectedTune->IsPatternInUse(Channel, i) && m_pSelectedTune->IsPatternEmpty(Channel, i))
 			return i;
@@ -1353,7 +1355,7 @@ void FtmDocument::RemoveTrack(unsigned int Track)
 	delete m_pTunes[Track];
 
 	// Move down all other tracks
-	for (unsigned int i = Track; i < m_iTracks;i++)
+	for (unsigned int i = Track; i < m_iTracks; i++)
 	{
 		m_sTrackNames[i] = m_sTrackNames[i + 1];
 		m_pTunes[i] = m_pTunes[i + 1];
@@ -1421,9 +1423,9 @@ CInstrument *FtmDocument::GetInstrument(int Index)
 int FtmDocument::GetInstrumentCount() const
 {
 	int count = 0;
-	for(int i=0;i<MAX_INSTRUMENTS;i++)
+	for (int i = 0; i < MAX_INSTRUMENTS; i++)
 	{
-		if( IsInstrumentUsed( i ) ) ++count;
+		if( IsInstrumentUsed( i ) ) count++;
 	}
 	return count;
 }
@@ -1469,14 +1471,14 @@ int FtmDocument::AddInstrument(const char *Name, int ChipType)
 	{
 		case SNDCHIP_NONE:
 		case SNDCHIP_MMC5:
-			for (int i=0;i<SEQ_COUNT;i++)
+			for (int i = 0; i < SEQ_COUNT; i++)
 			{
 				((CInstrument2A03*)m_pInstruments[Slot])->SetSeqEnable(i, 0);
 				((CInstrument2A03*)m_pInstruments[Slot])->SetSeqIndex(i, GetFreeSequence(i));
 			}
 			break;
 		case SNDCHIP_VRC6:
-			for (int i=0;i<SEQ_COUNT;i++)
+			for (int i = 0; i < SEQ_COUNT; i++)
 			{
 				((CInstrumentVRC6*)m_pInstruments[Slot])->SetSeqEnable(i, 0);
 				((CInstrumentVRC6*)m_pInstruments[Slot])->SetSeqIndex(i, GetFreeSequenceVRC6(i));
@@ -1571,7 +1573,7 @@ CInstrument * FtmDocument::CreateInstrument(int type)
 int FtmDocument::FindFreeInstrumentSlot()
 {
 	// Returns a free instrument slot, or -1 if no free slots exists
-	for (int i=0;i<MAX_INSTRUMENTS;i++)
+	for (int i = 0; i < MAX_INSTRUMENTS; i++)
 	{
 		if (m_pInstruments[i] == NULL)
 			return i;
@@ -1722,7 +1724,7 @@ int FtmDocument::GetSequenceItemCount(int Index, int Type) const
 int FtmDocument::GetFreeSequence(int Type) const
 {
 	// Return a free sequence slot
-	for (int i=0;i<MAX_SEQUENCES;i++)
+	for (int i = 0; i < MAX_SEQUENCES; i++)
 	{
 		if (GetSequenceItemCount(i, Type) == 0)
 			return i;
@@ -1734,10 +1736,10 @@ int FtmDocument::GetSequenceCount(int Type) const
 {
 	// Return number of allocated sequences of Type
 	int Count = 0;
-	for (int i=0;i<MAX_SEQUENCES;i++)
+	for (int i = 0; i < MAX_SEQUENCES; i++)
 	{
 		if (GetSequenceItemCount(i, Type) > 0)
-			++Count;
+			Count++;
 	}
 	return Count;
 }
@@ -1772,7 +1774,7 @@ int FtmDocument::GetSequenceItemCountVRC6(int Index, int Type) const
 
 int FtmDocument::GetFreeSequenceVRC6(int Type) const
 {
-	for (int i=0;i<MAX_SEQUENCES;i++)
+	for (int i = 0; i < MAX_SEQUENCES; i++)
 	{
 		if (GetSequenceItemCountVRC6(i, Type) == 0)
 			return i;
@@ -1791,17 +1793,17 @@ CDSample * FtmDocument::GetDSample(unsigned int Index)
 int FtmDocument::GetSampleCount() const
 {
 	int Count = 0;
-	for (int i=0;i<MAX_DSAMPLES;i++)
+	for (int i = 0; i < MAX_DSAMPLES; i++)
 	{
 		if (m_DSamples[i].SampleSize > 0)
-			++Count;
+			Count++;
 	}
 	return Count;
 }
 
 int FtmDocument::GetFreeDSample() const
 {
-	for (int i=0;i<MAX_DSAMPLES;i++)
+	for (int i = 0; i < MAX_DSAMPLES; i++)
 	{
 		if (m_DSamples[i].SampleSize == 0)
 		{
@@ -1856,7 +1858,7 @@ int FtmDocument::GetTotalSampleSize() const
 {
 	// Return total size of all loaded samples
 	int Size = 0;
-	for (int i=0;i<MAX_DSAMPLES;i++)
+	for (int i = 0; i < MAX_DSAMPLES; i++)
 	{
 		Size += m_DSamples[i].SampleSize;
 	}
@@ -1879,7 +1881,7 @@ void FtmDocument::ConvertSequence(stSequence *OldSequence, CSequence *NewSequenc
 		// Store the sequence
 		int Count = OldSequence->Count;
 
-		for (int k=0;k<Count;k++)
+		for (int k = 0; k < Count; k++)
 		{
 			int Value	= OldSequence->Value[k];
 			int Length	= OldSequence->Length[k];
@@ -1887,13 +1889,13 @@ void FtmDocument::ConvertSequence(stSequence *OldSequence, CSequence *NewSequenc
 			if (Length < 0)
 			{
 				iLoopPoint = 0;
-				for (int l=signed(OldSequence->Count)+Length-1; l<signed(OldSequence->Count)-1; l++)
+				for (int l = signed(OldSequence->Count)+Length-1; l < signed(OldSequence->Count)-1; l++)
 				{
 					iLoopPoint += (OldSequence->Length[l] + 1);
 				}
 			}
 			else {
-				for (int l=0;l<Length+1;l++)
+				for (int l = 0; l < Length+1; l++)
 				{
 					if ((Type == SEQ_PITCH || Type == SEQ_HIPITCH) && l > 0)
 						NewSequence->SetItem(ValPtr++, 0);

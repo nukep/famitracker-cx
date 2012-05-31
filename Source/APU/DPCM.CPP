@@ -58,7 +58,8 @@ void CDPCM::Reset()
 
 void CDPCM::Write(uint16 Address, uint8 Value)
 {
-	switch (Address) {
+	switch (Address)
+	{
 		case 0x00:
 			m_iPlayMode = Value & 0xC0;
 			m_iPeriod = PERIOD_TABLE[Value & 0x0F];
@@ -80,11 +81,13 @@ void CDPCM::Write(uint16 Address, uint8 Value)
 
 void CDPCM::WriteControl(uint8 Value)
 {
-	if ((Value & 1) == 1) {
+	if ((Value & 1) == 1)
+	{
 		if (m_iDMA_BytesRemaining == 0)
 			Reload();
 	}
-	else {
+	else
+	{
 		m_iDMA_BytesRemaining = 0;
 	}
 
@@ -109,14 +112,16 @@ void CDPCM::Reload()
 
 void CDPCM::Process(uint32 Time)
 {
-	while (Time >= m_iCounter) {
+	while (Time >= m_iCounter)
+	{
 		Time	  -= m_iCounter;
 		m_iTime	  += m_iCounter;
 		m_iCounter = m_iPeriod;
 
 		// DMA reader
 		// Check if a new byte should be fetched
-		if (!m_bSampleFilled && (m_iDMA_BytesRemaining > 0)) {
+		if (!m_bSampleFilled && (m_iDMA_BytesRemaining > 0))
+		{
 
 			m_iSampleBuffer = m_pSampleMem->Read(m_iDMA_Address | 0x8000);
 //			m_pEmulator->ConsumeCycles(4);
@@ -124,8 +129,10 @@ void CDPCM::Process(uint32 Time)
 			--m_iDMA_BytesRemaining;
 			m_bSampleFilled = true;
 
-			if (!m_iDMA_BytesRemaining) {
-				switch (m_iPlayMode) {
+			if (!m_iDMA_BytesRemaining)
+			{
+				switch (m_iPlayMode)
+				{
 					case 0x00:	// Stop
 						break;
 					case 0x40:	// Loop
@@ -140,10 +147,12 @@ void CDPCM::Process(uint32 Time)
 		}
 
 		// Output unit
-		if (!m_iBitDivider) {
+		if (!m_iBitDivider)
+		{
 			// Begin new output cycle
 			m_iBitDivider = 8;
-			if (m_bSampleFilled) {
+			if (m_bSampleFilled)
+			{
 				m_iShiftReg		= m_iSampleBuffer;
 				m_bSampleFilled = false;
 				m_bSilenceFlag	= false;
@@ -153,8 +162,10 @@ void CDPCM::Process(uint32 Time)
 			}
 		}
 
-		if (!m_bSilenceFlag) {
-			if ((m_iShiftReg & 1) == 1) {
+		if (!m_bSilenceFlag)
+		{
+			if ((m_iShiftReg & 1) == 1)
+			{
 				if (m_iDeltaCounter < 126)
 					m_iDeltaCounter += 2;
 			}

@@ -69,7 +69,8 @@ void CChannelHandler2A03::PlayChannelNote(stChanNote *pNoteData, int EffColumns)
 	int PostEffect = 0, PostEffectParam = 0;
 
 	// Evaluate effects
-	for (int n=0;n<EffColumns;n++) {
+	for (int n = 0; n < EffColumns; n++)
+	{
 		unsigned char EffNum   = pNoteData->EffNumber[n];
 		unsigned char EffParam = pNoteData->EffParam[n];
 
@@ -78,7 +79,8 @@ void CChannelHandler2A03::PlayChannelNote(stChanNote *pNoteData, int EffColumns)
 		if (!CheckCommonEffects(EffNum, EffParam))
 		{
 			// Custom effects
-			switch (EffNum) {
+			switch (EffNum)
+			{
 				case EF_VOLUME:
 					// Kill this maybe?
 					InitVolume = EffParam;
@@ -128,9 +130,10 @@ void CChannelHandler2A03::PlayChannelNote(stChanNote *pNoteData, int EffColumns)
 		if (pInstrument->GetType() != INST_2A03)
 			return;
 
-		for (int i=0;i<CInstrument2A03::SEQUENCE_COUNT;i++)
+		for (int i = 0; i < CInstrument2A03::SEQUENCE_COUNT; i++)
 		{
-			if (m_iSeqIndex[i] != pInstrument->GetSeqIndex(i)) {
+			if (m_iSeqIndex[i] != pInstrument->GetSeqIndex(i))
+			{
 				m_iSeqEnabled[i] = pInstrument->GetSeqEnable(i);
 				m_iSeqIndex[i]	 = pInstrument->GetSeqIndex(i);
 				m_iSeqPointer[i] = 0;
@@ -188,7 +191,7 @@ void CChannelHandler2A03::PlayChannelNote(stChanNote *pNoteData, int EffColumns)
 			return;
 
 		// Trigger instrument
-		for (int i=0;i<CInstrument2A03::SEQUENCE_COUNT;i++)
+		for (int i = 0; i < CInstrument2A03::SEQUENCE_COUNT; i++)
 		{
 			m_iSeqEnabled[i] = pInstrument->GetSeqEnable(i);
 			m_iSeqIndex[i]	 = pInstrument->GetSeqIndex(i);
@@ -226,7 +229,7 @@ void CChannelHandler2A03::ProcessChannel()
 		return;
 
 	// Sequences
-	for (int i = 0; i < CInstrument2A03::SEQUENCE_COUNT; ++i)
+	for (int i = 0; i < CInstrument2A03::SEQUENCE_COUNT; i++)
 		CChannelHandler::RunSequence(i, m_pDocument->GetSequence(m_iSeqIndex[i], CInstrument2A03::SEQUENCE_TYPES[i]));
 }
 
@@ -440,7 +443,7 @@ void CDPCMChan::PlayChannelNote(stChanNote *pNoteData, int EffColumns)
 		m_iNoteCut = 0;
 	}
 
-	for (int i=0;i<EffColumns;i++)
+	for (int i = 0; i < EffColumns; i++)
 	{
 		switch (pNoteData->EffNumber[i])
 		{
@@ -454,7 +457,8 @@ void CDPCMChan::PlayChannelNote(stChanNote *pNoteData, int EffColumns)
 			EffPitch = pNoteData->EffParam[i];
 			break;
 		case EF_RETRIGGER:
-//			if (NoteData->EffParam[i] > 0) {
+//			if (NoteData->EffParam[i] > 0)
+//			{
 				m_iRetrigger = pNoteData->EffParam[i] + 1;
 				if (m_iRetriggerCntr == 0)
 					m_iRetriggerCntr = m_iRetrigger;
@@ -561,7 +565,8 @@ void CDPCMChan::RefreshChannel()
 	if (m_iRetrigger != 0)
 	{
 		m_iRetriggerCntr--;
-		if (m_iRetriggerCntr == 0) {
+		if (m_iRetriggerCntr == 0)
+		{
 			m_iRetriggerCntr = m_iRetrigger;
 			m_bEnabled = true;
 		}

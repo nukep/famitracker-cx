@@ -37,17 +37,16 @@ int32 LogToLinear(uint32 l, uint32 sft)
 void LogTableInitialize(void)
 {
 	static volatile uint32 initialized = 0;
-	uint32 i;
 	double a;
 	if (initialized) return;
 	initialized = 1;
-	for (i = 0; i < (1 << LOG_BITS); i++)
+	for (uint32 i = 0; i < (1 << LOG_BITS); i++)
 	{
 		a = (1 << LOG_LIN_BITS) / pow(2, i / (double)(1 << LOG_BITS));
 		logtbl[i] = (uint32)a;
 	}
 	lineartbl[0] = LOG_LIN_BITS << LOG_BITS;
-	for (i = 1; i < (1 << LIN_BITS) + 1; i++)
+	for (uint32 i = 1; i < (1 << LIN_BITS) + 1; i++)
 	{
 		uint32 ua;
 		a = i << (LOG_LIN_BITS - LIN_BITS);
@@ -324,7 +323,6 @@ static uint32 DivFix(uint32 p1, uint32 p2, uint32 fix)
 
 void FDSCALL FDSSoundReset(void)
 {
-	uint32 i;
 	memset(&fdssound, 0, sizeof(FDSSOUND));
 	// TODO: Fix srate
 	fdssound.srate = CAPU::BASE_FREQ_NTSC; ///NESAudioFrequencyGet();
@@ -332,7 +330,7 @@ void FDSCALL FDSSoundReset(void)
 	fdssound.envspd = 0xe8 << EGCPS_BITS;
 	fdssound.envdisable = 1;
 	fdssound.phasecps = DivFix(NES_BASECYCLES, 12 * fdssound.srate, PGCPS_BITS);
-	for (i = 0; i < 0x40; i++)
+	for (uint32 i = 0; i < 0x40; i++)
 	{
 		fdssound.op[0].wg.wave[i] = (i < 0x20) ? 0x1f : -0x20;
 		fdssound.op[1].wg.wave[i] = 64;

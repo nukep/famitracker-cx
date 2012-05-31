@@ -37,7 +37,7 @@ CChannelMap::CChannelMap() :
 
 CChannelMap::~CChannelMap()
 {
-	for (int i=0;i<m_iAddedChips;i++)
+	for (int i = 0; i < m_iAddedChips; i++)
 	{
 		if (m_pChipInst[i] != NULL)
 			delete m_pChipInst[i];
@@ -77,7 +77,7 @@ void CChannelMap::AddChip(int Ident, CInstrument *pInst, const char *pName)
 	m_pChipNames[m_iAddedChips] = pName;
 	m_iChipIdents[m_iAddedChips] = Ident;
 	m_pChipInst[m_iAddedChips] = pInst;
-	++m_iAddedChips;
+	m_iAddedChips++;
 }
 
 int CChannelMap::GetChipCount() const
@@ -101,7 +101,8 @@ int CChannelMap::GetChipIdent(int Index) const
 int	CChannelMap::GetChipIndex(int Ident) const
 {
 	// Get index from chip ID
-	for (int i = 0; i < m_iAddedChips; ++i) {
+	for (int i = 0; i < m_iAddedChips; i++)
+	{
 		if (Ident == m_iChipIdents[i])
 			return i;
 	}

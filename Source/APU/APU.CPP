@@ -164,9 +164,11 @@ inline void CAPU::ClockSequence()
 
 	m_iSequencerClock += SEQUENCER_PERIOD;
 
-	if (m_iFrameMode == 0) {
+	if (m_iFrameMode == 0)
+	{
 		m_iFrameSequence = (m_iFrameSequence + 1) % 4;
-		switch (m_iFrameSequence) {
+		switch (m_iFrameSequence)
+		{
 			case 0: Clock_240Hz(); break;
 			case 1: Clock_240Hz(); Clock_120Hz(); break;
 			case 2: Clock_240Hz(); break;
@@ -175,7 +177,8 @@ inline void CAPU::ClockSequence()
 	}
 	else {
 		m_iFrameSequence = (m_iFrameSequence + 1) % 5;
-		switch (m_iFrameSequence) {
+		switch (m_iFrameSequence)
+		{
 			case 0: Clock_240Hz(); Clock_120Hz(); break;
 			case 1: Clock_240Hz(); break;
 			case 2: Clock_240Hz(); Clock_120Hz(); break;
@@ -194,8 +197,8 @@ void CAPU::Process()
 	
 	static uint32 Time, i;
 
-	while (m_iCyclesToRun > 0) {
-
+	while (m_iCyclesToRun > 0)
+	{
 		Time = m_iCyclesToRun;
 
 		if (Time > m_iSequencerClock)
@@ -205,7 +208,8 @@ void CAPU::Process()
 		
 		// Fixes the problem with distortion due to volume modulation
 		i = Time;
-		while (i > 0) {
+		while (i > 0)
+		{
 			uint32 Period = min(m_pSquare1->GetPeriod(), m_pSquare2->GetPeriod());
 			Period = min(max<uint32>(Period, 7), i);
 			m_pSquare1->Process(Period);
@@ -214,7 +218,8 @@ void CAPU::Process()
 		}
 
 		i = Time;
-		while (i > 0) {
+		while (i > 0)
+		{
 			uint32 Period = min(m_pTriangle->GetPeriod(), m_pNoise->GetPeriod());
 			Period = min<uint32>(Period, m_pDPCM->GetPeriod());
 			Period = min(max<uint32>(Period, 7), i);
@@ -224,7 +229,8 @@ void CAPU::Process()
 			i -= Period;
 		}
 
-		for (std::vector<CExternal*>::iterator iter = ExChips.begin(); iter != ExChips.end(); ++iter) {
+		for (std::vector<CExternal*>::iterator iter = ExChips.begin(); iter != ExChips.end(); ++iter)
+		{
 			(*iter)->Process(Time);
 		}
 
@@ -252,7 +258,8 @@ void CAPU::EndFrame()
 	m_pNoise->EndFrame();
 	m_pDPCM->EndFrame();
 
-	for (std::vector<CExternal*>::iterator iter = ExChips.begin(); iter != ExChips.end(); ++iter) {
+	for (std::vector<CExternal*>::iterator iter = ExChips.begin(); iter != ExChips.end(); ++iter)
+	{
 		(*iter)->EndFrame();
 	}
 
@@ -264,7 +271,7 @@ void CAPU::EndFrame()
 	m_iFrameCycles = 0;
 
 #ifdef LOGGING
-	++m_iFrame;
+	m_iFrame++;
 #endif
 }
 
@@ -288,7 +295,8 @@ void CAPU::Reset()
 	m_pNoise->Reset();
 	m_pDPCM->Reset();
 
-	for (std::vector<CExternal*>::iterator iter = ExChips.begin(); iter != ExChips.end(); ++iter) {
+	for (std::vector<CExternal*>::iterator iter = ExChips.begin(); iter != ExChips.end(); ++iter)
+	{
 		(*iter)->Reset();
 	}
 
@@ -333,7 +341,8 @@ void CAPU::ChangeMachine(int Machine)
 	// Allow to change speed on the fly
 	//
 
-	switch (Machine) {
+	switch (Machine)
+	{
 		case MACHINE_NTSC:
 			m_pNoise->PERIOD_TABLE = CNoise::NOISE_PERIODS_NTSC;
 			m_pDPCM->PERIOD_TABLE = CDPCM::DMC_PERIODS_NTSC;			
@@ -403,16 +412,19 @@ void CAPU::Write(uint16 Address, uint8 Value)
 
 	Process();
 
-	if (Address == 0x4015) {
+	if (Address == 0x4015)
+	{
 		Write4015(Value);
 		return;
 	}
-	else if (Address == 0x4017) {
+	else if (Address == 0x4017)
+	{
 		Write4017(Value);
 		return;
 	}
 
-	switch (Address & 0x1C) {
+	switch (Address & 0x1C)
+	{
 		case 0x00: m_pSquare1->Write(Address & 0x03, Value); break;
 		case 0x04: m_pSquare2->Write(Address & 0x03, Value); break;
 		case 0x08: m_pTriangle->Write(Address & 0x03, Value); break;
@@ -438,7 +450,8 @@ void CAPU::Write4017(uint8 Value)
 	m_iFrameSequence = 0;
 
 	// Mode 1
-	if (Value & 0x80) {
+	if (Value & 0x80)
+	{
 		m_iFrameMode = 1;
 		// Immediately run all units		
 		Clock_240Hz();
@@ -493,7 +506,8 @@ void CAPU::ExternalWrite(uint16 Address, uint8 Value)
 
 	Process();
 
-	for (std::vector<CExternal*>::iterator iter = ExChips.begin(); iter != ExChips.end(); ++iter) {
+	for (std::vector<CExternal*>::iterator iter = ExChips.begin(); iter != ExChips.end(); ++iter)
+	{
 		(*iter)->Write(Address, Value);
 	}
 }
@@ -508,7 +522,8 @@ uint8 CAPU::ExternalRead(uint16 Address)
 
 	Process();
 
-	for (std::vector<CExternal*>::iterator iter = ExChips.begin(); iter != ExChips.end(); ++iter) {
+	for (std::vector<CExternal*>::iterator iter = ExChips.begin(); iter != ExChips.end(); ++iter)
+	{
 		if (!Mapped)
 			Value = (*iter)->Read(Address, Mapped);
 	}
@@ -546,7 +561,7 @@ void CAPU::Log()
 {
 	CString str;
 	str.Format("Frame %08i: ", m_iFrame);
-	for (int i = 0; i < 0x14; ++i)
+	for (int i = 0; i < 0x14; i++)
 		str.AppendFormat("%02X ", m_iRegs[i]);
 	str.Append("\n");
 	m_pLog->Write(str, str.GetLength());

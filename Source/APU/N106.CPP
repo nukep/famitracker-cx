@@ -46,25 +46,25 @@ CN106::~CN106()
 	if (m_pWaveData)
 		delete [] m_pWaveData;
 
-	for (int i = 0; i < 8; ++i)
+	for (int i = 0; i < 8; i++)
 		delete m_pChannels[i];
 }
 
 void CN106::Reset()
 {
-	for (int i = 0; i < 8; ++i)
+	for (int i = 0; i < 8; i++)
 		m_pChannels[i]->Reset();
 }
 
 void CN106::Process(uint32 Time)
 {
-	for (int i = 7 - m_iChansInUse; i < 8; ++i)
+	for (int i = 7 - m_iChansInUse; i < 8; i++)
 		m_pChannels[i]->Process(Time, m_iChansInUse);
 }
 
 void CN106::EndFrame()
 {
-	for (int i = 0; i < 8; ++i)
+	for (int i = 0; i < 8; i++)
 		m_pChannels[i]->EndFrame();
 }
 
@@ -72,12 +72,14 @@ void CN106::Write(uint16 Address, uint8 Value)
 {
 	int Area = ExpandAddr & 0x7F;
 
-	switch (Address) {
+	switch (Address)
+	{
 		case 0x4800:
 			if (Area < 0x40)
 				m_pWaveData[Area] = Value;
 
-			else if (Area >= 0x40) {
+			else if (Area >= 0x40)
+			{
 				int Channel = (Area & 0x3F) >> 3;
 				m_pChannels[Channel]->Write(Area & 0x07, Value);
 
@@ -100,7 +102,8 @@ uint8 CN106::Read(uint16 Address, bool &Mapped)
 {
 	uint16 ReadAddr;
 
-	switch (Address) {
+	switch (Address)
+	{
 		case 0x4800:
 			Mapped = true;
 			ReadAddr = ExpandAddr & 0x3F;
@@ -144,7 +147,8 @@ void CN106Chan::Reset()
 
 void CN106Chan::Write(uint16 Address, uint8 Value)
 {
-	switch (Address) {
+	switch (Address)
+	{
 		case 0x00:
 			m_iFreqs[0] = Value;
 			break;
@@ -180,7 +184,8 @@ void CN106Chan::Process(uint32 Time, uint8 ChannelsActive)
 	if (!m_iWaveLength || !m_iVolume || !Period)
 		return;
 
-	while (Time >= m_iCounter) {
+	while (Time >= m_iCounter)
+	{
 		m_iTime += m_iCounter;
 		Time -= m_iCounter;
 		m_iCounter = Period;

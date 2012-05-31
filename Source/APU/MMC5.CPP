@@ -54,12 +54,14 @@ void CMMC5::Reset()
 
 void CMMC5::Write(uint16 Address, uint8 Value)
 {
-	if (Address >= 0x5C00 && Address <= 0x5FF5) {
+	if (Address >= 0x5C00 && Address <= 0x5FF5)
+	{
 		m_pEXRAM[Address & 0x3FF] = Value;
 		return;
 	}
 
-	switch (Address) {
+	switch (Address)
+	{
 		// Channel 1
 		case 0x5000:
 			m_pSquare1->Write(0, Value);
@@ -98,12 +100,14 @@ void CMMC5::Write(uint16 Address, uint8 Value)
 
 uint8 CMMC5::Read(uint16 Address, bool &Mapped)
 {
-	if (Address >= 0x5C00 && Address <= 0x5FF5) {
+	if (Address >= 0x5C00 && Address <= 0x5FF5)
+	{
 		Mapped = true;
 		return m_pEXRAM[Address & 0x3FF];
 	}
 	
-	switch (Address) {
+	switch (Address)
+	{
 		case 0x5205:
 			Mapped = true;
 			return (m_iMulLow * m_iMulHigh) & 0xFF;

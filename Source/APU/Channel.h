@@ -39,7 +39,8 @@ public:
 	}
 
 	// Begin a new audio frame
-	inline void EndFrame() {
+	inline void EndFrame()
+	{
 		m_iTime = 0;
 	}
 
@@ -48,8 +49,10 @@ public:
 	}
 
 protected:
-	inline virtual void Mix(int32 Value) {
-		if (m_iLastValue != Value) {
+	inline virtual void Mix(int32 Value)
+	{
+		if (m_iLastValue != Value)
+		{
 			m_pMixer->AddValue(m_iChanId, m_iChip, Value, Value, m_iTime);
 			m_iLastValue = Value;
 		}
@@ -82,12 +85,14 @@ public:
 	{
 	}
 
-	inline void EndFrame() {
+	inline void EndFrame()
+	{
 		m_iTime = 0;
 	}
 
 protected:
-	inline void Mix(int32 Value) {
+	inline void Mix(int32 Value)
+	{
 		int32 Delta = m_iLastValue - Value;
 		if (Delta)
 			m_pMixer->AddValue(m_iChanId, m_iChip, Delta, Value, m_iTime);
