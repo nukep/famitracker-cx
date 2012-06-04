@@ -207,9 +207,6 @@ void CChannelHandler::PlayNote(stChanNote *noteData, int effColumns)
 	if (HandleDelay(noteData, effColumns))
 		return;
 
-	// Handle global effects
-	soundGen()->evaluateGlobalEffects(noteData, effColumns);
-
 	// Let the channel play
 	PlayChannelNote(noteData, effColumns);
 }

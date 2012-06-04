@@ -18,6 +18,8 @@ class CDSample;
 struct stChanNote;
 class CTrackerChannel;
 class CChannelHandler;
+class FtmDocument;
+class TrackerController;
 
 const int VIBRATO_LENGTH = 256;
 const int TREMOLO_LENGTH = 256;
@@ -37,12 +39,21 @@ public:
 	// TODO - dan (dan's implementation)
 	bool isPlaying() const{ return false; }
 
+	void setDocument(FtmDocument *doc);
+
+	// Multiple times initialization
+	void loadMachineSettings(int machine, int rate);
+
 	// Vibrato
 	void generateVibratoTable(int type);
 	int readVibratoTable(int index) const{ return m_iVibratoTable[index]; }
 
-	// Tracker playing
-	void evaluateGlobalEffects(stChanNote *noteData, int effColumns);
+	// Player interface
+	void resetTempo();
+	unsigned int getTempo() const
+	{
+		return (m_iSpeed == 0) ? 0 : (m_iTempo * 6) / m_iSpeed;
+	}
 
 	// Rendering
 	void checkRenderStop();
@@ -51,27 +62,39 @@ public:
 	// Used by channels
 	void addCycles(int count);
 
+	void run();
+
 private:
 	// Internal initialization
 	void createChannels();
+	void setupChannels();
 	void assignChannel(CTrackerChannel *trackerChannel, CChannelHandler *renderer);
 	void resetAPU();
 
 	// Player
 	void playNote(int channel, stChanNote *noteData, int effColumns);
+	void runFrame();
 
 	// Misc
 	void playSample(CDSample *sample, int offset, int pitch);
 
 private:
+	FtmDocument *m_pDocument;
+	TrackerController *m_trackerctlr;
 	// Objects
 	CChannelHandler * m_pChannels[CHANNELS];
+
+	// TODO - dan: make private again
+public:
 	CTrackerChannel * m_pTrackerChannels[CHANNELS];
+private:
 
 	// Sound
 	CSampleMem m_samplemem;
 	CAPU m_apu;
 	SoundSink *m_sink;
+
+	unsigned int m_iChannels;
 
 // Tracker playing variables
 private:

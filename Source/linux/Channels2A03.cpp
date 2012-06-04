@@ -29,7 +29,8 @@
 #include "common.hpp"
 #include "App.hpp"
 
-CChannelHandler2A03::CChannelHandler2A03(SoundGen *gen) : CChannelHandler(gen)
+CChannelHandler2A03::CChannelHandler2A03(SoundGen *gen) : CChannelHandler(gen),
+	m_cSweep(0)
 {
 	SetMaxPeriod(0x7FF);
 }

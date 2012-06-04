@@ -41,6 +41,8 @@ set(SRC
 	linux/Sequence.h
 	linux/TrackerChannel.cpp
 	linux/TrackerChannel.h
+	linux/TrackerController.cpp
+	linux/TrackerController.hpp
 	linux/types.hpp
 
 	linux/Settings.cpp
