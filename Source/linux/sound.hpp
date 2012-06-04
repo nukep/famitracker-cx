@@ -7,6 +7,13 @@ class SoundSink : public ICallback
 {
 };
 
+class SoundSinkPlayback : public SoundSink
+{
+public:
+	virtual void initialize(unsigned int sampleRate, unsigned int channels, unsigned int latency_ms) = 0;
+	virtual void close() = 0;
+};
+
 class CDSample;
 struct stChanNote;
 class CTrackerChannel;

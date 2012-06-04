@@ -1239,6 +1239,204 @@ void FtmDocument::DecreaseEffect(unsigned int Frame, unsigned int Channel, unsig
 	}
 }
 
+void FtmDocument::SetNoteData(unsigned int Frame, unsigned int Channel, unsigned int Row, stChanNote *Data)
+{
+	ftm_Assert(Frame < MAX_FRAMES);
+	ftm_Assert(Channel < MAX_CHANNELS);
+	ftm_Assert(Row < MAX_PATTERN_LENGTH);
+
+	// Get notes from the pattern
+	memcpy(m_pSelectedTune->GetPatternData(Channel, GET_PATTERN(Frame, Channel), Row), Data, sizeof(stChanNote));
+	SetModifiedFlag();
+}
+
+void FtmDocument::GetNoteData(unsigned int Frame, unsigned int Channel, unsigned int Row, stChanNote *Data) const
+{
+	ftm_Assert(Frame < MAX_FRAMES);
+	ftm_Assert(Channel < MAX_CHANNELS);
+	ftm_Assert(Row < MAX_PATTERN_LENGTH);
+	unsigned int Pattern = GET_PATTERN(Frame, Channel);
+	// Sets the notes of the pattern
+	memcpy(Data, m_pSelectedTune->GetPatternData(Channel, Pattern, Row), sizeof(stChanNote));
+}
+
+void FtmDocument::SetDataAtPattern(unsigned int Track, unsigned int Pattern, unsigned int Channel, unsigned int Row, stChanNote *Data)
+{
+	ftm_Assert(Track < MAX_TRACKS);
+	ftm_Assert(Pattern < MAX_PATTERN);
+	ftm_Assert(Channel < MAX_CHANNELS);
+	ftm_Assert(Row < MAX_PATTERN_LENGTH);
+
+	// Set a note to a direct pattern
+	memcpy(m_pTunes[Track]->GetPatternData(Channel, Pattern, Row), Data, sizeof(stChanNote));
+	SetModifiedFlag();
+}
+
+void FtmDocument::GetDataAtPattern(unsigned int Track, unsigned int Pattern, unsigned int Channel, unsigned int Row, stChanNote *Data) const
+{
+	ftm_Assert(Track < MAX_TRACKS);
+	ftm_Assert(Pattern < MAX_PATTERN);
+	ftm_Assert(Channel < MAX_CHANNELS);
+	ftm_Assert(Row < MAX_PATTERN_LENGTH);
+
+	// Get note from a direct pattern
+	memcpy(Data, m_pTunes[Track]->GetPatternData(Channel, Pattern, Row), sizeof(stChanNote));
+}
+
+unsigned int FtmDocument::GetNoteEffectType(unsigned int Frame, unsigned int Channel, unsigned int Row, int Index) const
+{
+	ftm_Assert(Frame < MAX_FRAMES);
+	ftm_Assert(Channel < MAX_CHANNELS);
+	ftm_Assert(Row < MAX_PATTERN_LENGTH);
+	ftm_Assert(Index < MAX_EFFECT_COLUMNS);
+
+	return m_pSelectedTune->GetPatternData(Channel, GET_PATTERN(Frame, Channel), Row)->EffNumber[Index];
+}
+
+unsigned int FtmDocument::GetNoteEffectParam(unsigned int Frame, unsigned int Channel, unsigned int Row, int Index) const
+{
+	ftm_Assert(Frame < MAX_FRAMES);
+	ftm_Assert(Channel < MAX_CHANNELS);
+	ftm_Assert(Row < MAX_PATTERN_LENGTH);
+	ftm_Assert(Index < MAX_EFFECT_COLUMNS);
+
+	return m_pSelectedTune->GetPatternData(Channel, GET_PATTERN(Frame, Channel), Row)->EffParam[Index];
+}
+
+bool FtmDocument::InsertNote(unsigned int Frame, unsigned int Channel, unsigned int Row)
+{
+	ftm_Assert(Frame < MAX_FRAMES);
+	ftm_Assert(Channel < MAX_CHANNELS);
+	ftm_Assert(Row < MAX_PATTERN_LENGTH);
+
+	stChanNote Note;
+
+	for (int n = 0; n < MAX_EFFECT_COLUMNS; n++)
+	{
+		Note.EffNumber[n] = 0;
+		Note.EffParam[n] = 0;
+	}
+
+	Note.Note		= 0;
+	Note.Octave		= 0;
+	Note.Instrument	= MAX_INSTRUMENTS;
+	Note.Vol		= 0x10;
+
+	for (unsigned int i = m_pSelectedTune->GetPatternLength() - 1; i > Row; i--)
+	{
+		memcpy(m_pSelectedTune->GetPatternData(Channel, m_pSelectedTune->GetFramePattern(Frame, Channel), i),
+			m_pSelectedTune->GetPatternData(Channel, m_pSelectedTune->GetFramePattern(Frame, Channel), i - 1),
+			sizeof(stChanNote));
+	}
+
+	*m_pSelectedTune->GetPatternData(Channel, m_pSelectedTune->GetFramePattern(Frame, Channel), Row) = Note;
+
+	SetModifiedFlag();
+
+	return true;
+}
+
+bool FtmDocument::DeleteNote(unsigned int Frame, unsigned int Channel, unsigned int Row, unsigned int Column)
+{
+	ftm_Assert(Frame < MAX_FRAMES);
+	ftm_Assert(Channel < MAX_CHANNELS);
+	ftm_Assert(Row < MAX_PATTERN_LENGTH);
+
+	stChanNote *Note = m_pSelectedTune->GetPatternData(Channel, m_pSelectedTune->GetFramePattern(Frame, Channel), Row);
+
+	if (Column == C_NOTE)
+	{
+		Note->Note = 0;
+		Note->Octave = 0;
+		Note->Instrument = MAX_INSTRUMENTS;
+		Note->Vol = 0x10;
+	}
+	else if (Column == C_INSTRUMENT1 || Column == C_INSTRUMENT2)
+	{
+		Note->Instrument = MAX_INSTRUMENTS;
+	}
+	else if (Column == C_VOLUME)
+	{
+		Note->Vol = 0x10;
+	}
+	else if (Column == C_EFF_NUM || Column == C_EFF_PARAM1 || Column == C_EFF_PARAM2)
+	{
+		Note->EffNumber[0]	= 0;
+		Note->EffParam[0]	= 0;
+	}
+	else if (Column == C_EFF2_NUM || Column == C_EFF2_PARAM1 || Column == C_EFF2_PARAM2)
+	{
+		Note->EffNumber[1]	= 0;
+		Note->EffParam[1]	= 0;
+	}
+	else if (Column == C_EFF3_NUM || Column == C_EFF3_PARAM1 || Column == C_EFF3_PARAM2)
+	{
+		Note->EffNumber[2]	= 0;
+		Note->EffParam[2]	= 0;
+	}
+	else if (Column == C_EFF4_NUM || Column == C_EFF4_PARAM1 || Column == C_EFF4_PARAM2)
+	{
+		Note->EffNumber[3]	= 0;
+		Note->EffParam[3]	= 0;
+	}
+
+	SetModifiedFlag();
+
+	return true;
+}
+
+
+bool FtmDocument::ClearRow(unsigned int Frame, unsigned int Channel, unsigned int Row)
+{
+	ftm_Assert(Frame < MAX_FRAMES);
+	ftm_Assert(Channel < MAX_CHANNELS);
+	ftm_Assert(Row < MAX_PATTERN_LENGTH);
+
+	stChanNote *Note = m_pSelectedTune->GetPatternData(Channel, m_pSelectedTune->GetFramePattern(Frame, Channel), Row);
+
+	Note->Note = 0;
+	Note->Octave = 0;
+	Note->Instrument = MAX_INSTRUMENTS;
+	Note->Vol = 0x10;
+
+	SetModifiedFlag();
+
+	return true;
+}
+
+bool FtmDocument::RemoveNote(unsigned int Frame, unsigned int Channel, unsigned int Row)
+{
+	ftm_Assert(Frame < MAX_FRAMES);
+	ftm_Assert(Channel < MAX_CHANNELS);
+	ftm_Assert(Row < MAX_PATTERN_LENGTH);
+
+	stChanNote Note;
+
+	for (int n = 0; n < MAX_EFFECT_COLUMNS; n++)
+	{
+		Note.EffNumber[n] = 0;
+		Note.EffParam[n] = 0;
+	}
+
+	Note.Note = 0;
+	Note.Octave = 0;
+	Note.Instrument = MAX_INSTRUMENTS;
+	Note.Vol = 0x10;
+
+	for (unsigned int i = Row - 1; i < (m_pSelectedTune->GetPatternLength() - 1); i++)
+	{
+		memcpy(m_pSelectedTune->GetPatternData(Channel, m_pSelectedTune->GetFramePattern(Frame, Channel), i),
+			m_pSelectedTune->GetPatternData(Channel, m_pSelectedTune->GetFramePattern(Frame, Channel), i + 1),
+			sizeof(stChanNote));
+	}
+
+	*m_pSelectedTune->GetPatternData(Channel, m_pSelectedTune->GetFramePattern(Frame, Channel), m_pSelectedTune->GetPatternLength() - 1) = Note;
+
+	SetModifiedFlag();
+
+	return true;
+}
+
 void FtmDocument::SetEngineSpeed(unsigned int Speed)
 {
 	ftm_Assert(Speed <= 800); // hardcoded at the moment, TODO: fix this
