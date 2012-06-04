@@ -9,7 +9,7 @@
 
 #include "ChannelHandler.h"
 #include "Channels2A03.h"
-//#include "ChannelsVRC6.h"
+#include "ChannelsVRC6.h"
 
 // The depth of each vibrato level
 static const double NEW_VIBRATO_DEPTH[] = {
@@ -153,11 +153,11 @@ void SoundGen::loadMachineSettings(int machine, int rate)
 	m_pChannels[CHANID_TRIANGLE]->SetNoteTable(m_pNoteLookupTable);
 
 	// TODO - dan
-/*	m_pChannels[CHANID_MMC5_SQUARE1]->SetNoteTable(m_iNoteLookupTableNTSC);
-	m_pChannels[CHANID_MMC5_SQUARE2]->SetNoteTable(m_iNoteLookupTableNTSC);
 	m_pChannels[CHANID_VRC6_PULSE1]->SetNoteTable(m_iNoteLookupTableNTSC);
 	m_pChannels[CHANID_VRC6_PULSE2]->SetNoteTable(m_iNoteLookupTableNTSC);
 	m_pChannels[CHANID_VRC6_SAWTOOTH]->SetNoteTable(m_iNoteLookupTableSaw);
+/*	m_pChannels[CHANID_MMC5_SQUARE1]->SetNoteTable(m_iNoteLookupTableNTSC);
+	m_pChannels[CHANID_MMC5_SQUARE2]->SetNoteTable(m_iNoteLookupTableNTSC);
 	m_pChannels[CHANID_FDS]->SetNoteTable(m_iNoteLookupTableFDS);
 
 	m_pChannels[CHANID_N106_CHAN1]->SetNoteTable(m_iNoteLookupTableN106);
@@ -257,12 +257,12 @@ void SoundGen::createChannels()
 	assignChannel(new CTrackerChannel("Triangle", SNDCHIP_NONE, CHANID_TRIANGLE), new CTriangleChan(this));
 	assignChannel(new CTrackerChannel("Noise", SNDCHIP_NONE, CHANID_NOISE), new CNoiseChan(this));
 	assignChannel(new CTrackerChannel("DPCM", SNDCHIP_NONE, CHANID_DPCM), new CDPCMChan(this, &m_samplemem));
-/*
+
 	// Konami VRC6
 	assignChannel(new CTrackerChannel("Square 1", SNDCHIP_VRC6, CHANID_VRC6_PULSE1), new CVRC6Square1(this));
 	assignChannel(new CTrackerChannel("Square 2", SNDCHIP_VRC6, CHANID_VRC6_PULSE2), new CVRC6Square2(this));
 	assignChannel(new CTrackerChannel("Sawtooth", SNDCHIP_VRC6, CHANID_VRC6_SAWTOOTH), new CVRC6Sawtooth(this));
-*/
+
 	// TODO - dan
 /*
 	// Konami VRC7

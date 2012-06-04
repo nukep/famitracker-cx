@@ -20,13 +20,12 @@
 
 // This file handles playing of VRC6 channels
 
-#include "stdafx.h"
-#include "FamiTracker.h"
-#include "FamiTrackerDoc.h"
+#include "FtmDocument.hpp"
+#include "Instrument.h"
 #include "ChannelHandler.h"
 #include "ChannelsVRC6.h"
 
-CChannelHandlerVRC6::CChannelHandlerVRC6() : CChannelHandler() 
+CChannelHandlerVRC6::CChannelHandlerVRC6(SoundGen *gen) : CChannelHandler(gen)
 {
 	SetMaxPeriod(0xFFF);
 }

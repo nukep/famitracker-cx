@@ -24,9 +24,11 @@
 // Derived channels, VRC6
 //
 
+class SoundGen;
+
 class CChannelHandlerVRC6 : public CChannelHandler {
 public:
-	CChannelHandlerVRC6();
+	CChannelHandlerVRC6(SoundGen *gen);
 	virtual void ProcessChannel();
 	virtual void ResetChannel();
 protected:
@@ -35,7 +37,7 @@ protected:
 
 class CVRC6Square1 : public CChannelHandlerVRC6 {
 public:
-	CVRC6Square1() : CChannelHandlerVRC6() { m_iDefaultDuty = 0; m_bEnabled = false; };
+	CVRC6Square1(SoundGen *gen) : CChannelHandlerVRC6(gen) { m_iDefaultDuty = 0; m_bEnabled = false; }
 	void RefreshChannel();
 protected:
 	void ClearRegisters();
@@ -44,7 +46,7 @@ private:
 
 class CVRC6Square2 : public CChannelHandlerVRC6 {
 public:
-	CVRC6Square2() : CChannelHandlerVRC6() { m_iDefaultDuty = 0;  m_bEnabled = false; };
+	CVRC6Square2(SoundGen *gen) : CChannelHandlerVRC6(gen) { m_iDefaultDuty = 0;  m_bEnabled = false; }
 	void RefreshChannel();
 protected:
 	void ClearRegisters();
@@ -53,7 +55,7 @@ private:
 
 class CVRC6Sawtooth : public CChannelHandlerVRC6 {
 public:
-	CVRC6Sawtooth() : CChannelHandlerVRC6() { m_iDefaultDuty = 0;  m_bEnabled = false; };
+	CVRC6Sawtooth(SoundGen *gen) : CChannelHandlerVRC6(gen) { m_iDefaultDuty = 0;  m_bEnabled = false; };
 	void RefreshChannel();
 protected:
 	void ClearRegisters();
