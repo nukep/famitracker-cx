@@ -407,16 +407,10 @@ void SoundGen::run()
 
 		int channels = m_pDocument->GetAvailableChannels();
 
-		static unsigned int arp[5] = {0,0,0,0,0};
-
 		for (int i = 0; i < channels; i++)
 		{
 			// TODO - dan, proper indexing
 			int channel = m_pTrackerChannels[i]->GetID();
-
-//			m_pChannels[channel]->Arpeggiate(16);
-
-			arp[i] = (arp[i]+1)&127;
 
 			if (m_pTrackerChannels[channel]->NewNoteData())
 			{

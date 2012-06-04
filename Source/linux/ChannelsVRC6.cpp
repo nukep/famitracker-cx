@@ -84,7 +84,8 @@ void CChannelHandlerVRC6::PlayChannelNote(stChanNote *pNoteData, int EffColumns)
 	if (!pInstrument)
 		return;
 
-	if (LastInstrument != m_iInstrument || Note > 0 && Note != HALT && Note != RELEASE) {
+	if ((LastInstrument != m_iInstrument) || (Note > 0 && Note != HALT && Note != RELEASE))
+	{
 		// Setup instrument
 		for (int i = 0; i < CInstrumentVRC6::SEQUENCE_COUNT; ++i) {
 			m_iSeqEnabled[i] = pInstrument->GetSeqEnable(i);
@@ -219,8 +220,6 @@ void CVRC6Sawtooth::RefreshChannel()
 
 	Volume = (Volume << 1) | ((m_iDutyPeriod & 1) << 5);
 
-	if (Volume < 0)
-		Volume = 0;
 	if (Volume > 63)
 		Volume = 63;
 
