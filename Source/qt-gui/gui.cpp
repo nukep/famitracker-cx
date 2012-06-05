@@ -158,4 +158,12 @@ namespace gui
 			break;
 		}
 	}
+	bool FileIO::isReadable()
+	{
+		return f->isReadable();
+	}
+	bool FileIO::isWritable()
+	{
+		return f->isWritable();
+	}
 }

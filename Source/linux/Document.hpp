@@ -17,6 +17,8 @@ public:
 	virtual Quantity read(void *buf, Quantity sz) = 0;
 	virtual Quantity write(const void *buf, Quantity sz) = 0;
 	virtual bool seek(int offset, SeekOrigin o) = 0;
+	virtual bool isReadable() = 0;
+	virtual bool isWritable() = 0;
 	virtual ~IO(){ }
 
 	bool read_e(void *buf, Quantity sz)

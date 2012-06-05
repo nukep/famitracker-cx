@@ -21,7 +21,8 @@ static const double OLD_VIBRATO_DEPTH[] = {
 };
 
 SoundGen::SoundGen()
-	: m_apu(&m_samplemem), m_iConsumedCycles(0), m_pDocument(NULL)
+	: m_apu(&m_samplemem), m_iConsumedCycles(0), m_pDocument(NULL),
+	  m_trackerUpdateCallback(NULL)
 {
 	// Create all kinds of channels
 	createChannels();
@@ -58,8 +59,10 @@ void SoundGen::setDocument(FtmDocument *doc)
 
 	resetTempo();
 
-	m_trackerctlr->m_document = doc;
-	m_trackerctlr->m_trackerChannels = m_pTrackerChannels;
+	m_lastRow = ~0;
+	m_lastFrame = ~0;
+
+	m_trackerctlr->initialize(doc, m_pTrackerChannels);
 
 	m_iChannels = 0;
 	for (int i = 0; i < CHANNELS; i++)
@@ -202,15 +205,10 @@ void SoundGen::resetTempo()
 	if (m_pDocument == NULL)
 		return;
 
-	m_iSpeed = m_pDocument->GetSongSpeed();
-	m_iTempo = m_pDocument->GetSongTempo();
+	unsigned int speed = m_pDocument->GetSongSpeed();
+	unsigned int tempo = m_pDocument->GetSongTempo();
 
-	m_iTempoAccum = 0;
-	m_iTempoDecrement = (m_iTempo * 24) / m_iSpeed;
-
-	m_bUpdateRow = false;
-
-	m_trackerctlr->setTempo(m_iTempo, m_iSpeed);
+	m_trackerctlr->setTempo(tempo, speed);
 }
 
 void SoundGen::checkRenderStop()
@@ -265,17 +263,6 @@ void SoundGen::createChannels()
 
 	// TODO - dan
 /*
-	// Konami VRC7
-	assignChannel(new CTrackerChannel("FM Channel 1", SNDCHIP_VRC7, CHANID_VRC7_CH1), new CVRC7Channel(this));
-	assignChannel(new CTrackerChannel("FM Channel 2", SNDCHIP_VRC7, CHANID_VRC7_CH2), new CVRC7Channel(this));
-	assignChannel(new CTrackerChannel("FM Channel 3", SNDCHIP_VRC7, CHANID_VRC7_CH3), new CVRC7Channel(this));
-	assignChannel(new CTrackerChannel("FM Channel 4", SNDCHIP_VRC7, CHANID_VRC7_CH4), new CVRC7Channel(this));
-	assignChannel(new CTrackerChannel("FM Channel 5", SNDCHIP_VRC7, CHANID_VRC7_CH5), new CVRC7Channel(this));
-	assignChannel(new CTrackerChannel("FM Channel 6", SNDCHIP_VRC7, CHANID_VRC7_CH6), new CVRC7Channel(this));
-
-	// Nintendo FDS
-	assignChannel(new CTrackerChannel("FDS", SNDCHIP_FDS, CHANID_FDS), new CChannelHandlerFDS(this));
-
 	// Nintendo MMC5
 	assignChannel(new CTrackerChannel("Square 1", SNDCHIP_MMC5, CHANID_MMC5_SQUARE1), new CMMC5Square1Chan(this));
 	assignChannel(new CTrackerChannel("Square 2", SNDCHIP_MMC5, CHANID_MMC5_SQUARE2), new CMMC5Square2Chan(this));
@@ -289,6 +276,17 @@ void SoundGen::createChannels()
 	assignChannel(new CTrackerChannel("Namco 6", SNDCHIP_N106, CHANID_N106_CHAN6), new CChannelHandlerN106(this));
 	assignChannel(new CTrackerChannel("Namco 7", SNDCHIP_N106, CHANID_N106_CHAN7), new CChannelHandlerN106(this));
 	assignChannel(new CTrackerChannel("Namco 8", SNDCHIP_N106, CHANID_N106_CHAN8), new CChannelHandlerN106(this));
+
+	// Nintendo FDS
+	assignChannel(new CTrackerChannel("FDS", SNDCHIP_FDS, CHANID_FDS), new CChannelHandlerFDS(this));
+
+	// Konami VRC7
+	assignChannel(new CTrackerChannel("FM Channel 1", SNDCHIP_VRC7, CHANID_VRC7_CH1), new CVRC7Channel(this));
+	assignChannel(new CTrackerChannel("FM Channel 2", SNDCHIP_VRC7, CHANID_VRC7_CH2), new CVRC7Channel(this));
+	assignChannel(new CTrackerChannel("FM Channel 3", SNDCHIP_VRC7, CHANID_VRC7_CH3), new CVRC7Channel(this));
+	assignChannel(new CTrackerChannel("FM Channel 4", SNDCHIP_VRC7, CHANID_VRC7_CH4), new CVRC7Channel(this));
+	assignChannel(new CTrackerChannel("FM Channel 5", SNDCHIP_VRC7, CHANID_VRC7_CH5), new CVRC7Channel(this));
+	assignChannel(new CTrackerChannel("FM Channel 6", SNDCHIP_VRC7, CHANID_VRC7_CH6), new CVRC7Channel(this));
 
 	// Sunsoft 5B
 	assignChannel(new CTrackerChannel("Square 1", SNDCHIP_S5B, CHANID_S5B_CH1), new CS5BChannel1(this));
@@ -348,29 +346,6 @@ void SoundGen::playNote(int channel, stChanNote *noteData, int effColumns)
 void SoundGen::runFrame()
 {
 	m_trackerctlr->tick();
-	return;
-	int ticksPerSec = m_pDocument->GetFrameRate();
-
-//	if (m_bPlaying)
-	{
-		m_iPlayTime++;
-
-		m_iStepRows = 0;
-
-		if (m_iTempoAccum <= 0)
-		{
-			m_iTempoAccum += 60 * ticksPerSec;
-			m_iStepRows++;
-
-			m_bUpdateRow = true;
-
-			m_trackerctlr->playRow();
-		}
-		else
-		{
-			m_bUpdateRow = false;
-		}
-	}
 }
 
 void SoundGen::playSample(CDSample *sample, int offset, int pitch)
@@ -405,7 +380,7 @@ void SoundGen::run()
 
 		runFrame();
 
-		int channels = m_pDocument->GetAvailableChannels();
+		int channels = m_iChannels;
 
 		for (int i = 0; i < channels; i++)
 		{
@@ -462,10 +437,18 @@ void SoundGen::run()
 		m_apu.AddTime(m_iUpdateCycles - m_iConsumedCycles);
 		m_apu.Process();
 
-	//	if (m_bPlaying)
+		unsigned int row = m_trackerctlr->row();
+		unsigned int frame = m_trackerctlr->frame();
+
+		bool updated = (m_lastRow != row) || (m_lastFrame != frame);
+
+		if (updated && m_trackerUpdateCallback != NULL)
 		{
-			m_iTempoAccum -= m_iTempoDecrement;
+			(*m_trackerUpdateCallback)(this);
 		}
+
+		m_lastRow = row;
+		m_lastFrame = frame;
 
 		// TODO - dan
 /*		if (m_bPlayerHalted && m_bUpdateRow)

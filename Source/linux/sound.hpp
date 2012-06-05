@@ -31,6 +31,7 @@ typedef enum { SONG_TIME_LIMIT, SONG_LOOP_LIMIT } RENDER_END;
 class SoundGen
 {
 public:
+	typedef void (*trackerupdate_f)(SoundGen*);
 	SoundGen();
 	~SoundGen();
 
@@ -40,6 +41,8 @@ public:
 	bool isPlaying() const{ return false; }
 
 	void setDocument(FtmDocument *doc);
+	TrackerController * trackerController() const{ return m_trackerctlr; }
+	void setTrackerUpdate(trackerupdate_f f){ m_trackerUpdateCallback = f; }
 
 	// Multiple times initialization
 	void loadMachineSettings(int machine, int rate);
@@ -50,10 +53,6 @@ public:
 
 	// Player interface
 	void resetTempo();
-	unsigned int getTempo() const
-	{
-		return (m_iSpeed == 0) ? 0 : (m_iTempo * 6) / m_iSpeed;
-	}
 
 	// Rendering
 	void checkRenderStop();
@@ -81,6 +80,7 @@ private:
 private:
 	FtmDocument *m_pDocument;
 	TrackerController *m_trackerctlr;
+	trackerupdate_f m_trackerUpdateCallback;
 	// Objects
 	CChannelHandler * m_pChannels[CHANNELS];
 
@@ -98,8 +98,7 @@ private:
 
 // Tracker playing variables
 private:
-	unsigned int		m_iTempo, m_iSpeed;					// Tempo and speed
-	int					m_iTempoAccum;						// Used for speed calculation
+	unsigned int		m_lastRow, m_lastFrame;
 	unsigned int		m_iPlayTime;
 	volatile bool		m_bPlaying;
 	bool				m_bPlayLooping;
@@ -108,12 +107,6 @@ private:
 	int					m_iUpdateCycles;					// Number of cycles/APU update
 
 	int					m_iConsumedCycles;					// Cycles consumed by the update registers functions
-
-	// Play control
-	int					m_iJumpToPattern;
-	int					m_iSkipToRow;
-	int					m_iStepRows;
-	int					m_iPlayMode;
 
 	unsigned int		*m_pNoteLookupTable;				// NTSC or PAL
 	unsigned int		m_iNoteLookupTableNTSC[96];			// For 2A03
@@ -134,9 +127,6 @@ private:
 	int					m_iRenderedSong;
 	int					m_iDelayedStart;
 	int					m_iDelayedEnd;
-
-	int					m_iTempoDecrement;
-	bool				m_bUpdateRow;
 
 	bool				m_bRendering;
 	bool				m_bRequestRenderStop;

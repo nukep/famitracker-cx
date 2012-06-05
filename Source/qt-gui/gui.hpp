@@ -52,6 +52,8 @@ namespace gui
 		Quantity read(void *buf, Quantity sz);
 		Quantity write(const void *buf, Quantity sz);
 		bool seek(int offset, SeekOrigin o);
+		bool isReadable();
+		bool isWritable();
 	private:
 		QFile *f;
 	};

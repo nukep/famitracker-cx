@@ -33,7 +33,7 @@ void TrackerController::playRow()
 	int channels = m_document->GetAvailableChannels();
 
 	m_jumped = false;
-	for (int i=0;i<channels;i++)
+	for (int i=0; i<channels; i++)
 	{
 		stChanNote note;
 		unsigned int pattern = m_document->GetPatternAtFrame(m_frame, i);
@@ -64,7 +64,9 @@ void TrackerController::setFrame(unsigned int frame)
 	if (m_frame == frame && m_row == 0)
 		return;
 
-	m_frame = frame;
+	unsigned int num_frames = m_document->GetFrameCount();
+
+	m_frame = frame % num_frames;
 	m_row = 0;
 
 	m_elapsedFrames++;
@@ -73,13 +75,8 @@ void TrackerController::setFrame(unsigned int frame)
 
 void TrackerController::skip(unsigned int row)
 {
-	m_frame++;
+	setFrame(m_frame+1);
 	m_row = row;
-
-	m_elapsedFrames++;
-	m_jumped = true;
-
-//	m_tempoAccum = 0;
 }
 
 void TrackerController::evaluateGlobalEffects(stChanNote *noteData, int effColumns)
@@ -132,4 +129,10 @@ void TrackerController::setTempo(unsigned int tempo, unsigned int speed)
 
 	m_tempoAccum = 0;
 	m_tempoDecrement = (tempo * 24) / speed;
+}
+
+void TrackerController::initialize(FtmDocument *doc, CTrackerChannel * const * trackerChannels)
+{
+	m_document = doc;
+	m_trackerChannels = trackerChannels;
 }

@@ -17,11 +17,16 @@ public:
 
 	void setTempo(unsigned int tempo, unsigned int speed);
 
-	// TODO - dan: make private
-	FtmDocument * m_document;
-	CTrackerChannel ** m_trackerChannels;
+	void initialize(FtmDocument *doc, CTrackerChannel * const * trackerChannels);
+
+	unsigned int frame() const{ return m_frame; }
+	unsigned int row() const{ return m_row; }
+	FtmDocument * document() const{ return m_document; }
 private:
 	void evaluateGlobalEffects(stChanNote *noteData, int effColumns);
+
+	FtmDocument * m_document;
+	CTrackerChannel * const * m_trackerChannels;
 
 	bool m_jumped;
 	bool m_halted;
