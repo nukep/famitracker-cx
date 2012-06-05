@@ -22,8 +22,8 @@
 
 #include <cmath>
 #include <memory>
-#include "APU.H"
-#include "FDS.H"
+#include "APU.h"
+#include "FDS.h"
 #include "FDSSound.h"
 
 // FDS interface 

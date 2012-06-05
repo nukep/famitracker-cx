@@ -1,7 +1,7 @@
 #ifndef _SOUND_HPP_
 #define _SOUND_HPP_
 
-#include "../APU/APU.H"
+#include "../APU/APU.h"
 
 class SoundSink : public ICallback
 {

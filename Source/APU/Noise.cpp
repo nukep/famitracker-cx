@@ -18,7 +18,7 @@
 ** must bear this legend.
 */
 
-#include "APU.H"
+#include "APU.h"
 #include "Noise.h"
 
 const uint16 CNoise::NOISE_PERIODS_NTSC[] = {

@@ -18,8 +18,8 @@
 ** must bear this legend.
 */
 
-#include "APU.H"
-#include "DPCM.H"
+#include "APU.h"
+#include "DPCM.h"
 
 const uint16 CDPCM::DMC_PERIODS_NTSC[] = {
 	428, 380, 340, 320, 286, 254, 226, 214, 190, 160, 142, 128, 106, 85, 72, 54

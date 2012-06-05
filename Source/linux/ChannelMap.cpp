@@ -20,7 +20,7 @@
 
 #include "TrackerChannel.h"
 #include "ChannelMap.h"
-#include "../APU/APU.H"
+#include "../APU/APU.h"
 #include "Instrument.h"
 #include "types.hpp"
 

@@ -23,8 +23,8 @@
 #include "../stdafx.h"
 #include <cmath>
 #include <memory>
-#include "APU.H"
-#include "FDS.H"
+#include "APU.h"
+#include "FDS.h"
 
 #define LOG_BITS 12
 #define LIN_BITS 7

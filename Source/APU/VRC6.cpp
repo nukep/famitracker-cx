@@ -19,8 +19,8 @@
 */
 
 #include <memory>
-#include "APU.H"
-#include "VRC6.H"
+#include "APU.h"
+#include "VRC6.h"
 
 // Konami VRC6 external sound chip emulation
 

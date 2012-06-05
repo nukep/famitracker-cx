@@ -19,8 +19,8 @@
 */
 
 #include <cstdio>
-#include "APU.H"
-#include "S5B.H"
+#include "APU.h"
+#include "S5B.h"
 #include "emu2149.h"
 
 // Sunsoft 5B (YM2149)

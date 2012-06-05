@@ -40,19 +40,19 @@
 #include "../linux/types.hpp"
 #include <cstdio>
 #include <memory>
-#include "APU.H"
+#include "APU.h"
 
 #include "Square.h"
 #include "Triangle.h"
 #include "Noise.h"
-#include "DPCM.H"
+#include "DPCM.h"
 
-#include "VRC6.H"
-#include "MMC5.H"
-#include "FDS.H"
-#include "N106.H"
-//#include "VRC7.H"
-//#include "S5B.H"
+#include "VRC6.h"
+#include "MMC5.h"
+#include "FDS.h"
+#include "N106.h"
+//#include "VRC7.h"
+//#include "S5B.h"
 
 using std::min;
 using std::max;

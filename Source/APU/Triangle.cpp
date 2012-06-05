@@ -18,7 +18,7 @@
 ** must bear this legend.
 */
 
-#include "APU.H"
+#include "APU.h"
 #include "Triangle.h"
 
 const uint8 CTriangle::TRIANGLE_WAVE[] = {

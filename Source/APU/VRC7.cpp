@@ -22,8 +22,8 @@
 #include <memory>
 #include <stdlib.h>
 #include <string.h>
-#include "APU.H"
-#include "VRC7.H"
+#include "APU.h"
+#include "VRC7.h"
 
 const float  CVRC7::AMPLIFY	  = 2.44f;		// Mixing amplification, VRC7 patch 14 is 4,88 times stronger than a 50% square @ v=15
 const uint32 CVRC7::OPL_CLOCK = 3579545;	// Clock frequency

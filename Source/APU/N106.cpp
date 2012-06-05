@@ -20,8 +20,8 @@
 
 #include <memory>
 #include "../Common.h"
-#include "APU.H"
-#include "N106.H"
+#include "APU.h"
+#include "N106.h"
 
 //
 // N106

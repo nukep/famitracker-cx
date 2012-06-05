@@ -18,8 +18,8 @@
 ** must bear this legend.
 */
 
-#include "APU.H"
-#include "MMC5.H"
+#include "APU.h"
+#include "MMC5.h"
 #include "Square.h"
 
 // MMC5 external sound
