@@ -5,36 +5,36 @@ set(SRC
 	../Blip_Buffer/Blip_Buffer.cpp
 	../Blip_Buffer/Blip_Buffer.h
 
-	APU.CPP
+	APU.cpp
 	Mixer.cpp
-	DPCM.CPP
+	DPCM.cpp
 	Noise.cpp
 	Square.cpp
 	Triangle.cpp
-	FDS.CPP
-	MMC5.CPP
-	N106.CPP
-#	S5B.CPP
-	VRC6.CPP
-#	VRC7.CPP
+	FDS.cpp
+	MMC5.cpp
+	N106.cpp
+#	S5B.cpp
+	VRC6.cpp
+#	VRC7.cpp
 #	emu2149.c
 #	emu2413.c
 	FDSSound.cpp
 
-	APU.H
+	APU.h
 	Channel.h
 	Mixer.h
-	DPCM.H
+	DPCM.h
 	Noise.h
 	Square.h
 	Triangle.h
 	External.h
-	FDS.H
-	MMC5.H
-	N106.H
-#	S5B.H
-	VRC6.H
-#	VRC7.H
+	FDS.h
+	MMC5.h
+	N106.h
+#	S5B.h
+	VRC6.h
+#	VRC7.h
 	2413tone.h
 #	emu2149.h
 #	emu2413.h
