@@ -312,8 +312,7 @@ void SoundGen::assignChannel(CTrackerChannel *trackerChannel, CChannelHandler *r
 {
 	int id = trackerChannel->GetID();
 
-	// TODO - dan
-//	renderer->SetChannelID(id);
+	renderer->SetChannelID(id);
 
 	m_pTrackerChannels[id] = trackerChannel;
 	m_pChannels[id] = renderer;
