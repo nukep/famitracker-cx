@@ -23,7 +23,7 @@ public:
 	unsigned int row() const{ return m_row; }
 	FtmDocument * document() const{ return m_document; }
 private:
-	void evaluateGlobalEffects(stChanNote *noteData, int effColumns);
+	void evaluateGlobalEffects(const stChanNote *noteData, int effColumns);
 
 	FtmDocument * m_document;
 	CTrackerChannel * const * m_trackerChannels;
@@ -31,6 +31,7 @@ private:
 	bool m_jumped;
 	bool m_halted;
 	unsigned int m_frame, m_row;
+	unsigned int m_jumpFrame, m_jumpRow;
 
 	unsigned int m_tempo, m_speed;
 	int m_tempoAccum, m_tempoDecrement;

@@ -39,11 +39,15 @@ void TrackerController::playRow()
 		unsigned int pattern = m_document->GetPatternAtFrame(m_frame, i);
 		m_document->GetDataAtPattern(track, pattern, i, m_row, &note);
 		evaluateGlobalEffects(&note, m_document->GetEffColumns(i) + 1);
-		if (!m_jumped)
-			m_trackerChannels[i]->SetNote(note);
+		m_trackerChannels[i]->SetNote(note);
 	}
 
-	if (!m_jumped)
+	if (m_jumped)
+	{
+		m_frame = m_jumpFrame;
+		m_row = m_jumpRow;
+	}
+	else
 	{
 		m_row++;
 		if (m_row >= pattern_length)
@@ -66,8 +70,8 @@ void TrackerController::setFrame(unsigned int frame)
 
 	unsigned int num_frames = m_document->GetFrameCount();
 
-	m_frame = frame % num_frames;
-	m_row = 0;
+	m_jumpFrame = frame % num_frames;
+	m_jumpRow = 0;
 
 	m_elapsedFrames++;
 	m_jumped = true;
@@ -76,10 +80,10 @@ void TrackerController::setFrame(unsigned int frame)
 void TrackerController::skip(unsigned int row)
 {
 	setFrame(m_frame+1);
-	m_row = row;
+	m_jumpRow = row;
 }
 
-void TrackerController::evaluateGlobalEffects(stChanNote *noteData, int effColumns)
+void TrackerController::evaluateGlobalEffects(const stChanNote *noteData, int effColumns)
 {
 	// Handle global effects (effects that affects all channels)
 	for (int i = 0; i < effColumns; i++)
