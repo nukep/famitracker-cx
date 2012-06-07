@@ -53,8 +53,6 @@ set(SRC
 
 add_subdirectory("APU")
 
-add_subdirectory("qt-gui")
-
 find_package(ALSA REQUIRED)
 include(${ALSA_INCLUDE_DIR})
 setup_libs("${ALSA_LIBRARY}")
