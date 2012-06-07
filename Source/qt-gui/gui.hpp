@@ -1,7 +1,7 @@
 #ifndef _GUI_HPP_
 #define _GUI_HPP_
 
-#include "../linux/Document.hpp"
+#include "../Document.hpp"
 
 class QFile;
 class QString;

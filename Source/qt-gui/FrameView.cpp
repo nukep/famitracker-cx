@@ -3,7 +3,7 @@
 #include <QMouseEvent>
 #include "gui.hpp"
 #include "FrameView.hpp"
-#include "../linux/FtmDocument.hpp"
+#include "../FtmDocument.hpp"
 #include <QDebug>
 
 namespace gui

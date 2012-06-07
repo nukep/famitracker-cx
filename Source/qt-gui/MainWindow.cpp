@@ -2,7 +2,7 @@
 #include <QDebug>
 #include "MainWindow.hpp"
 #include "gui.hpp"
-#include "../linux/FtmDocument.hpp"
+#include "../FtmDocument.hpp"
 
 namespace gui
 {

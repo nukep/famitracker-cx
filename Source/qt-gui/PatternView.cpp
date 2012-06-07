@@ -4,7 +4,7 @@
 #include <QPainter>
 #include "PatternView.hpp"
 #include "gui.hpp"
-#include "../linux/FtmDocument.hpp"
+#include "../FtmDocument.hpp"
 
 namespace gui
 {

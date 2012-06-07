@@ -2,7 +2,7 @@
 #define _FTM_DOCUMENT_HPP
 
 // Get access to some APU constants
-#include "../APU/APU.h"
+#include "APU/APU.h"
 #include "types.hpp"
 #include "FamiTrackerTypes.h"
 #include "Instrument.h"

@@ -3,7 +3,7 @@
 #include <vector>
 #include "gui.hpp"
 #include "MainWindow.hpp"
-#include "../linux/FtmDocument.hpp"
+#include "../FtmDocument.hpp"
 
 namespace gui
 {

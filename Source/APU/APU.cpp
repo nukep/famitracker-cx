@@ -37,7 +37,7 @@
 //
 
 #include <vector>
-#include "../linux/types.hpp"
+#include "../types.hpp"
 #include <cstdio>
 #include <memory>
 #include "APU.h"

@@ -1,5 +1,5 @@
 #include <stdio.h>
-#include "../qt-gui/gui.hpp"
+#include "qt-gui/gui.hpp"
 
 int main(int argc, char *argv[])
 {
