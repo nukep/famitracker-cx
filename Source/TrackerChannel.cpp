@@ -68,36 +68,28 @@ void CTrackerChannel::SetColumnCount(int Count)
 
 void CTrackerChannel::SetNote(stChanNote Note)
 {
-	m_NoteLock.lock();
 	m_Note = Note;
 	m_bNewNote = true;
-	m_NoteLock.unlock();
 }
 
 stChanNote CTrackerChannel::GetNote()
 {
 	stChanNote Note;
-	m_NoteLock.lock();
 	m_bNewNote = false;
 	Note = m_Note;
-	m_NoteLock.unlock();
 	return Note;
 }
 
 bool CTrackerChannel::NewNoteData()
 {
 	bool bNewNote;
-	m_NoteLock.lock();
 	bNewNote = m_bNewNote;
-	m_NoteLock.unlock();
 	return bNewNote;
 }
 
 void CTrackerChannel::Reset()
 {
-	m_NoteLock.lock();
 	m_bNewNote = false;
-	m_NoteLock.unlock();
 }
 
 void CTrackerChannel::SetVolumeMeter(int Value)
