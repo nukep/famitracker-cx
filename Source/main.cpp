@@ -125,6 +125,11 @@ int main(int argc, char *argv[])
 	FtmDocument doc;
 	{
 		FileIO ftm_io(song, "rb");
+		if (!ftm_io.isReadable())
+		{
+			printf("Cannot open file\n");
+			return 1;
+		}
 		doc.read(&ftm_io);
 
 		doc.SelectTrack(track-1);
