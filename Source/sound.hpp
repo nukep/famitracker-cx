@@ -63,6 +63,8 @@ public:
 
 	void run();
 
+	int export_seconds;
+
 private:
 	// Internal initialization
 	void createChannels();

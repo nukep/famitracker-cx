@@ -4,6 +4,9 @@
 #include "wavoutput.hpp"
 #include "alsa.hpp"
 
+// Uncomment for wave exporting (out.wav), number is the amount of seconds
+//#define WAVE 120
+
 class FileIO : public IO
 {
 public:
@@ -141,17 +144,17 @@ int main(int argc, char *argv[])
 	{
 		unsigned int rate = 48000;
 
-//#define WAVE
+		SoundGen sg;
 
 #ifdef WAVE
 		FileIO wav_io("out.wav", "wb");
 		WavOutput as(&wav_io, 1, rate);
+		sg.export_seconds = WAVE;
 #else
 		AlsaSound as;
 		as.initialize(rate, 1, 80);
 #endif
 
-		SoundGen sg;
 		sg.setSoundSink(&as);
 		sg.setDocument(&doc);
 		sg.setTrackerUpdate(tracker_update);

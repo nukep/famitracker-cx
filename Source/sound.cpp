@@ -23,7 +23,7 @@ static const double OLD_VIBRATO_DEPTH[] = {
 
 SoundGen::SoundGen()
 	: m_apu(&m_samplemem), m_iConsumedCycles(0), m_pDocument(NULL),
-	  m_trackerUpdateCallback(NULL)
+	  m_trackerUpdateCallback(NULL), export_seconds(-1)
 {
 	// Create all kinds of channels
 	createChannels();
@@ -387,6 +387,10 @@ void SoundGen::run()
 	while (m_bRunning)
 	{
 		m_iFrameCounter++;
+
+		if (export_seconds > 0)
+			if (m_iFrameCounter >= m_pDocument->GetFrameRate()*export_seconds)
+				break;
 
 		runFrame();
 
