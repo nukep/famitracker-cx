@@ -116,7 +116,7 @@ CAPU::~CAPU()
 
 	SAFE_RELEASE(m_pMixer);
 
-	SAFE_RELEASE(m_pSoundBuffer);
+	SAFE_RELEASE_ARRAY(m_pSoundBuffer);
 
 #ifdef LOGGING
 	m_pLog->Close();

@@ -32,7 +32,17 @@ SoundGen::SoundGen()
 
 SoundGen::~SoundGen()
 {
+	delete m_trackerctlr;
 
+	// Remove channels
+	for (int i=0; i < CHANNELS; i++)
+	{
+		if (m_pChannels[i] != NULL)
+			delete m_pChannels[i];
+
+		if (m_pTrackerChannels[i] != NULL)
+			delete m_pTrackerChannels[i];
+	}
 }
 
 void SoundGen::setSoundSink(SoundSink *s)

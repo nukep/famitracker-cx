@@ -231,11 +231,6 @@ bool FtmDocument::readOld(Document *doc, IO *io)
 
 bool FtmDocument::readNew(Document *doc, IO *io)
 {
-	if (m_iFileVersion < 0x0210)
-	{
-		// This has to be done for older files
-		SwitchToTrack(0);
-	}
 	while (!doc->isFileDone())
 	{
 		if (!doc->readBlock(io))
@@ -300,9 +295,10 @@ bool FtmDocument::readNew(Document *doc, IO *io)
 bool FtmDocument::readNew_params(Document *doc)
 {
 	unsigned int block_ver = doc->getBlockVersion();
+	unsigned int ver1_song_speed;
 	if (block_ver == 1)
 	{
-		m_pSelectedTune->SetSongSpeed(doc->getBlockInt());
+		ver1_song_speed = doc->getBlockInt();
 	}
 	else
 	{
@@ -315,6 +311,17 @@ bool FtmDocument::readNew_params(Document *doc)
 
 	if (m_iMachine != NTSC && m_iMachine != PAL)
 		m_iMachine = NTSC;
+
+	if (m_iFileVersion < 0x0210)
+	{
+		// This has to be done for older files
+		SwitchToTrack(0);
+	}
+
+	if (block_ver == 1)
+	{
+		m_pSelectedTune->SetSongSpeed(ver1_song_speed);
+	}
 
 	if (block_ver > 2)
 		m_iVibratoStyle = doc->getBlockInt();

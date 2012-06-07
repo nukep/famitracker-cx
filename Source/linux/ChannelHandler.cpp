@@ -23,7 +23,6 @@
 // playing the channels.
 //
 
-//#include "FamiTracker.h"
 #include "FtmDocument.hpp"
 #include "sound.hpp"
 #include "ChannelHandler.h"
@@ -176,7 +175,10 @@ void CChannelHandler::KillChannel()
 	m_iPortaTo		= 0;
 
 	for (int i = 0; i < SEQ_COUNT; i++)
+	{
 		m_iSeqEnabled[i] = 0;
+		m_iSeqIndex[i] = 0;
+	}
 
 	// TODO - dan
 //	theApp.RegisterKeyState(m_iChannelID, -1);
@@ -193,7 +195,10 @@ void CChannelHandler::ResetChannel()
 	m_iDefaultDuty = 0;
 
 	for (int i = 0; i < SEQ_COUNT; i++)
+	{
 		m_iSeqEnabled[i] = 0;
+		m_iSeqIndex[i] = 0;
+	}
 
 	ClearRegisters();
 }

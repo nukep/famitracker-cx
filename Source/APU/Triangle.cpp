@@ -36,6 +36,7 @@ CTriangle::~CTriangle()
 
 void CTriangle::Reset()
 {
+	m_iStepGen = m_iLinearCounter = 0;
 	m_iEnabled = m_iControlReg = 0;
 	m_iCounter = m_iLengthCounter = 0;
 
