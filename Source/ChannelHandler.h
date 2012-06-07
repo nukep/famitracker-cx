@@ -40,6 +40,7 @@ class CSequence;
 class CChannelHandler {
 public:
 	CChannelHandler(SoundGen *gen);
+	virtual ~CChannelHandler(){}
 
 	SoundGen * soundGen() const{ return m_pSoundGen; }
 

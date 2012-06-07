@@ -152,7 +152,7 @@ int main(int argc, char *argv[])
 		sg.export_seconds = WAVE;
 #else
 		AlsaSound as;
-		as.initialize(rate, 1, 80);
+		as.initialize(rate, 1, 150);
 #endif
 
 		sg.setSoundSink(&as);

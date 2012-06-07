@@ -62,7 +62,7 @@ void SoundGen::setDocument(FtmDocument *doc)
 	m_apu.SetupSound(48000, 1, doc->GetMachine());
 	m_apu.SetupMixer(16, 12000, 24, 100);
 
-	loadMachineSettings(doc->GetMachine(), 0);
+	loadMachineSettings(doc->GetMachine(), doc->GetEngineSpeed());
 
 	unsigned char chip = doc->GetExpansionChip();
 	m_apu.SetExternalSound(chip);
