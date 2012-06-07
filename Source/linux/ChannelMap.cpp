@@ -51,20 +51,20 @@ void CChannelMap::SetupSoundChips()
 	// Under development
 	AddChip(SNDCHIP_NONE, new CInstrument2A03(), "Internal only (2A03/2A07)");
 	AddChip(SNDCHIP_VRC6, new CInstrumentVRC6(), "Konami VRC6");
+	AddChip(SNDCHIP_MMC5, new CInstrument2A03(), "Nintendo MMC5");
 	// TODO - dan
 /*	AddChip(SNDCHIP_VRC7, new CInstrumentVRC7(), "Konami VRC7");
 	AddChip(SNDCHIP_FDS,  new CInstrumentFDS(),  "Nintendo FDS sound");
-	AddChip(SNDCHIP_MMC5, new CInstrument2A03(), "Nintendo MMC5");
 	AddChip(SNDCHIP_N106, new CInstrumentN106(), "Namco 106");
 	AddChip(SNDCHIP_S5B,  new CInstrumentS5B(),  "Sunsoft 5B");*/
 #else /* _DEBUG */
 	// Ready for use
 	AddChip(SNDCHIP_NONE, new CInstrument2A03(), "Internal only (2A03/2A07)");
 	AddChip(SNDCHIP_VRC6, new CInstrumentVRC6(), "Konami VRC6");
+	AddChip(SNDCHIP_MMC5, new CInstrument2A03(), "Nintendo MMC5");
 	// TODO - dan
 /*	AddChip(SNDCHIP_VRC7, new CInstrumentVRC7(), "Konami VRC7");
 	AddChip(SNDCHIP_FDS,  new CInstrumentFDS(),  "Nintendo FDS sound");
-	AddChip(SNDCHIP_MMC5, new CInstrument2A03(), "Nintendo MMC5");
 //	AddChip(SNDCHIP_N106, new CInstrumentN106(), "Namco 106/163");
 //	AddChip(SNDCHIP_S5B,  new CInstrumentS5B(),  "Sunsoft 5B");*/
 #endif /* _DEBUG */

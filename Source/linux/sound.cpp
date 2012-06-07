@@ -9,6 +9,7 @@
 
 #include "ChannelHandler.h"
 #include "Channels2A03.h"
+#include "ChannelsMMC5.h"
 #include "ChannelsVRC6.h"
 
 // The depth of each vibrato level
@@ -72,16 +73,17 @@ void SoundGen::setDocument(FtmDocument *doc)
 	m_lastRow = ~0;
 	m_lastFrame = ~0;
 
-	m_trackerctlr->initialize(doc, m_pTrackerChannels);
-
 	m_iChannels = 0;
 	for (int i = 0; i < CHANNELS; i++)
 	{
 		if (m_pTrackerChannels[i] && ((i < 5) || (m_pTrackerChannels[i]->GetChip() & chip)))
 		{
+			m_pActiveTrackerChannels[m_iChannels] = m_pTrackerChannels[i];
 			m_iChannels++;
 		}
 	}
+
+	m_trackerctlr->initialize(doc, m_pActiveTrackerChannels);
 }
 
 void SoundGen::loadMachineSettings(int machine, int rate)
@@ -169,9 +171,9 @@ void SoundGen::loadMachineSettings(int machine, int rate)
 	m_pChannels[CHANID_VRC6_PULSE1]->SetNoteTable(m_iNoteLookupTableNTSC);
 	m_pChannels[CHANID_VRC6_PULSE2]->SetNoteTable(m_iNoteLookupTableNTSC);
 	m_pChannels[CHANID_VRC6_SAWTOOTH]->SetNoteTable(m_iNoteLookupTableSaw);
-/*	m_pChannels[CHANID_MMC5_SQUARE1]->SetNoteTable(m_iNoteLookupTableNTSC);
+	m_pChannels[CHANID_MMC5_SQUARE1]->SetNoteTable(m_iNoteLookupTableNTSC);
 	m_pChannels[CHANID_MMC5_SQUARE2]->SetNoteTable(m_iNoteLookupTableNTSC);
-	m_pChannels[CHANID_FDS]->SetNoteTable(m_iNoteLookupTableFDS);
+/*	m_pChannels[CHANID_FDS]->SetNoteTable(m_iNoteLookupTableFDS);
 
 	m_pChannels[CHANID_N106_CHAN1]->SetNoteTable(m_iNoteLookupTableN106);
 	m_pChannels[CHANID_N106_CHAN2]->SetNoteTable(m_iNoteLookupTableN106);
@@ -272,11 +274,11 @@ void SoundGen::createChannels()
 	assignChannel(new CTrackerChannel("Sawtooth", SNDCHIP_VRC6, CHANID_VRC6_SAWTOOTH), new CVRC6Sawtooth(this));
 
 	// TODO - dan
-/*
+
 	// Nintendo MMC5
 	assignChannel(new CTrackerChannel("Square 1", SNDCHIP_MMC5, CHANID_MMC5_SQUARE1), new CMMC5Square1Chan(this));
 	assignChannel(new CTrackerChannel("Square 2", SNDCHIP_MMC5, CHANID_MMC5_SQUARE2), new CMMC5Square2Chan(this));
-
+/*
 	// Namco N106
 	assignChannel(new CTrackerChannel("Namco 1", SNDCHIP_N106, CHANID_N106_CHAN1), new CChannelHandlerN106(this));
 	assignChannel(new CTrackerChannel("Namco 2", SNDCHIP_N106, CHANID_N106_CHAN2), new CChannelHandlerN106(this));
@@ -384,31 +386,30 @@ void SoundGen::run()
 
 	while (m_bRunning)
 	{
-		fflush(stdout);
 		m_iFrameCounter++;
 
 		runFrame();
 
 		int channels = m_iChannels;
 
-		for (int i = 0; i < channels; i++)
+		for (int i = 0; i < CHANNELS; i++)
 		{
-			// TODO - dan, proper indexing
-			int channel = m_pTrackerChannels[i]->GetID();
+			if (m_pChannels[i] == NULL)
+				continue;
 
-			if (m_pTrackerChannels[channel]->NewNoteData())
+			if (m_pTrackerChannels[i]->NewNoteData())
 			{
-				stChanNote note = m_pTrackerChannels[channel]->GetNote();
+				stChanNote note = m_pTrackerChannels[i]->GetNote();
 
-				playNote(channel, &note, m_pDocument->GetEffColumns(i) + 1);
+				playNote(i, &note, m_pDocument->GetEffColumns(i) + 1);
 			}
 
 			// Pitch wheel
-			int pitch = m_pTrackerChannels[channel]->GetPitch();
-			m_pChannels[channel]->SetPitch(pitch);
+			int pitch = m_pTrackerChannels[i]->GetPitch();
+			m_pChannels[i]->SetPitch(pitch);
 
 			// Update volume meters
-			m_pTrackerChannels[channel]->SetVolumeMeter(m_apu.GetVol(channel));
+			m_pTrackerChannels[i]->SetVolumeMeter(m_apu.GetVol(i));
 		}
 
 		if (m_bPlayerHalted)

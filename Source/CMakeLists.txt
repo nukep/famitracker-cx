@@ -20,6 +20,8 @@ set(SRC
 	linux/ChannelHandler.h
 	linux/Channels2A03.cpp
 	linux/Channels2A03.h
+	linux/ChannelsMMC5.cpp
+	linux/ChannelsMMC5.h
 	linux/ChannelsVRC6.cpp
 	linux/ChannelsVRC6.h
 	linux/ChannelMap.cpp

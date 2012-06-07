@@ -19,7 +19,6 @@
 */
 
 #include <string.h>
-//#include "FamiTrackerDoc.h"
 #include "PatternData.h"
 #include "types.hpp"
 

@@ -21,8 +21,6 @@
 // This file handles playing of 2A03 channels
 
 #include <cmath>
-//#include "FamiTracker.h"
-//#include "FamiTrackerDoc.h"
 #include "FtmDocument.hpp"
 #include "ChannelHandler.h"
 #include "Channels2A03.h"

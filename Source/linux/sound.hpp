@@ -83,10 +83,8 @@ private:
 	trackerupdate_f m_trackerUpdateCallback;
 	// Objects
 	CChannelHandler * m_pChannels[CHANNELS];
-
-	// TODO - dan: make private again
-public:
 	CTrackerChannel * m_pTrackerChannels[CHANNELS];
+	CTrackerChannel * m_pActiveTrackerChannels[CHANNELS];
 private:
 
 	// Sound

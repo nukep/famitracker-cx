@@ -33,7 +33,7 @@ void TrackerController::playRow()
 	int channels = m_document->GetAvailableChannels();
 
 	m_jumped = false;
-	for (int i=0; i<channels; i++)
+	for (int i=0; i < channels; i++)
 	{
 		stChanNote note;
 		unsigned int pattern = m_document->GetPatternAtFrame(m_frame, i);
