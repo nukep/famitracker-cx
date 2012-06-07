@@ -116,11 +116,12 @@ Source code/maintenance objectives
 - Rewrite the document reader. The current reader is full of opportunities for
     undefined behavior if the file is corrupt.
 
-Compiling
----------
+Compiling (requires source code)
+--------------------------------
 CMake, g++/clang++ and libasound2-dev are required to build the preview.
 
-1. Create a new directory outside of the source directory and navigate to it
+1. Create a new directory outside of the extracted directory (the one before
+     ReadMe.txt) and navigate to it
    (eg. $ mkdir famitracker-bin; cd famitracker-bin)
 2. cmake -DCMAKE_BUILD_TYPE=Release ../famitracker
 3. make
