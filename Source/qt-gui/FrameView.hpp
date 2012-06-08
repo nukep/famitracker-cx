@@ -22,6 +22,7 @@ namespace gui
 		void scrollVertical(int);
 	private:
 		QFont font;
+		unsigned int m_currentFrame, m_currentChannel;
 		bool m_updating;
 
 		bool posToFrameChannel(QPoint p, unsigned int &frame, unsigned int &chan);

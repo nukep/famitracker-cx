@@ -29,6 +29,9 @@ namespace gui
 		void decrementPattern();
 		void instrumentSelect();
 		void instrumentNameChange(QString);
+
+		void play();
+		void stop();
 	};
 }
 

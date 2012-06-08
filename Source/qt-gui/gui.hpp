@@ -25,6 +25,9 @@ namespace gui
 	void openDocument(FileIO *io, bool close_active);
 	void newDocument(bool close_active);
 
+	void playSong();
+	void stopSong();
+
 	class DocInfo
 	{
 		friend void gui::closeActiveDocument();

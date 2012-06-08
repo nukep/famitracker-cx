@@ -68,7 +68,16 @@
     <addaction name="action_ViewStatusBar"/>
     <addaction name="action_ViewControlpanel"/>
    </widget>
+   <widget class="QMenu" name="menuT_racker">
+    <property name="title">
+     <string>T&amp;racker</string>
+    </property>
+    <addaction name="action_Play"/>
+    <addaction name="actionPlay_and_loop"/>
+    <addaction name="action_Stop"/>
+   </widget>
    <addaction name="menu_File"/>
+   <addaction name="menuT_racker"/>
    <addaction name="menu_View"/>
   </widget>
   <widget class="QStatusBar" name="statusbar"/>
@@ -86,7 +95,13 @@
    <addaction name="action_Open"/>
    <addaction name="action_Save"/>
    <addaction name="separator"/>
+   <addaction name="action_Play"/>
+   <addaction name="actionPlay_and_loop"/>
+   <addaction name="action_Stop"/>
+   <addaction name="actionToggle_edit_mode"/>
+   <addaction name="separator"/>
    <addaction name="action_Create_NSF"/>
+   <addaction name="separator"/>
   </widget>
   <widget class="QDockWidget" name="controlPanel">
    <property name="windowTitle">
@@ -489,6 +504,29 @@
    </property>
    <property name="text">
     <string>Control panel</string>
+   </property>
+  </action>
+  <action name="action_Play">
+   <property name="text">
+    <string>&amp;Play</string>
+   </property>
+  </action>
+  <action name="actionPlay_and_loop">
+   <property name="text">
+    <string>Play and loop</string>
+   </property>
+  </action>
+  <action name="action_Stop">
+   <property name="text">
+    <string>&amp;Stop</string>
+   </property>
+  </action>
+  <action name="actionToggle_edit_mode">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Toggle edit mode</string>
    </property>
   </action>
  </widget>

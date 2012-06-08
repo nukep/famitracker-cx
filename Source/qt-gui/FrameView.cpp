@@ -9,7 +9,8 @@
 namespace gui
 {
 	FrameView::FrameView(QWidget *parent)
-		: QAbstractScrollArea(parent), font("FreeSans"), m_updating(false)
+		: QAbstractScrollArea(parent), font("FreeSans"), m_updating(false),
+		  m_currentFrame(0), m_currentChannel(0)
 	{
 		font.setPixelSize(12);
 		font.setBold(true);
@@ -82,8 +83,10 @@ namespace gui
 
 		const DocInfo *dinfo = gui::activeDocInfo();
 
-		int currentFrame = dinfo->currentFrame();
-		int currentChannel = dinfo->currentChannel();
+		m_currentFrame = dinfo->currentFrame();
+		m_currentChannel = dinfo->currentChannel();
+		int currentFrame = m_currentFrame;
+		int currentChannel = m_currentChannel;
 
 		const int frame_y_offset = y_offset - currentFrame*px_vspace;
 
@@ -208,7 +211,9 @@ namespace gui
 		int w_compensation = size().width() - viewport()->size().width();
 
 		setFixedWidth(pxunit*2*(chans+1) + w_compensation);
-		viewport()->update();
+
+		if (! (m_currentFrame == info->currentFrame() && m_currentChannel == info->currentChannel()))
+			viewport()->update();
 
 		m_updating = false;
 	}

@@ -12,6 +12,7 @@ public:
 	~TrackerController();
 	void tick();
 	void playRow();
+	void startAt(unsigned int frame, unsigned int row);
 	void setFrame(unsigned int frame);
 	void skip(unsigned int row);
 
@@ -21,6 +22,7 @@ public:
 
 	unsigned int frame() const{ return m_frame; }
 	unsigned int row() const{ return m_row; }
+	bool isHalted() const{ return m_halted; }
 	FtmDocument * document() const{ return m_document; }
 private:
 	void evaluateGlobalEffects(const stChanNote *noteData, int effColumns);

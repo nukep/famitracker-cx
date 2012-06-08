@@ -37,8 +37,7 @@ public:
 
 	void setSoundSink(SoundSink *s);
 
-	// TODO - dan (dan's implementation)
-	bool isPlaying() const{ return false; }
+	bool isRunning() const{ return m_bRunning; }
 
 	void setDocument(FtmDocument *doc);
 	TrackerController * trackerController() const{ return m_trackerctlr; }
@@ -62,6 +61,8 @@ public:
 	void addCycles(int count);
 
 	void run();
+
+	void requestStop();
 
 private:
 	// Internal initialization
@@ -98,8 +99,6 @@ private:
 private:
 	unsigned int		m_lastRow, m_lastFrame;
 	unsigned int		m_iPlayTime;
-	volatile bool		m_bPlaying;
-	bool				m_bPlayLooping;
 	int					m_iFrameCounter;
 
 	int					m_iUpdateCycles;					// Number of cycles/APU update
@@ -127,7 +126,7 @@ private:
 	int					m_iDelayedEnd;
 
 	bool				m_bRendering;
-	bool				m_bRequestRenderStop;
+	volatile bool		m_bRequestStop;
 	bool				m_bPlayerHalted;
 };
 

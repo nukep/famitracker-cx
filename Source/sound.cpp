@@ -225,21 +225,21 @@ void SoundGen::resetTempo()
 
 void SoundGen::checkRenderStop()
 {
-	if (m_bRequestRenderStop)
+	if (m_bRequestStop)
 		return;
 
 	if (m_iRenderEndWhen == SONG_LOOP_LIMIT)
 	{
 		if (m_iRenderedFrames >= m_iRenderEndParam)
 		{
-			m_bRequestRenderStop = true;
+			m_bRequestStop = true;
 		}
 	}
 }
 
 void SoundGen::frameIsDone(int skipFrames)
 {
-	if (m_bRequestRenderStop)
+	if (m_bRequestStop)
 		return;
 
 	m_iRenderedFrames += skipFrames;
@@ -378,11 +378,13 @@ void SoundGen::run()
 {
 	m_bRunning = true;
 	m_bPlayerHalted = false;
-	m_bPlaying = true;
+	m_bRequestStop = false;
 	m_iDelayedStart = 0;
 	m_iFrameCounter = 0;
 
+	resetAPU();
 	setupChannels();
+	resetTempo();
 
 	while (m_bRunning)
 	{
@@ -390,7 +392,7 @@ void SoundGen::run()
 
 		runFrame();
 
-		int channels = m_iChannels;
+		m_bPlayerHalted = m_trackerctlr->isHalted() || m_bRequestStop;
 
 		for (int i = 0; i < CHANNELS; i++)
 		{
@@ -421,6 +423,8 @@ void SoundGen::run()
 					m_pChannels[i]->MakeSilent();
 				}
 			}
+			m_bRunning = false;
+			continue;
 		}
 
 		const int CHANNEL_DELAY = 250;
@@ -459,11 +463,10 @@ void SoundGen::run()
 
 		m_lastRow = row;
 		m_lastFrame = frame;
-
-		// TODO - dan
-/*		if (m_bPlayerHalted && m_bUpdateRow)
-		{
-			haltPlayer();
-		}*/
 	}
+}
+
+void SoundGen::requestStop()
+{
+	m_bRequestStop = true;
 }

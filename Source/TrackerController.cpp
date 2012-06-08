@@ -15,6 +15,9 @@ TrackerController::~TrackerController()
 
 void TrackerController::tick()
 {
+	if (m_halted)
+		return;
+
 	if (m_tempoAccum <= 0)
 	{
 		int ticksPerSec = m_document->GetFrameRate();
@@ -61,6 +64,19 @@ void TrackerController::playRow()
 			}
 		}
 	}
+}
+
+void TrackerController::startAt(unsigned int frame, unsigned int row)
+{
+	unsigned int num_frames = m_document->GetFrameCount();
+	unsigned int num_rows = m_document->GetPatternLength();
+
+	m_frame = frame % num_frames;
+	m_row = row & num_rows;
+
+	m_elapsedFrames = 0;
+	m_jumped = false;
+	m_halted = false;
 }
 
 void TrackerController::setFrame(unsigned int frame)

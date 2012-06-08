@@ -28,6 +28,9 @@ namespace gui
 		QObject::connect(instruments, SIGNAL(itemSelectionChanged()), this, SLOT(instrumentSelect()));
 		QObject::connect(instrumentName, SIGNAL(textEdited(QString)), this, SLOT(instrumentNameChange(QString)));
 
+		QObject::connect(action_Play, SIGNAL(triggered()), this, SLOT(play()));
+		QObject::connect(action_Stop, SIGNAL(triggered()), this, SLOT(stop()));
+
 		updateDocument();
 	}
 
@@ -142,6 +145,11 @@ namespace gui
 		DocInfo *dinfo = gui::activeDocInfo();
 		FtmDocument *d = dinfo->doc();
 
+		if (d->GetSelectedTrack() == i)
+			return;
+
+		gui::stopSong();
+
 		d->SelectTrack(i);
 
 		speed->setValue(d->GetSongSpeed());
@@ -209,5 +217,13 @@ namespace gui
 		CInstrument *inst = (CInstrument*)idx.data(Qt::UserRole).value<void*>();
 		inst->SetName(s.toAscii());
 		setInstrumentName(instruments->currentItem(), idx.row(), s.toAscii());
+	}
+	void MainWindow::play()
+	{
+		gui::playSong();
+	}
+	void MainWindow::stop()
+	{
+		gui::stopSong();
 	}
 }

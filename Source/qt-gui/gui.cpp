@@ -1,9 +1,15 @@
 #include <QApplication>
 #include <QFile>
 #include <vector>
+#include <QDebug>
+#include <QThread>
 #include "gui.hpp"
 #include "MainWindow.hpp"
+#include "threads.hpp"
 #include "../FtmDocument.hpp"
+#include "../sound.hpp"
+#include "../TrackerController.hpp"
+#include "../alsa.hpp"
 
 namespace gui
 {
@@ -34,12 +40,33 @@ namespace gui
 	typedef std::vector<DocInfo> DocsList;
 	DocsList loaded_documents;
 	int active_doc_index;
+	SoundGen *sgen;
+	SoundGenThread *sgen_thread;
+	AlsaSound *alsa;
 
 	QApplication *app;
 	MainWindow *mw;
+
+	static void trackerUpdate(SoundGen *gen)
+	{
+		// happens on non-gui thread
+		const TrackerController *c = gen->trackerController();
+		activeDocInfo()->setCurrentFrame(c->frame());
+		activeDocInfo()->setCurrentRow(c->row());
+		mw->updateFrameChannel();
+	}
+
 	void init(int &argc, char **argv)
 	{
 		active_doc_index = -1;
+
+		alsa = new AlsaSound;
+		alsa->initialize(48000, 1, 200);
+		sgen = new SoundGen;
+		sgen->setSoundSink(alsa);
+		sgen->setTrackerUpdate(trackerUpdate);
+
+		sgen_thread = new SoundGenThread(sgen);
 
 		newDocument(false);
 
@@ -51,8 +78,15 @@ namespace gui
 	}
 	void destroy()
 	{
+		stopSong();
+
 		delete mw;
 		delete app;
+
+		delete sgen_thread;
+
+		delete sgen;
+		delete alsa;
 	}
 	void spin()
 	{
@@ -63,6 +97,15 @@ namespace gui
 	void updateFrameChannel()
 	{
 		mw->updateFrameChannel();
+	}
+
+	static void setActiveDocument(int idx)
+	{
+		active_doc_index = idx;
+		if (idx < 0)
+			return;
+
+		sgen->setDocument(activeDocument());
 	}
 
 	unsigned int loadedDocuments()
@@ -89,10 +132,12 @@ namespace gui
 		if (active_doc_index < 0)
 			return;
 
+		stopSong();
+
 		loaded_documents[active_doc_index].destroy();
 		loaded_documents.erase(loaded_documents.begin()+active_doc_index);
 
-		active_doc_index--;
+		setActiveDocument(active_doc_index-1);
 	}
 
 	void openDocument(FileIO *io, bool close_active)
@@ -102,11 +147,12 @@ namespace gui
 
 		FtmDocument *d = new FtmDocument;
 		d->read(io);
+		d->SelectTrack(0);
 
 		DocInfo a(d);
 
 		loaded_documents.push_back(a);
-		active_doc_index = loaded_documents.size()-1;
+		setActiveDocument(loaded_documents.size()-1);
 	}
 	void newDocument(bool close_active)
 	{
@@ -119,7 +165,28 @@ namespace gui
 		DocInfo a(d);
 
 		loaded_documents.push_back(a);
-		active_doc_index = loaded_documents.size()-1;
+		setActiveDocument(loaded_documents.size()-1);
+	}
+
+	void playSong()
+	{
+		if (sgen_thread->isRunning())
+			return;
+
+		const DocInfo *dinfo = activeDocInfo();
+
+		sgen->trackerController()->startAt(dinfo->currentFrame(), 0);
+
+		sgen_thread->run();
+	}
+
+	void stopSong()
+	{
+		if (sgen_thread->isRunning())
+		{
+			sgen->requestStop();
+		}
+		sgen_thread->wait();
 	}
 
 	FileIO::FileIO(const QString &name, bool reading)
