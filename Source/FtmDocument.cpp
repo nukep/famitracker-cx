@@ -182,6 +182,8 @@ void FtmDocument::createEmpty()
 	// Auto-select new style vibrato for new modules
 	m_iVibratoStyle = VIBRATO_NEW;
 
+	m_iChannelsAvailable = 5;
+
 	SetModifiedFlag(0);
 }
 

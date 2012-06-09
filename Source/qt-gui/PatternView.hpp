@@ -10,6 +10,7 @@ namespace gui
 	class PatternView : public QAbstractScrollArea
 	{
 		Q_OBJECT
+		friend class PatternView_Body;
 	public:
 		PatternView(QWidget *parent);
 

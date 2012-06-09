@@ -43,10 +43,10 @@ namespace gui
 		updateDocument();
 	}
 
-	void MainWindow::updateFrameChannel()
+	void MainWindow::updateFrameChannel(bool modified)
 	{
-		frameView->update();
-		patternView->update();
+		frameView->update(modified);
+		patternView->update(modified);
 	}
 
 	bool MainWindow::event(QEvent *event)
@@ -54,7 +54,6 @@ namespace gui
 		if (event->type() == UPDATEEVENT)
 		{
 			updateFrameChannel();
-		//	qDebug() << "update!";
 			return true;
 		}
 		return QMainWindow::event(event);
@@ -189,7 +188,7 @@ namespace gui
 		tempo->blockSignals(false);
 		speed->blockSignals(false);
 
-		updateFrameChannel();
+		updateFrameChannel(true);
 	}
 
 	void MainWindow::incrementPattern()

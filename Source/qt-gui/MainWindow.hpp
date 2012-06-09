@@ -21,7 +21,7 @@ namespace gui
 	public:
 		MainWindow();
 
-		void updateFrameChannel();
+		void updateFrameChannel(bool modified=false);
 
 	protected:
 		bool event(QEvent *event);

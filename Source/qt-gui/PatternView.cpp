@@ -50,7 +50,8 @@ namespace gui
 		int colspace;
 		QTextOption opt;
 		PatternView_Body()
-			: font("monospace")
+			: font("monospace"),
+			  m_currentFramePixmap(NULL)
 		{
 			font.setPixelSize(12);
 			font.setBold(true);
@@ -60,6 +61,15 @@ namespace gui
 			colspace = px_unit/2;
 			opt.setAlignment(Qt::AlignHCenter | Qt::AlignVCenter);
 		}
+		~PatternView_Body()
+		{
+			if (m_currentFramePixmap != NULL)
+				delete m_currentFramePixmap;
+		}
+
+		PatternView * pvParent() const{ return m_pvParent; }
+
+		PatternView * m_pvParent;
 
 		// c=' ': -
 		void drawChar(QPainter &p, int x, int y, char c, const QColor &col)
@@ -240,7 +250,10 @@ namespace gui
 			p.setBrush(QColor(0,0,64));
 			p.drawRect(px_unit*3, row*px_vspace, rowWidth, px_vspace);
 
-			drawFrame(p, gui::activeDocInfo()->currentFrame());
+			if (m_currentFramePixmap != NULL)
+			{
+				p.drawPixmap(0,0, *m_currentFramePixmap);
+			}
 
 			p.resetTransform();
 
@@ -253,8 +266,32 @@ namespace gui
 			}
 			p.end();
 		}
+		void repaintPixmaps()
+		{
+			FtmDocument *d = gui::activeDocument();
+
+			unsigned int channels = d->GetAvailableChannels();
+
+			int rowWidth = px_unit*3;
+			for (int i = 0; i < channels; i++)
+			{
+				rowWidth += columnWidth(d->GetEffColumns(i)) + colspace;
+			}
+
+			if (m_currentFramePixmap != NULL)
+				delete m_currentFramePixmap;
+
+			m_currentFramePixmap = new QPixmap(rowWidth, d->GetPatternLength()*px_vspace);
+			m_currentFramePixmap->fill(QColor(0,0,0,0));
+
+			QPainter p;
+			p.begin(m_currentFramePixmap);
+			drawFrame(p, gui::activeDocInfo()->currentFrame());
+			p.end();
+		}
 
 		QFont font;
+		QPixmap *m_currentFramePixmap;
 	};
 
 	PatternView::PatternView(QWidget *parent)
@@ -266,6 +303,7 @@ namespace gui
 
 		m_header = new PatternView_Header;
 		m_body = new PatternView_Body;
+		m_body->m_pvParent = this;
 
 		QVBoxLayout *l = new QVBoxLayout;
 		l->setMargin(0);
@@ -280,6 +318,11 @@ namespace gui
 	{
 		DocInfo *dinfo = gui::activeDocInfo();
 		FtmDocument *d = dinfo->doc();
+
+		if (modified || m_currentFrame != dinfo->currentFrame())
+		{
+			m_body->repaintPixmaps();
+		}
 
 		m_currentFrame = dinfo->currentFrame();
 		m_currentRow = dinfo->currentRow();
