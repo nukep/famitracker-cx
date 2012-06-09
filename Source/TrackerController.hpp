@@ -35,6 +35,7 @@ private:
 	unsigned int m_frame, m_row;
 	unsigned int m_jumpFrame, m_jumpRow;
 
+	unsigned int m_lastDocTempo, m_lastDocSpeed;
 	unsigned int m_tempo, m_speed;
 	int m_tempoAccum, m_tempoDecrement;
 

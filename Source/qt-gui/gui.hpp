@@ -25,6 +25,7 @@ namespace gui
 	void openDocument(FileIO *io, bool close_active);
 	void newDocument(bool close_active);
 
+	bool isPlaying();
 	void playSong();
 	void stopSong();
 

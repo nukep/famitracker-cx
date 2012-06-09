@@ -18,6 +18,16 @@ void TrackerController::tick()
 	if (m_halted)
 		return;
 
+	m_document->lock();
+
+	if (m_lastDocTempo != m_document->GetSongTempo() || m_lastDocSpeed != m_document->GetSongSpeed())
+	{
+		setTempo(m_document->GetSongTempo(), m_document->GetSongSpeed());
+
+		m_lastDocTempo = m_tempo;
+		m_lastDocSpeed = m_speed;
+	}
+
 	if (m_tempoAccum <= 0)
 	{
 		int ticksPerSec = m_document->GetFrameRate();
@@ -25,6 +35,8 @@ void TrackerController::tick()
 
 		playRow();
 	}
+
+	m_document->unlock();
 
 	m_tempoAccum -= m_tempoDecrement;
 }
@@ -155,4 +167,7 @@ void TrackerController::initialize(FtmDocument *doc, CTrackerChannel * const * t
 {
 	m_document = doc;
 	m_trackerChannels = trackerChannels;
+
+	m_lastDocTempo = m_document->GetSongTempo();
+	m_lastDocSpeed = m_document->GetSongSpeed();
 }

@@ -186,7 +186,7 @@ namespace gui
 		p.end();
 	}
 
-	void FrameView::update()
+	void FrameView::update(bool modified)
 	{
 		if (m_updating)
 			return;
@@ -212,7 +212,7 @@ namespace gui
 
 		setFixedWidth(pxunit*2*(chans+1) + w_compensation);
 
-		if (! (m_currentFrame == info->currentFrame() && m_currentChannel == info->currentChannel()))
+		if (modified || (!gui::isPlaying()) || (!(m_currentFrame == info->currentFrame() && m_currentChannel == info->currentChannel())))
 			viewport()->update();
 
 		m_updating = false;

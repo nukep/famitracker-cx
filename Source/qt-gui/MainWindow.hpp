@@ -29,6 +29,7 @@ namespace gui
 		void decrementPattern();
 		void instrumentSelect();
 		void instrumentNameChange(QString);
+		void speedTempoChange(int);
 
 		void play();
 		void stop();

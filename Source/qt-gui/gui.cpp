@@ -168,6 +168,11 @@ namespace gui
 		setActiveDocument(loaded_documents.size()-1);
 	}
 
+	bool isPlaying()
+	{
+		return sgen_thread->isRunning();
+	}
+
 	void playSong()
 	{
 		if (sgen_thread->isRunning())

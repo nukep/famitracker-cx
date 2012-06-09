@@ -15,9 +15,8 @@ namespace gui
 		void resizeEvent(QResizeEvent *);
 		void mouseReleaseEvent(QMouseEvent *);
 
+		void update(bool modified=false);
 	public slots:
-		void update();
-
 		void scrollHorizontal(int);
 		void scrollVertical(int);
 	private:

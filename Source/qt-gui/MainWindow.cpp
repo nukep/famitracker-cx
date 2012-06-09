@@ -28,6 +28,9 @@ namespace gui
 		QObject::connect(instruments, SIGNAL(itemSelectionChanged()), this, SLOT(instrumentSelect()));
 		QObject::connect(instrumentName, SIGNAL(textEdited(QString)), this, SLOT(instrumentNameChange(QString)));
 
+		QObject::connect(speed, SIGNAL(valueChanged(int)), this, SLOT(speedTempoChange(int)));
+		QObject::connect(tempo, SIGNAL(valueChanged(int)), this, SLOT(speedTempoChange(int)));
+
 		QObject::connect(action_Play, SIGNAL(triggered()), this, SLOT(play()));
 		QObject::connect(action_Stop, SIGNAL(triggered()), this, SLOT(stop()));
 
@@ -67,7 +70,7 @@ namespace gui
 			songs->addItem(s);
 		}
 
-		setSong(0);
+		setSong(-1);
 		frameView->update();
 
 		instruments->clear();
@@ -119,7 +122,7 @@ namespace gui
 	}
 	void MainWindow::saveAs()
 	{
-		QFileDialog::getSaveFileName(this, tr("Save As"), QString(), tr("FamiTracker files (*.ftm);;All files (*.*)"), 0, 0);
+		qDebug() << QFileDialog::getSaveFileName(this, tr("Save As"), QString(), tr("FamiTracker files (*.ftm);;All files (*.*)"), 0, 0);
 	}
 
 	void MainWindow::quit()
@@ -148,9 +151,15 @@ namespace gui
 		if (d->GetSelectedTrack() == i)
 			return;
 
+		if (i < 0)
+			i = 0;
+
 		gui::stopSong();
 
 		d->SelectTrack(i);
+
+		speed->blockSignals(true);
+		tempo->blockSignals(true);
 
 		speed->setValue(d->GetSongSpeed());
 		tempo->setValue(d->GetSongTempo());
@@ -160,6 +169,9 @@ namespace gui
 		dinfo->setCurrentFrame(0);
 		dinfo->setCurrentRow(0);
 
+		tempo->blockSignals(false);
+		speed->blockSignals(false);
+
 		updateFrameChannel();
 	}
 
@@ -167,6 +179,9 @@ namespace gui
 	{
 		DocInfo *info = gui::activeDocInfo();
 		FtmDocument *doc = info->doc();
+
+		doc->lock();
+
 		int current_frame = info->currentFrame();
 		int current_channel = info->currentChannel();
 		if (changeAll->checkState() == Qt::Checked)
@@ -180,12 +195,17 @@ namespace gui
 		{
 			doc->IncreasePattern(current_frame, current_channel, 1);
 		}
-		frameView->update();
+		frameView->update(true);
+
+		doc->unlock();
 	}
 	void MainWindow::decrementPattern()
 	{
 		DocInfo *info = gui::activeDocInfo();
 		FtmDocument *doc = info->doc();
+
+		doc->lock();
+
 		int current_frame = info->currentFrame();
 		int current_channel = info->currentChannel();
 		if (changeAll->checkState() == Qt::Checked)
@@ -199,7 +219,9 @@ namespace gui
 		{
 			doc->DecreasePattern(current_frame, current_channel, 1);
 		}
-		frameView->update();
+		frameView->update(true);
+
+		doc->unlock();
 	}
 	void MainWindow::instrumentSelect()
 	{
@@ -217,6 +239,16 @@ namespace gui
 		CInstrument *inst = (CInstrument*)idx.data(Qt::UserRole).value<void*>();
 		inst->SetName(s.toAscii());
 		setInstrumentName(instruments->currentItem(), idx.row(), s.toAscii());
+	}
+	void MainWindow::speedTempoChange(int i)
+	{
+		FtmDocument *d = gui::activeDocument();
+		d->lock();
+
+		d->SetSongSpeed(speed->value());
+		d->SetSongTempo(tempo->value());
+
+		d->unlock();
 	}
 	void MainWindow::play()
 	{
