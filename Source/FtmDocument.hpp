@@ -14,6 +14,11 @@ class Document;
 class IO;
 class CTrackerChannel;
 
+namespace boost
+{
+	class mutex;
+}
+
 // Default song settings
 const unsigned int DEFAULT_TEMPO_NTSC   = 150;
 const unsigned int DEFAULT_TEMPO_PAL    = 125;
@@ -43,6 +48,10 @@ class FtmDocument
 public:
 	FtmDocument();
 	~FtmDocument();
+
+	// use lock/unlock while accessing the document
+	void lock();
+	void unlock();
 
 	void createEmpty();
 
@@ -249,6 +258,8 @@ private:
 	stSequence		m_TmpSequences[MAX_SEQUENCES];
 
 	bool m_bModified;
+
+	boost::mutex *	m_modifyLock;
 };
 
 #endif

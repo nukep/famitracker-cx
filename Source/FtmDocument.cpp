@@ -1,5 +1,6 @@
 #include <string.h>
 #include <stdio.h>
+#include <boost/thread/mutex.hpp>
 #include "App.hpp"
 #include "FtmDocument.hpp"
 #include "Document.hpp"
@@ -92,6 +93,8 @@ void CDSample::Allocate(int iSize, char *pData)
 
 FtmDocument::FtmDocument()
 {
+	m_modifyLock = new boost::mutex;
+
 	for (int i = 0; i < MAX_DSAMPLES; i++)
 	{
 		m_DSamples[i].SampleSize = 0;
@@ -154,6 +157,18 @@ FtmDocument::~FtmDocument()
 				delete m_pSequencesN106[i][j];
 		}
 	}
+
+	delete m_modifyLock;
+}
+
+void FtmDocument::lock()
+{
+	m_modifyLock->lock();
+}
+
+void FtmDocument::unlock()
+{
+	m_modifyLock->unlock();
 }
 
 void FtmDocument::createEmpty()

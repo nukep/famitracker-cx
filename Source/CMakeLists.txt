@@ -59,5 +59,9 @@ find_package(ALSA REQUIRED)
 include(${ALSA_INCLUDE_DIR})
 setup_libs("${ALSA_LIBRARY}")
 
+find_package(Boost REQUIRED thread)
+include_directories(${Boost_INCLUDE_DIR})
+setup_libs("${Boost_LIBRARIES}")
+
 add_library(core ${SRC})
 target_link_libraries(core apu)

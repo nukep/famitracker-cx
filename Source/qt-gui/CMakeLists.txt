@@ -26,10 +26,6 @@ find_package(Qt4 REQUIRED QtCore QtGui)
 include(${QT_USE_FILE})
 setup_libs("${QT_LIBRARIES}")
 
-find_package(Boost REQUIRED thread)
-include_directories(${Boost_INCLUDE_DIR})
-setup_libs("${Boost_LIBRARIES}")
-
 # for the generated ui header files
 include_directories("${CMAKE_CURRENT_BINARY_DIR}")
 include_directories(".")
