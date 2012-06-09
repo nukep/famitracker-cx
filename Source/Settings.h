@@ -54,6 +54,7 @@ class CSettingBase
 {
 public:
 	CSettingBase(const char * pSection, const char * pEntry, void *pVariable) : m_pSection(pSection), m_pEntry(pEntry), m_pVariable(pVariable) {}
+	virtual ~CSettingBase(){}
 	virtual void Default() = 0;
 	const char * GetSection() const { return m_pSection; }
 protected:
