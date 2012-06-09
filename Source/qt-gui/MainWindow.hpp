@@ -2,10 +2,19 @@
 #define _MAINWINDOW_HPP_
 
 #include <QMainWindow>
+#include <QEvent>
 #include "ui_mainwindow.h"
 
 namespace gui
 {
+#define UPDATEEVENT QEvent::User
+
+	class UpdateEvent : public QEvent
+	{
+	public:
+		UpdateEvent();
+	};
+
 	class MainWindow : public QMainWindow, Ui_MainWindow
 	{
 		Q_OBJECT
@@ -13,6 +22,9 @@ namespace gui
 		MainWindow();
 
 		void updateFrameChannel();
+
+	protected:
+		bool event(QEvent *event);
 	private:
 		void updateDocument();
 	public slots:

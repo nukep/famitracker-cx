@@ -6,6 +6,12 @@
 
 namespace gui
 {
+	UpdateEvent::UpdateEvent()
+		: QEvent(UPDATEEVENT)
+	{
+
+	}
+
 	MainWindow::MainWindow()
 	{
 		setupUi(this);
@@ -41,6 +47,17 @@ namespace gui
 	{
 		frameView->update();
 		patternView->update();
+	}
+
+	bool MainWindow::event(QEvent *event)
+	{
+		if (event->type() == UPDATEEVENT)
+		{
+			updateFrameChannel();
+		//	qDebug() << "update!";
+			return true;
+		}
+		return QMainWindow::event(event);
 	}
 
 	static void setInstrumentName(QListWidgetItem *item, int i, const char *s)

@@ -53,7 +53,10 @@ namespace gui
 		const TrackerController *c = gen->trackerController();
 		activeDocInfo()->setCurrentFrame(c->frame());
 		activeDocInfo()->setCurrentRow(c->row());
-		mw->updateFrameChannel();
+
+		// post an event to the main thread
+		UpdateEvent *event = new UpdateEvent;
+		QApplication::postEvent(mw, event);
 	}
 
 	void init(int &argc, char **argv)
@@ -61,7 +64,7 @@ namespace gui
 		active_doc_index = -1;
 
 		alsa = new AlsaSound;
-		alsa->initialize(48000, 1, 200);
+		alsa->initialize(48000, 1, 150);
 		sgen = new SoundGen;
 		sgen->setSoundSink(alsa);
 		sgen->setTrackerUpdate(trackerUpdate);
