@@ -9,6 +9,7 @@
 
 #include "ChannelHandler.h"
 #include "Channels2A03.h"
+#include "ChannelsFDS.h"
 #include "ChannelsMMC5.h"
 #include "ChannelsVRC6.h"
 
@@ -113,7 +114,8 @@ void SoundGen::loadMachineSettings(int machine, int rate)
 	double clock_ntsc = CAPU::BASE_FREQ_NTSC / 16.0;
 	double clock_pal = CAPU::BASE_FREQ_PAL / 16.0;
 
-	for (int i = 0; i < NOTE_COUNT; ++i) {
+	for (int i = 0; i < NOTE_COUNT; i++)
+	{
 		// Frequency (in Hz)
 		freq = BASE_FREQ * pow(2.0, double(i) / 12.0);
 
@@ -173,9 +175,9 @@ void SoundGen::loadMachineSettings(int machine, int rate)
 	m_pChannels[CHANID_VRC6_SAWTOOTH]->SetNoteTable(m_iNoteLookupTableSaw);
 	m_pChannels[CHANID_MMC5_SQUARE1]->SetNoteTable(m_iNoteLookupTableNTSC);
 	m_pChannels[CHANID_MMC5_SQUARE2]->SetNoteTable(m_iNoteLookupTableNTSC);
-/*	m_pChannels[CHANID_FDS]->SetNoteTable(m_iNoteLookupTableFDS);
+	m_pChannels[CHANID_FDS]->SetNoteTable(m_iNoteLookupTableFDS);
 
-	m_pChannels[CHANID_N106_CHAN1]->SetNoteTable(m_iNoteLookupTableN106);
+/*	m_pChannels[CHANID_N106_CHAN1]->SetNoteTable(m_iNoteLookupTableN106);
 	m_pChannels[CHANID_N106_CHAN2]->SetNoteTable(m_iNoteLookupTableN106);
 	m_pChannels[CHANID_N106_CHAN3]->SetNoteTable(m_iNoteLookupTableN106);
 	m_pChannels[CHANID_N106_CHAN4]->SetNoteTable(m_iNoteLookupTableN106);
@@ -273,11 +275,14 @@ void SoundGen::createChannels()
 	assignChannel(new CTrackerChannel("Square 2", SNDCHIP_VRC6, CHANID_VRC6_PULSE2), new CVRC6Square2(this));
 	assignChannel(new CTrackerChannel("Sawtooth", SNDCHIP_VRC6, CHANID_VRC6_SAWTOOTH), new CVRC6Sawtooth(this));
 
-	// TODO - dan
-
 	// Nintendo MMC5
 	assignChannel(new CTrackerChannel("Square 1", SNDCHIP_MMC5, CHANID_MMC5_SQUARE1), new CMMC5Square1Chan(this));
 	assignChannel(new CTrackerChannel("Square 2", SNDCHIP_MMC5, CHANID_MMC5_SQUARE2), new CMMC5Square2Chan(this));
+
+	// Nintendo FDS
+	assignChannel(new CTrackerChannel("FDS", SNDCHIP_FDS, CHANID_FDS), new CChannelHandlerFDS(this));
+
+	// TODO - dan
 /*
 	// Namco N106
 	assignChannel(new CTrackerChannel("Namco 1", SNDCHIP_N106, CHANID_N106_CHAN1), new CChannelHandlerN106(this));
@@ -288,9 +293,6 @@ void SoundGen::createChannels()
 	assignChannel(new CTrackerChannel("Namco 6", SNDCHIP_N106, CHANID_N106_CHAN6), new CChannelHandlerN106(this));
 	assignChannel(new CTrackerChannel("Namco 7", SNDCHIP_N106, CHANID_N106_CHAN7), new CChannelHandlerN106(this));
 	assignChannel(new CTrackerChannel("Namco 8", SNDCHIP_N106, CHANID_N106_CHAN8), new CChannelHandlerN106(this));
-
-	// Nintendo FDS
-	assignChannel(new CTrackerChannel("FDS", SNDCHIP_FDS, CHANID_FDS), new CChannelHandlerFDS(this));
 
 	// Konami VRC7
 	assignChannel(new CTrackerChannel("FM Channel 1", SNDCHIP_VRC7, CHANID_VRC7_CH1), new CVRC7Channel(this));

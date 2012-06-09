@@ -1781,10 +1781,10 @@ CInstrument * FtmDocument::CreateInstrument(int type)
 	{
 		case INST_2A03: return new CInstrument2A03;
 		case INST_VRC6: return new CInstrumentVRC6;
+		case INST_FDS: return new CInstrumentFDS;
 	// TODO - dan
 /*		case INST_VRC7: return new CInstrumentVRC7();
 		case INST_N106:	return new CInstrumentN106();
-		case INST_FDS: return new CInstrumentFDS();
 		case INST_S5B: return new CInstrumentS5B();*/
 	}
 

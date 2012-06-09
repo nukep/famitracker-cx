@@ -151,13 +151,13 @@ public:
 	virtual int	GetType() const { return INST_VRC7; }
 	virtual CInstrument* CreateNew() { return new CInstrumentVRC7; }
 	virtual CInstrument* Clone();
-	virtual void Store(FtmDocument *pDocFile);
-	virtual bool Load(FtmDocument *pDocFile);
-	virtual void SaveFile(IO *pFile, CFamiTrackerDoc *pDoc);
-	virtual bool LoadFile(IO *pFile, int iVersion, CFamiTrackerDoc *pDoc);
+	virtual void Store(Document *pDocFile);
+	virtual bool Load(Document *pDocFile);
+	virtual void SaveFile(IO *pFile, FtmDocument *pDoc);
+	virtual bool LoadFile(IO *pFile, int iVersion, FtmDocument *pDoc);
 	virtual int CompileSize(CCompiler *pCompiler);
 	virtual int Compile(CCompiler *pCompiler, int Index);
-	virtual bool CanRelease() const;
+	virtual bool CanRelease(FtmDocument *doc) const;
 public:
 	void		 SetPatch(unsigned int Patch);
 	unsigned int GetPatch() const;
@@ -168,6 +168,8 @@ private:
 	unsigned int m_iRegs[8];		// Custom patch settings
 };
 
+#endif
+
 class CInstrumentFDS : public CInstrument {
 public:
 	CInstrumentFDS();
@@ -175,13 +177,13 @@ public:
 	virtual int GetType() const { return INST_FDS; }
 	virtual CInstrument* CreateNew() { return new CInstrumentFDS; }
 	virtual CInstrument* Clone();
-	virtual void Store(FtmDocument *pDocFile);
-	virtual bool Load(FtmDocument *pDocFile);
-	virtual void SaveFile(IO *pFile, CFamiTrackerDoc *pDoc);
-	virtual bool LoadFile(IO *pFile, int iVersion, CFamiTrackerDoc *pDoc);
-	virtual int CompileSize(CCompiler *pCompiler);
-	virtual int Compile(CCompiler *pCompiler, int Index);
-	virtual bool CanRelease() const;
+	virtual void Store(Document *pDocFile);
+	virtual bool Load(Document *pDocFile);
+	virtual void SaveFile(IO *file, FtmDocument *pDoc);
+	virtual bool LoadFile(IO *file, int iVersion, FtmDocument *pDoc);
+//	virtual int CompileSize(CCompiler *pCompiler);
+//	virtual int Compile(CCompiler *pCompiler, int Index);
+	virtual bool CanRelease(FtmDocument *doc) const;
 public:
 	unsigned char GetSample(int Index) const;
 	void	SetSample(int Index, int Sample);
@@ -200,9 +202,9 @@ public:
 	CSequence* GetArpSeq() const;
 	CSequence* GetPitchSeq() const;
 private:
-	void StoreSequence(FtmDocument *pDocFile, CSequence *pSeq);
-	bool LoadSequence(FtmDocument *pDocFile, CSequence *pSeq);
-	void StoreInstSequence(IO *pDocFile, CSequence *pSeq);
+	void StoreSequence(Document *pDocFile, CSequence *pSeq);
+	bool LoadSequence(Document *pDocFile, CSequence *pSeq);
+	void StoreInstSequence(IO *file, CSequence *pSeq);
 	bool LoadInstSequence(IO *pFile, CSequence *pSeq);
 public:
 	static const int WAVE_SIZE = 64;
@@ -224,19 +226,21 @@ private:
 	CSequence*	  m_pPitch;
 };
 
+#if 0
+
 class CInstrumentN106 : public CInstrument {
 public:
 	CInstrumentN106();
 	virtual int GetType() const { return INST_N106; }
 	virtual CInstrument* CreateNew() { return new CInstrumentN106(); }
 	virtual CInstrument* Clone();
-	virtual void Store(FtmDocument *pDocFile);
-	virtual bool Load(FtmDocument *pDocFile);
-	virtual void SaveFile(IO *pFile, CFamiTrackerDoc *pDoc);
-	virtual bool LoadFile(IO *pFile, int iVersion, CFamiTrackerDoc *pDoc);
+	virtual void Store(Document *pDocFile);
+	virtual bool Load(Document *pDocFile);
+	virtual void SaveFile(IO *pFile, FtmDocument *pDoc);
+	virtual bool LoadFile(IO *pFile, int iVersion, FtmDocument *pDoc);
 	virtual int CompileSize(CCompiler *pCompiler);
 	virtual int Compile(CCompiler *pCompiler, int Index);
-	virtual bool CanRelease() const;
+	virtual bool CanRelease(FtmDocument *doc) const;
 public:	
 	int		GetSeqEnable(int Index) const;
 	int		GetSeqIndex(int Index) const;
@@ -267,13 +271,13 @@ public:
 	virtual int GetType() const { return INST_S5B; };
 	virtual CInstrument* CreateNew() { return new CInstrumentS5B(); };
 	virtual CInstrument* Clone();
-	virtual void Store(FtmDocument *pDocFile);
-	virtual bool Load(FtmDocument *pDocFile);
-	virtual void SaveFile(IO *pFile, CFamiTrackerDoc *pDoc);
-	virtual bool LoadFile(IO *pFile, int iVersion, CFamiTrackerDoc *pDoc);
+	virtual void Store(Document *pDocFile);
+	virtual bool Load(Document *pDocFile);
+	virtual void SaveFile(IO *pFile, FtmDocument *pDoc);
+	virtual bool LoadFile(IO *pFile, int iVersion, FtmDocument *pDoc);
 	virtual int CompileSize(CCompiler *pCompiler);
 	virtual int Compile(CCompiler *pCompiler, int Index);
-	virtual bool CanRelease() const;
+	virtual bool CanRelease(FtmDocument *doc) const;
 public:
 	int		GetSeqEnable(int Index) const;
 	int		GetSeqIndex(int Index) const;

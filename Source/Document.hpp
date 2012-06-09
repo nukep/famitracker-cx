@@ -103,6 +103,8 @@ public:
 	void createBlock(const char *id, int version);
 
 	std::string readString();
+
+	void rollbackPointer(int count);	// avoid this
 private:
 	unsigned int m_iFileVersion;
 

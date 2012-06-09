@@ -149,6 +149,11 @@ std::string Document::readString()
 	return s;
 }
 
+void Document::rollbackPointer(int count)
+{
+	m_iBlockPointer -= count;
+}
+
 void Document::init_pBlockData(Quantity size)
 {
 	if (m_pBlockData != NULL)
