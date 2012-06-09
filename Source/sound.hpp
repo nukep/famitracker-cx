@@ -5,6 +5,8 @@
 
 class SoundSink : public ICallback
 {
+public:
+	virtual void flush() = 0;
 };
 
 class SoundSinkPlayback : public SoundSink

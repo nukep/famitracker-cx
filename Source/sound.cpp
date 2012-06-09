@@ -464,6 +464,8 @@ void SoundGen::run()
 		m_lastRow = row;
 		m_lastFrame = frame;
 	}
+
+	m_sink->flush();
 }
 
 void SoundGen::requestStop()

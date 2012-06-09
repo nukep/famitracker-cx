@@ -9,6 +9,7 @@ class WavOutput : public SoundSink
 public:
 	WavOutput(IO *io, int channels, int sampleRate);
 	void FlushBuffer(int16 *Buffer, uint32 Size);
+	void flush(){}
 
 	void finalize();
 private:

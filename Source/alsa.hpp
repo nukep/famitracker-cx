@@ -11,6 +11,7 @@ public:
 	void initialize(unsigned int sampleRate, unsigned int channels, unsigned int latency_ms);
 	void close();
 	void FlushBuffer(int16 *Buffer, uint32 Size);
+	void flush();
 private:
 	void * m_handle;
 };

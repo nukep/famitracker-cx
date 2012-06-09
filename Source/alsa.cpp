@@ -73,5 +73,11 @@ void AlsaSound::FlushBuffer(int16 *buffer, uint32 size)
 		fprintf(stderr, "Short write (expected %li, wrote %li)\n", (long)size, frames);
 		return;
 	}
+}
 
+void AlsaSound::flush()
+{
+	snd_pcm_t *handle = (snd_pcm_t*)m_handle;
+
+	snd_pcm_prepare(handle);
 }
