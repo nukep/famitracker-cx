@@ -112,7 +112,7 @@ void TrackerController::setFrame(unsigned int frame)
 
 void TrackerController::skip(unsigned int row)
 {
-	setFrame(m_jumpFrame+1);
+	setFrame(m_frame+1);
 	m_jumpRow = row;
 }
 

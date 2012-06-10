@@ -426,6 +426,10 @@ void SoundGen::run()
 				}
 			}
 			m_bRunning = false;
+			if (m_trackerUpdateCallback != NULL)
+			{
+				(*m_trackerUpdateCallback)(this);
+			}
 			continue;
 		}
 

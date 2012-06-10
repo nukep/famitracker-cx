@@ -74,7 +74,7 @@ namespace gui
 		newDocument(false);
 
 		app = new QApplication(argc, argv);
-		app->setApplicationName(QApplication::tr("Famitracker"));
+		app->setApplicationName(QApplication::tr("FamiTracker"));
 
 		mw = new MainWindow;
 		mw->resize(1024, 768);

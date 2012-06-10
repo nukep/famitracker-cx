@@ -3,7 +3,7 @@
 
 int main(int argc, char *argv[])
 {
-	printf("Welcome to Famitracker!\n");
+	printf("Welcome to FamiTracker!\n");
 
 	gui::init(argc, argv);
 

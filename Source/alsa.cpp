@@ -33,7 +33,7 @@ void AlsaSound::initialize(unsigned int sampleRate, unsigned int channels, unsig
 								  channels,
 								  sampleRate,
 								  1,
-								  latency_ms*1000)) < 0)	/* 0.2sec */
+								  latency_ms*1000)) < 0)
 	{
 		// error
 		fprintf(stderr, "Playback open error: %s\n", snd_strerror(err));

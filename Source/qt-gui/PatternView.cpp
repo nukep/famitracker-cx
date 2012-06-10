@@ -91,8 +91,11 @@ namespace gui
 			return px_unit*6 + colspace*2 + (px_unit*3+colspace)*(effColumns+1);
 		}
 
-		void drawNote(QPainter &p, int x, int y, const stChanNote &n, int effColumns)
+		// returns true if note terminates frame
+		bool drawNote(QPainter &p, int x, int y, const stChanNote &n, int effColumns)
 		{
+			bool terminate = false;
+
 			char buf[6];
 
 			if (n.Note == NONE)
@@ -161,6 +164,9 @@ namespace gui
 			{
 				unsigned char eff = n.EffNumber[i];
 
+				if (eff == EF_JUMP || eff == EF_SKIP || eff == EF_HALT)
+					terminate = true;
+
 				if (eff == 0)
 					buf[0] = ' ';
 				else
@@ -182,9 +188,12 @@ namespace gui
 				drawChar(p, x, y, buf[1], Qt::green);
 				x += px_unit + colspace;
 			}
+
+			return terminate;
 		}
 
-		void drawFrame(QPainter &p, unsigned int frame)
+		// returns rows
+		int drawFrame(QPainter &p, unsigned int frame)
 		{
 			FtmDocument *d = gui::activeDocument();
 			unsigned int patternLength = d->GetPatternLength();
@@ -192,6 +201,8 @@ namespace gui
 			unsigned int track = d->GetSelectedTrack();
 
 			unsigned int channels = d->GetAvailableChannels();
+
+			int rows = 0;
 
 			for (unsigned int i=0; i < patternLength; i++)
 			{
@@ -205,6 +216,8 @@ namespace gui
 
 				int x = px_unit*3;
 
+				bool terminateFrame = false;
+
 				for (unsigned int j = 0; j < channels; j++)
 				{
 					stChanNote note;
@@ -213,11 +226,19 @@ namespace gui
 
 					unsigned int effcolumns = d->GetEffColumns(j);
 
-					drawNote(p, x, y, note, effcolumns);
+					terminateFrame |= drawNote(p, x, y, note, effcolumns);
 
 					x += columnWidth(effcolumns) + colspace;
 				}
+
+				rows++;
+
+				if (terminateFrame)
+				{
+					break;
+				}
 			}
+			return rows;
 		}
 
 		void paintEvent(QPaintEvent *)
@@ -235,6 +256,8 @@ namespace gui
 			p.setFont(font);
 
 			unsigned int row = gui::activeDocInfo()->currentRow();
+			if (row >= m_currentFrameRows)
+				row = m_currentFrameRows-1;
 
 			int rowWidth = 0;
 			for (int i = 0; i < channels; i++)
@@ -247,12 +270,19 @@ namespace gui
 
 			p.translate(0, frame_y_offset);
 
-			p.setBrush(QColor(0,0,64));
-			p.drawRect(px_unit*3, row*px_vspace, rowWidth, px_vspace);
+			{
+				QLinearGradient lg(0, 0, 0, 1);
+				lg.setColorAt(0, QColor(0, 0, 128));
+				lg.setColorAt(1, QColor(0, 0, 64));
+				lg.setCoordinateMode(QGradient::ObjectBoundingMode);
+
+				p.setBrush(lg);
+				p.drawRect(px_unit*3 - colspace/2, row*px_vspace, rowWidth, px_vspace);
+			}
 
 			if (m_currentFramePixmap != NULL)
 			{
-				p.drawPixmap(0,0, *m_currentFramePixmap);
+				p.drawPixmap(QPoint(0,0), *m_currentFramePixmap, QRect(0,0,m_currentFramePixmap->width(), m_currentFrameRows*px_vspace));
 			}
 
 			p.resetTransform();
@@ -286,12 +316,13 @@ namespace gui
 
 			QPainter p;
 			p.begin(m_currentFramePixmap);
-			drawFrame(p, gui::activeDocInfo()->currentFrame());
+			m_currentFrameRows = drawFrame(p, gui::activeDocInfo()->currentFrame());
 			p.end();
 		}
 
 		QFont font;
 		QPixmap *m_currentFramePixmap;
+		int m_currentFrameRows;
 	};
 
 	PatternView::PatternView(QWidget *parent)
