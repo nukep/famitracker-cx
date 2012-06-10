@@ -4,7 +4,8 @@
 #include "TrackerChannel.h"
 
 TrackerController::TrackerController()
-	: m_frame(0), m_row(0), m_elapsedFrames(0), m_halted(false)
+	: m_frame(0), m_row(0), m_elapsedFrames(0), m_halted(false),
+	  m_jumpFrame(0), m_jumpRow(0)
 {
 
 }
@@ -48,6 +49,10 @@ void TrackerController::playRow()
 	int channels = m_document->GetAvailableChannels();
 
 	m_jumped = false;
+
+	m_frame = m_jumpFrame;
+	m_row = m_jumpRow;
+
 	for (int i=0; i < channels; i++)
 	{
 		stChanNote note;
@@ -59,20 +64,18 @@ void TrackerController::playRow()
 
 	if (m_jumped)
 	{
-		m_frame = m_jumpFrame;
-		m_row = m_jumpRow;
 	}
 	else
 	{
-		m_row++;
-		if (m_row >= pattern_length)
+		m_jumpRow++;
+		if (m_jumpRow >= pattern_length)
 		{
-			m_row = 0;
-			m_frame++;
+			m_jumpRow = 0;
+			m_jumpFrame++;
 
-			if (m_frame >= m_document->GetFrameCount())
+			if (m_jumpFrame >= m_document->GetFrameCount())
 			{
-				m_frame = 0;
+				m_jumpFrame = 0;
 			}
 		}
 	}
@@ -85,6 +88,8 @@ void TrackerController::startAt(unsigned int frame, unsigned int row)
 
 	m_frame = frame % num_frames;
 	m_row = row & num_rows;
+	m_jumpFrame = m_frame;
+	m_jumpRow = m_row;
 
 	m_elapsedFrames = 0;
 	m_jumped = false;
@@ -93,7 +98,7 @@ void TrackerController::startAt(unsigned int frame, unsigned int row)
 
 void TrackerController::setFrame(unsigned int frame)
 {
-	if (m_frame == frame && m_row == 0)
+	if (m_jumpFrame == frame && m_jumpRow == 0)
 		return;
 
 	unsigned int num_frames = m_document->GetFrameCount();
@@ -107,7 +112,7 @@ void TrackerController::setFrame(unsigned int frame)
 
 void TrackerController::skip(unsigned int row)
 {
-	setFrame(m_frame+1);
+	setFrame(m_jumpFrame+1);
 	m_jumpRow = row;
 }
 
