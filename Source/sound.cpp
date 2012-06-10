@@ -384,7 +384,6 @@ void SoundGen::run()
 	m_iDelayedStart = 0;
 	m_iFrameCounter = 0;
 
-	resetAPU();
 	setupChannels();
 	resetTempo();
 
