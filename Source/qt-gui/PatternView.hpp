@@ -16,6 +16,11 @@ namespace gui
 
 		void update(bool modified=false);
 
+	protected:
+		void wheelEvent(QWheelEvent *);
+		void focusInEvent(QFocusEvent *);
+		void focusOutEvent(QFocusEvent *);
+		void scrollContentsBy(int dx, int dy);
 	private:
 		PatternView_Header * m_header;
 		PatternView_Body * m_body;

@@ -2,6 +2,7 @@
 #define _GUI_HPP_
 
 #include "../Document.hpp"
+#include "../FamiTrackerTypes.h"
 
 class QFile;
 class QString;
@@ -41,9 +42,11 @@ namespace gui
 		unsigned int currentFrame() const{ return m_currentFrame; }
 		unsigned int currentChannel() const{ return m_currentChannel; }
 		unsigned int currentRow() const{ return m_currentRow; }
+		unsigned int framePlayLength(unsigned int frame) const;
 	protected:
 		FtmDocument * m_doc;
 		unsigned int m_currentFrame, m_currentChannel, m_currentRow;
+		unsigned int m_framePlayLengths[MAX_FRAMES];
 
 		void destroy();
 	};

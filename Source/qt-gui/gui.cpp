@@ -16,6 +16,10 @@ namespace gui
 	DocInfo::DocInfo(FtmDocument *d)
 		: m_doc(d), m_currentChannel(0), m_currentFrame(0), m_currentRow(0)
 	{
+		for (unsigned int i = 0; i < d->GetFrameCount(); i++)
+		{
+			m_framePlayLengths[i] = d->getFramePlayLength(i);
+		}
 	}
 	void DocInfo::destroy()
 	{
@@ -27,6 +31,7 @@ namespace gui
 			frame = doc()->GetFrameCount()-1;
 
 		m_currentFrame = frame;
+		setCurrentRow(m_currentRow);
 	}
 	void DocInfo::setCurrentChannel(unsigned int chan)
 	{
@@ -36,7 +41,13 @@ namespace gui
 	}
 	void DocInfo::setCurrentRow(unsigned int row)
 	{
+		if (row >= framePlayLength(m_currentFrame))
+			row = framePlayLength(m_currentFrame)-1;
 		m_currentRow = row;
+	}
+	unsigned int DocInfo::framePlayLength(unsigned int frame) const
+	{
+		return m_framePlayLengths[frame];
 	}
 
 	typedef std::vector<DocInfo> DocsList;

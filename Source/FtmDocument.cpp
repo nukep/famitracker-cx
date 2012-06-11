@@ -184,6 +184,9 @@ void FtmDocument::createEmpty()
 
 	m_iChannelsAvailable = 5;
 
+	m_highlight = 4;
+	m_secondHighlight = 16;
+
 	SetModifiedFlag(0);
 }
 
@@ -347,13 +350,13 @@ bool FtmDocument::readNew_params(Document *doc)
 
 	if (block_ver > 3)
 	{
-		Highlight = doc->getBlockInt();
-		SecondHighlight = doc->getBlockInt();
+		m_highlight = doc->getBlockInt();
+		m_secondHighlight = doc->getBlockInt();
 	}
 	else
 	{
-		Highlight = 4;
-		SecondHighlight = 16;
+		m_highlight = 4;
+		m_secondHighlight = 16;
 	}
 
 	// remark: porting bug fix over
@@ -1058,6 +1061,35 @@ void FtmDocument::SetSongTempo(unsigned int Tempo)
 		m_pSelectedTune->SetSongTempo(Tempo);
 		SetModifiedFlag();
 	}
+}
+
+unsigned int FtmDocument::getFramePlayLength(unsigned int frame) const
+{
+	ftm_Assert(frame < GetFrameCount());
+
+	unsigned int track = GetSelectedTrack();
+
+	stChanNote note;
+
+	for (unsigned int i = 0; i < GetPatternLength(); i++)
+	{
+		for (unsigned int j = 0; j < GetAvailableChannels(); j++)
+		{
+			unsigned int pattern = GetPatternAtFrame(frame, j);
+			GetDataAtPattern(track, pattern, j, i, &note);
+
+			for (unsigned int k = 0; k <= GetEffColumns(j); k++)
+			{
+				unsigned char eff = note.EffNumber[k];
+				if (eff == EF_JUMP || eff == EF_SKIP || eff == EF_HALT)
+				{
+					return i+1;
+				}
+			}
+		}
+	}
+
+	return GetPatternLength();
 }
 
 unsigned int FtmDocument::GetEffColumns(int Track, unsigned int Channel) const

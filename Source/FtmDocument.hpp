@@ -87,6 +87,8 @@ public:
 	unsigned int	GetSongSpeed(int Track)		const { return m_pTunes[Track]->GetSongSpeed(); }
 	unsigned int	GetSongTempo(int Track)		const { return m_pTunes[Track]->GetSongTempo(); }
 
+	unsigned int	getFramePlayLength(unsigned int frame) const;
+
 	unsigned int	GetEffColumns(int Track, unsigned int Channel) const;
 	unsigned int	GetEffColumns(unsigned int Channel) const;
 	void			SetEffColumns(unsigned int Channel, unsigned int Columns);
@@ -202,7 +204,9 @@ public:
 	void SetModifiedFlag(bool modified=true){ m_bModified = modified; }
 	void UpdateViews(){ /* TODO - dan */ }
 
-	int Highlight, SecondHighlight;
+	int				GetHighlight() const{ return m_highlight; }
+	int				GetSecondHighlight() const{ return m_secondHighlight; }
+
 private:
 	bool bForceBackup;
 	bool readOld(Document *doc, IO *io);
@@ -258,6 +262,7 @@ private:
 	stSequence		m_TmpSequences[MAX_SEQUENCES];
 
 	bool m_bModified;
+	int m_highlight, m_secondHighlight;
 
 	boost::mutex *	m_modifyLock;
 };

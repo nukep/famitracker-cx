@@ -2,6 +2,7 @@
 #include <QVBoxLayout>
 #include <QScrollBar>
 #include <QPainter>
+#include <QWheelEvent>
 #include <QDebug>
 #include <stdio.h>
 #include <string.h>
@@ -51,7 +52,13 @@ namespace gui
 		int colspace;
 		QTextOption opt;
 		PatternView_Body()
-			: font("monospace")
+			: font("monospace"),
+			  m_currentRowHighlightPixmap(NULL),
+			  m_currentRowNoFocusHighlightPixmap(NULL),
+			  m_currentRowRecordHighlightPixmap(NULL),
+			  m_primaryHighlightPixmap(NULL),
+			  m_secondaryHighlightPixmap(NULL),
+			  m_modified(true)
 		{
 			font.setPixelSize(11);
 			font.setBold(true);
@@ -60,9 +67,56 @@ namespace gui
 			px_vspace = px_unit * vertical_factor;
 			colspace = px_unit/2;
 			opt.setAlignment(Qt::AlignHCenter | Qt::AlignVCenter);
+
+			redrawHighlightPixmaps();
 		}
 		~PatternView_Body()
 		{
+			if (m_currentRowHighlightPixmap != NULL)
+				delete m_currentRowHighlightPixmap;
+			if (m_currentRowNoFocusHighlightPixmap != NULL)
+				delete m_currentRowNoFocusHighlightPixmap;
+			if (m_currentRowRecordHighlightPixmap != NULL)
+				delete m_currentRowRecordHighlightPixmap;
+			if (m_primaryHighlightPixmap != NULL)
+				delete m_primaryHighlightPixmap;
+			if (m_secondaryHighlightPixmap != NULL)
+				delete m_secondaryHighlightPixmap;
+		}
+
+		void createHighlightPixmap(QPixmap **pix, double r, double g, double b)
+		{
+			if (*pix != NULL)
+				delete *pix;
+
+			*pix = new QPixmap(1, px_vspace);
+
+			QPainter p;
+			p.begin(*pix);
+			{
+				const double x = 192;
+				const double y = 128;
+				const double z = 64;
+				QLinearGradient lg(0, 0, 0, 1);
+				lg.setColorAt(0, QColor(r*x, g*x, b*x));
+				lg.setColorAt(0.25, QColor(r*y, g*y, b*y));
+				lg.setColorAt(1, QColor(r*z, g*z, b*z));
+				lg.setCoordinateMode(QGradient::ObjectBoundingMode);
+
+				p.setPen(Qt::NoPen);
+				p.setBrush(lg);
+				p.drawRect(0, 0, 1, px_vspace);
+			}
+			p.end();
+		}
+
+		void redrawHighlightPixmaps()
+		{
+			createHighlightPixmap(&m_currentRowHighlightPixmap, 0,0,1);
+			createHighlightPixmap(&m_currentRowNoFocusHighlightPixmap, 0.375,0.375,0.3);
+			createHighlightPixmap(&m_currentRowRecordHighlightPixmap, 0.5625,0.18,0.25);
+			createHighlightPixmap(&m_primaryHighlightPixmap, 0,0.25,0);
+			createHighlightPixmap(&m_secondaryHighlightPixmap, 0,0.125,0);
 		}
 
 		PatternView * pvParent() const{ return m_pvParent; }
@@ -75,7 +129,7 @@ namespace gui
 			if (c == ' ')
 			{
 				c = '-';
-				p.setPen(selected?QColor(64, 128, 64):QColor(32, 64, 32));
+				p.setPen(selected?QColor(32, 64, 32):QColor(16, 32, 16));
 			}
 			else
 			{
@@ -241,10 +295,17 @@ namespace gui
 			return to;
 		}
 
+		int yOffset() const
+		{
+			return height()/2 - px_vspace/2;
+		}
+
 		void paintEvent(QPaintEvent *)
 		{
-			FtmDocument *d = gui::activeDocument();
+			const DocInfo *dinfo = gui::activeDocInfo();
+			const FtmDocument *d = dinfo->doc();
 
+			unsigned int frame = dinfo->currentFrame();
 			unsigned int channels = d->GetAvailableChannels();
 
 			QPainter p;
@@ -255,7 +316,7 @@ namespace gui
 
 			p.setFont(font);
 
-			unsigned int row = gui::activeDocInfo()->currentRow();
+			unsigned int row = dinfo->currentRow();
 
 			int rowWidth = 0;
 			for (int i = 0; i < channels; i++)
@@ -263,31 +324,68 @@ namespace gui
 				rowWidth += columnWidth(d->GetEffColumns(i)) + colspace;
 			}
 
-			const int y_offset = height()/2 - px_vspace/2;
+			const int row_x = px_unit*3 - colspace/2;
+
+			const int y_offset = yOffset();
 			const int frame_y_offset = y_offset - row*px_vspace;
 
 			p.translate(0, frame_y_offset);
 
+			// current row highlight
+			QPixmap *highlight;
+			if (pvParent()->hasFocus())
 			{
-				QLinearGradient lg(0, 0, 0, 1);
-				lg.setColorAt(0, QColor(0, 0, 128));
-				lg.setColorAt(1, QColor(0, 0, 64));
-				lg.setCoordinateMode(QGradient::ObjectBoundingMode);
+				highlight = m_currentRowHighlightPixmap;
+			}
+			else
+			{
+				highlight = m_currentRowNoFocusHighlightPixmap;
+			}
+			p.drawPixmap(row_x, row*px_vspace, rowWidth, px_vspace, *highlight);
 
-				p.setBrush(lg);
-				p.drawRect(px_unit*3 - colspace/2, row*px_vspace, rowWidth, px_vspace);
+			unsigned int currentframe_playlength = dinfo->framePlayLength(frame);
+
+			for (int i = 0; i < currentframe_playlength; i++)
+			{
+				if (i == row)
+					continue;
+
+				if (i % d->GetSecondHighlight() == 0)
+				{
+					// primary
+					p.drawPixmap(row_x, i*px_vspace, rowWidth, px_vspace, *m_primaryHighlightPixmap);
+				}
+				else if (i % d->GetHighlight() == 0)
+				{
+					// secondary
+					p.drawPixmap(row_x, i*px_vspace, rowWidth, px_vspace, *m_secondaryHighlightPixmap);
+				}
 			}
 
 			int from = row - y_offset / px_vspace;
 			int to = row + y_offset / px_vspace;
 
-			unsigned int frame = gui::activeDocInfo()->currentFrame();
+			if (from < 0)
+			{
+				// draw the previous frame
+				if (frame > 0)
+				{
+					int prevlen = dinfo->framePlayLength(frame-1);
+					int prevlen_pix = prevlen*px_vspace;
+
+					p.translate(0, -prevlen_pix);
+
+					drawFrame(p, frame-1, from+prevlen, prevlen-1, false);
+
+					p.translate(0, prevlen_pix);
+				}
+			}
 
 			int lr = drawFrame(p, frame, from, to, true);
 
 			if (to > lr)
 			{
-				if (frame+1 < gui::activeDocument()->GetFrameCount())
+				if (frame+1 < d->GetFrameCount())
 				{
 					// draw the next frame, too
 					p.translate(0, (lr+1)*px_vspace);
@@ -305,10 +403,61 @@ namespace gui
 				x += columnWidth(d->GetEffColumns(i)) + colspace;
 			}
 			p.end();
+
+			m_modified = false;
+		}
+		void mouseReleaseEvent(QMouseEvent *e)
+		{
+			if (gui::isPlaying())
+				return;
+
+			int y = (e->y() - yOffset())/px_vspace;
+			if (e->y() - yOffset() < 0)
+				y--;
+
+			DocInfo *dinfo = gui::activeDocInfo();
+
+			y += dinfo->currentRow();
+
+			unsigned int frame = dinfo->currentFrame();
+
+			if (y < 0)
+			{
+				if (frame == 0)
+					return;
+				frame--;
+				y += dinfo->framePlayLength(frame);
+				if (y < 0)
+					return;
+			}
+			else if (y >= dinfo->framePlayLength(frame))
+			{
+				frame++;
+				if (frame == dinfo->doc()->GetFrameCount())
+					return;
+				y -= dinfo->framePlayLength(frame-1);
+				if (y >= dinfo->framePlayLength(frame))
+					return;
+			}
+
+			dinfo->setCurrentRow(y);
+			dinfo->setCurrentFrame(frame);
+			gui::updateFrameChannel();
+		}
+
+		void setModified()
+		{
+			m_modified = true;
 		}
 
 		QFont font;
 		int m_currentFrameRows;
+		QPixmap *m_currentRowHighlightPixmap;
+		QPixmap *m_currentRowNoFocusHighlightPixmap;
+		QPixmap *m_currentRowRecordHighlightPixmap;
+		QPixmap *m_primaryHighlightPixmap;
+		QPixmap *m_secondaryHighlightPixmap;
+		bool m_modified;
 	};
 
 	PatternView::PatternView(QWidget *parent)
@@ -331,19 +480,84 @@ namespace gui
 		viewport()->setLayout(l);
 	}
 
+	void PatternView::wheelEvent(QWheelEvent *e)
+	{
+		if (gui::isPlaying())
+			return;
+
+		DocInfo *dinfo = gui::activeDocInfo();
+		bool down = e->delta() < 0;
+
+		int f = dinfo->currentFrame();
+		int r = dinfo->currentRow();
+		r = down ? r+4 : r-4;
+
+		if (r < 0)
+		{
+			if (f == 0)
+			{
+				// wrap to the end
+				f = dinfo->doc()->GetFrameCount()-1;
+			}
+			else
+			{
+				f--;
+			}
+			r = dinfo->framePlayLength(f) + r;
+		}
+		else if (r >= dinfo->framePlayLength(f))
+		{
+			r = r - dinfo->framePlayLength(f);
+			f++;
+			if (f >= dinfo->doc()->GetFrameCount())
+			{
+				// wrap to the beginning
+				f = 0;
+			}
+		}
+
+		dinfo->setCurrentFrame(f);
+		dinfo->setCurrentRow(r);
+
+		gui::updateFrameChannel();
+	}
+	void PatternView::focusInEvent(QFocusEvent *e)
+	{
+		m_body->repaint();
+		QAbstractScrollArea::focusInEvent(e);
+	}
+	void PatternView::focusOutEvent(QFocusEvent *e)
+	{
+		m_body->repaint();
+		QAbstractScrollArea::focusOutEvent(e);
+	}
+	void PatternView::scrollContentsBy(int dx, int dy)
+	{
+		if (gui::isPlaying())
+			return;
+
+		DocInfo *dinfo = gui::activeDocInfo();
+		dinfo->setCurrentRow(verticalScrollBar()->value());
+		gui::updateFrameChannel();
+	}
+
 	void PatternView::update(bool modified)
 	{
 		DocInfo *dinfo = gui::activeDocInfo();
-		FtmDocument *d = dinfo->doc();
 
 		if (modified || m_currentFrame != dinfo->currentFrame())
 		{
-		//	m_body->repaintPixmaps();
+			m_body->setModified();
 		}
 
 		m_currentFrame = dinfo->currentFrame();
 		m_currentRow = dinfo->currentRow();
 		m_currentChannel = dinfo->currentChannel();
+
+		verticalScrollBar()->blockSignals(true);
+		verticalScrollBar()->setRange(0, dinfo->framePlayLength(m_currentFrame));
+		verticalScrollBar()->setValue(m_currentRow);
+		verticalScrollBar()->blockSignals(false);
 
 		m_body->repaint();
 	}
