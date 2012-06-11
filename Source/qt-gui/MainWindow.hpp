@@ -3,6 +3,7 @@
 
 #include <QMainWindow>
 #include <QEvent>
+#include <QMutex>
 #include "ui_mainwindow.h"
 
 namespace gui
@@ -22,6 +23,8 @@ namespace gui
 		MainWindow();
 
 		void updateFrameChannel(bool modified=false);
+
+		void sendUpdateEvent();
 
 	protected:
 		bool event(QEvent *event);
@@ -45,6 +48,9 @@ namespace gui
 
 		void play();
 		void stop();
+	private:
+		int m_updateCount;	// number of queued up update events
+		QMutex m_updateCountMutex;
 	};
 }
 

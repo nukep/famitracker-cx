@@ -13,6 +13,7 @@ namespace gui
 	}
 
 	MainWindow::MainWindow()
+		: m_updateCount(0)
 	{
 		setupUi(this);
 		QObject::connect(actionNew, SIGNAL(triggered()), this, SLOT(newDoc()));
@@ -49,10 +50,33 @@ namespace gui
 		patternView->update(modified);
 	}
 
+	void MainWindow::sendUpdateEvent()
+	{
+		// called from tracker update thread
+		m_updateCountMutex.lock();
+		if (m_updateCount >= 2)
+		{
+			// forget it
+			m_updateCountMutex.unlock();
+			return;
+		}
+
+		m_updateCount++;
+		m_updateCountMutex.unlock();
+
+		// post an event to the main thread
+		UpdateEvent *event = new UpdateEvent;
+		QApplication::postEvent(this, event);
+	}
+
 	bool MainWindow::event(QEvent *event)
 	{
 		if (event->type() == UPDATEEVENT)
 		{
+			m_updateCountMutex.lock();
+			m_updateCount--;
+			m_updateCountMutex.unlock();
+
 			updateFrameChannel();
 			return true;
 		}

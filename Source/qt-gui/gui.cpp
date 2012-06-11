@@ -54,9 +54,7 @@ namespace gui
 		activeDocInfo()->setCurrentFrame(c->frame());
 		activeDocInfo()->setCurrentRow(c->row());
 
-		// post an event to the main thread
-		UpdateEvent *event = new UpdateEvent;
-		QApplication::postEvent(mw, event);
+		mw->sendUpdateEvent();
 	}
 
 	void init(int &argc, char **argv)
