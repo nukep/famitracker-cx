@@ -2,6 +2,7 @@
 #include <QVBoxLayout>
 #include <QScrollBar>
 #include <QPainter>
+#include <QDebug>
 #include <stdio.h>
 #include <string.h>
 #include "PatternView.hpp"
@@ -50,10 +51,9 @@ namespace gui
 		int colspace;
 		QTextOption opt;
 		PatternView_Body()
-			: font("monospace"),
-			  m_currentFramePixmap(NULL)
+			: font("monospace")
 		{
-			font.setPixelSize(12);
+			font.setPixelSize(11);
 			font.setBold(true);
 			px_unit = font.pixelSize();
 			px_hspace = px_unit * horizontal_factor;
@@ -63,8 +63,6 @@ namespace gui
 		}
 		~PatternView_Body()
 		{
-			if (m_currentFramePixmap != NULL)
-				delete m_currentFramePixmap;
 		}
 
 		PatternView * pvParent() const{ return m_pvParent; }
@@ -72,12 +70,12 @@ namespace gui
 		PatternView * m_pvParent;
 
 		// c=' ': -
-		void drawChar(QPainter &p, int x, int y, char c, const QColor &col)
+		void drawChar(QPainter &p, int x, int y, char c, const QColor &col, bool selected)
 		{
 			if (c == ' ')
 			{
 				c = '-';
-				p.setPen(QColor(64, 128, 64));
+				p.setPen(selected?QColor(64, 128, 64):QColor(32, 64, 32));
 			}
 			else
 			{
@@ -92,8 +90,11 @@ namespace gui
 		}
 
 		// returns true if note terminates frame
-		bool drawNote(QPainter &p, int x, int y, const stChanNote &n, int effColumns)
+		bool drawNote(QPainter &p, int x, int y, const stChanNote &n, int effColumns, bool selected)
 		{
+			const QColor primary = selected ? Qt::green : Qt::darkGreen;
+			const QColor volcol = selected ? QColor(128, 128, 255) : QColor(64, 64, 128);
+			const QColor effcol = selected ? QColor(255, 128, 128) : QColor(128, 64, 64);
 			bool terminate = false;
 
 			char buf[6];
@@ -101,14 +102,14 @@ namespace gui
 			if (n.Note == NONE)
 			{
 				for (int i=0;i<3;i++)
-					drawChar(p, x + px_unit*i, y, ' ', Qt::black);
+					drawChar(p, x + px_unit*i, y, ' ', Qt::black, selected);
 				x += px_unit*3 + colspace;
 			}
 			else if (n.Note == RELEASE)
 			{
 				// two bars
 				p.setPen(Qt::NoPen);
-				p.setBrush(Qt::green);
+				p.setBrush(primary);
 				int hw = px_unit*2;
 				int hh = px_vspace/4;
 				int hth = px_vspace*2/3;
@@ -121,7 +122,7 @@ namespace gui
 			{
 				// one bar
 				p.setPen(Qt::NoPen);
-				p.setBrush(Qt::green);
+				p.setBrush(primary);
 				int hw = px_unit*2;
 				int hh = px_vspace/4;
 				p.drawRect( x + (px_unit*3-hw)/2, y + (px_vspace-hh)/2, hw, hh);
@@ -131,16 +132,16 @@ namespace gui
 			{
 				int ni = n.Note - C;
 				sprintf(buf, "%c", noteletters[ni]);
-				drawChar(p, x, y, buf[0], Qt::green);
+				drawChar(p, x, y, buf[0], primary, selected);
 				x += px_unit;
 
 				buf[0] = notesharps[ni];
 				if (buf[0] == ' ') buf[0] = '-';
-				drawChar(p, x, y, buf[0], Qt::green);
+				drawChar(p, x, y, buf[0], primary, selected);
 				x += px_unit;
 
 				sprintf(buf, "%d", n.Octave);
-				drawChar(p, x, y, buf[0], Qt::green);
+				drawChar(p, x, y, buf[0], primary, selected);
 				x += px_unit + colspace;
 			}
 
@@ -148,16 +149,16 @@ namespace gui
 				sprintf(buf, "  ");
 			else
 				sprintf(buf, "%02X", n.Instrument);
-			drawChar(p, x, y, buf[0], Qt::green);
+			drawChar(p, x, y, buf[0], primary, selected);
 			x += px_unit;
-			drawChar(p, x, y, buf[1], Qt::green);
+			drawChar(p, x, y, buf[1], primary, selected);
 			x += px_unit + colspace;
 
 			if (n.Vol > 0xF)
 				buf[0] = ' ';
 			else
 				sprintf(buf, "%X", n.Vol);
-			drawChar(p, x, y, buf[0], QColor(128, 128, 255));
+			drawChar(p, x, y, buf[0], volcol, selected);
 			x += px_unit + colspace;
 
 			for (unsigned int i = 0; i <= effColumns; i++)
@@ -171,7 +172,7 @@ namespace gui
 					buf[0] = ' ';
 				else
 					buf[0] = EFF_CHAR[eff-1];
-				drawChar(p, x, y, buf[0], QColor(255, 128, 128));
+				drawChar(p, x, y, buf[0], effcol, selected);
 				x += px_unit;
 
 				if (eff == 0)
@@ -183,17 +184,17 @@ namespace gui
 					unsigned char effp = n.EffParam[i];
 					sprintf(buf, "%02X", effp);
 				}
-				drawChar(p, x, y, buf[0], Qt::green);
+				drawChar(p, x, y, buf[0], primary, selected);
 				x += px_unit;
-				drawChar(p, x, y, buf[1], Qt::green);
+				drawChar(p, x, y, buf[1], primary, selected);
 				x += px_unit + colspace;
 			}
 
 			return terminate;
 		}
 
-		// returns rows
-		int drawFrame(QPainter &p, unsigned int frame)
+		// returns last row drawn ("to")
+		int drawFrame(QPainter &p, unsigned int frame, int from, int to, bool selected)
 		{
 			FtmDocument *d = gui::activeDocument();
 			unsigned int patternLength = d->GetPatternLength();
@@ -202,14 +203,15 @@ namespace gui
 
 			unsigned int channels = d->GetAvailableChannels();
 
-			int rows = 0;
+			from = from < 0 ? 0 : from;
+			to = to > patternLength-1 ? patternLength-1 : to;
 
-			for (unsigned int i=0; i < patternLength; i++)
+			for (int i = from; i <= to; i++)
 			{
 				int y = px_vspace*i;
 
 				char buf[6];
-				p.setPen(Qt::green);
+				p.setPen(selected?Qt::green:Qt::darkGreen);
 				sprintf(buf, "%02X", i);
 
 				p.drawText(QRect(0,y,px_unit*3-colspace/2,px_vspace), buf, opt);
@@ -226,19 +228,17 @@ namespace gui
 
 					unsigned int effcolumns = d->GetEffColumns(j);
 
-					terminateFrame |= drawNote(p, x, y, note, effcolumns);
+					terminateFrame |= drawNote(p, x, y, note, effcolumns, selected);
 
 					x += columnWidth(effcolumns) + colspace;
 				}
 
-				rows++;
-
 				if (terminateFrame)
 				{
-					break;
+					return i;
 				}
 			}
-			return rows;
+			return to;
 		}
 
 		void paintEvent(QPaintEvent *)
@@ -256,8 +256,6 @@ namespace gui
 			p.setFont(font);
 
 			unsigned int row = gui::activeDocInfo()->currentRow();
-			if (row >= m_currentFrameRows)
-				row = m_currentFrameRows-1;
 
 			int rowWidth = 0;
 			for (int i = 0; i < channels; i++)
@@ -280,14 +278,26 @@ namespace gui
 				p.drawRect(px_unit*3 - colspace/2, row*px_vspace, rowWidth, px_vspace);
 			}
 
-			if (m_currentFramePixmap != NULL)
+			int from = row - y_offset / px_vspace;
+			int to = row + y_offset / px_vspace;
+
+			unsigned int frame = gui::activeDocInfo()->currentFrame();
+
+			int lr = drawFrame(p, frame, from, to, true);
+
+			if (to > lr)
 			{
-				p.drawPixmap(QPoint(0,0), *m_currentFramePixmap, QRect(0,0,m_currentFramePixmap->width(), m_currentFrameRows*px_vspace));
+				if (frame+1 < gui::activeDocument()->GetFrameCount())
+				{
+					// draw the next frame, too
+					p.translate(0, (lr+1)*px_vspace);
+					drawFrame(p, frame+1, 0, to-lr-1, false);
+				}
 			}
 
 			p.resetTransform();
 
-			p.setPen(Qt::darkGray);
+			p.setPen(QColor(80,80,80));
 			int x = px_unit*3 - colspace/2;
 			for (int i = 0; i <= channels; i++)
 			{
@@ -296,32 +306,8 @@ namespace gui
 			}
 			p.end();
 		}
-		void repaintPixmaps()
-		{
-			FtmDocument *d = gui::activeDocument();
-
-			unsigned int channels = d->GetAvailableChannels();
-
-			int rowWidth = px_unit*3;
-			for (int i = 0; i < channels; i++)
-			{
-				rowWidth += columnWidth(d->GetEffColumns(i)) + colspace;
-			}
-
-			if (m_currentFramePixmap != NULL)
-				delete m_currentFramePixmap;
-
-			m_currentFramePixmap = new QPixmap(rowWidth, d->GetPatternLength()*px_vspace);
-			m_currentFramePixmap->fill(QColor(0,0,0,0));
-
-			QPainter p;
-			p.begin(m_currentFramePixmap);
-			m_currentFrameRows = drawFrame(p, gui::activeDocInfo()->currentFrame());
-			p.end();
-		}
 
 		QFont font;
-		QPixmap *m_currentFramePixmap;
 		int m_currentFrameRows;
 	};
 
@@ -352,7 +338,7 @@ namespace gui
 
 		if (modified || m_currentFrame != dinfo->currentFrame())
 		{
-			m_body->repaintPixmaps();
+		//	m_body->repaintPixmaps();
 		}
 
 		m_currentFrame = dinfo->currentFrame();

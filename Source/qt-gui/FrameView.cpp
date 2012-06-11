@@ -68,7 +68,10 @@ namespace gui
 		unsigned int frame, chan;
 		if (posToFrameChannel(p, frame, chan))
 		{
-			dinfo->setCurrentFrame(frame);
+			if (!gui::isPlaying())
+			{
+				dinfo->setCurrentFrame(frame);
+			}
 			dinfo->setCurrentChannel(chan);
 			gui::updateFrameChannel();
 		}
@@ -235,7 +238,7 @@ namespace gui
 
 	void FrameView::scrollVertical(int i)
 	{
-		if (m_updating)
+		if (gui::isPlaying() || m_updating)
 			return;
 
 		DocInfo *dinfo = gui::activeDocInfo();

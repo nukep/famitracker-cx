@@ -30,6 +30,8 @@ namespace gui
 	}
 	void DocInfo::setCurrentChannel(unsigned int chan)
 	{
+		if (chan >= doc()->GetAvailableChannels())
+			return;
 		m_currentChannel = chan;
 	}
 	void DocInfo::setCurrentRow(unsigned int row)
