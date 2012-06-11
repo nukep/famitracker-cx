@@ -16,10 +16,7 @@ namespace gui
 	DocInfo::DocInfo(FtmDocument *d)
 		: m_doc(d), m_currentChannel(0), m_currentFrame(0), m_currentRow(0)
 	{
-		for (unsigned int i = 0; i < d->GetFrameCount(); i++)
-		{
-			m_framePlayLengths[i] = d->getFramePlayLength(i);
-		}
+		calculateFramePlayLengths();
 	}
 	void DocInfo::destroy()
 	{
@@ -84,15 +81,25 @@ namespace gui
 		return m_framePlayLengths[frame];
 	}
 
+	void DocInfo::calculateFramePlayLengths()
+	{
+		for (unsigned int i = 0; i < doc()->GetFrameCount(); i++)
+		{
+			m_framePlayLengths[i] = doc()->getFramePlayLength(i);
+		}
+	}
+
 	typedef std::vector<DocInfo> DocsList;
 	DocsList loaded_documents;
 	int active_doc_index;
 	SoundGen *sgen;
 	SoundGenThread *sgen_thread;
-	AlsaSound *alsa;
+	SoundSinkPlayback *sink;
 
 	QApplication *app;
 	MainWindow *mw;
+
+	bool edit_mode = false;
 
 	static void trackerUpdate(SoundGen *gen)
 	{
@@ -108,10 +115,10 @@ namespace gui
 	{
 		active_doc_index = -1;
 
-		alsa = new AlsaSound;
-		alsa->initialize(48000, 1, 150);
+		sink = new AlsaSound;
+		sink->initialize(48000, 1, 150);
 		sgen = new SoundGen;
-		sgen->setSoundSink(alsa);
+		sgen->setSoundSink(sink);
 		sgen->setTrackerUpdate(trackerUpdate);
 
 		sgen_thread = new SoundGenThread(sgen);
@@ -134,7 +141,7 @@ namespace gui
 		delete sgen_thread;
 
 		delete sgen;
-		delete alsa;
+		delete sink;
 	}
 	void spin()
 	{
@@ -220,6 +227,10 @@ namespace gui
 	{
 		return sgen_thread->isRunning();
 	}
+	bool isEditing()
+	{
+		return edit_mode;
+	}
 
 	void playSong()
 	{
@@ -240,6 +251,12 @@ namespace gui
 			sgen->requestStop();
 		}
 		sgen_thread->wait();
+	}
+
+	void toggleEditMode()
+	{
+		edit_mode = !edit_mode;
+		mw->updateEditMode();
 	}
 
 	FileIO::FileIO(const QString &name, bool reading)

@@ -25,7 +25,7 @@ namespace gui
 		void updateFrameChannel(bool modified=false);
 
 		void sendUpdateEvent();
-
+		void updateEditMode();
 	protected:
 		bool event(QEvent *event);
 	private:
@@ -48,6 +48,7 @@ namespace gui
 
 		void play();
 		void stop();
+		void toggleEditMode();
 	private:
 		int m_updateCount;	// number of queued up update events
 		QMutex m_updateCountMutex;

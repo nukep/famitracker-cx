@@ -40,6 +40,7 @@ namespace gui
 
 		QObject::connect(action_Play, SIGNAL(triggered()), this, SLOT(play()));
 		QObject::connect(action_Stop, SIGNAL(triggered()), this, SLOT(stop()));
+		QObject::connect(actionToggle_edit_mode, SIGNAL(triggered()), this, SLOT(toggleEditMode()));
 
 		updateDocument();
 	}
@@ -67,6 +68,12 @@ namespace gui
 		// post an event to the main thread
 		UpdateEvent *event = new UpdateEvent;
 		QApplication::postEvent(this, event);
+	}
+	void MainWindow::updateEditMode()
+	{
+		bool b = gui::isEditing();
+		actionToggle_edit_mode->setChecked(b);
+		patternView->update();
 	}
 
 	bool MainWindow::event(QEvent *event)
@@ -197,6 +204,7 @@ namespace gui
 		gui::stopSong();
 
 		d->SelectTrack(i);
+		dinfo->calculateFramePlayLengths();
 
 		speed->blockSignals(true);
 		tempo->blockSignals(true);
@@ -297,5 +305,9 @@ namespace gui
 	void MainWindow::stop()
 	{
 		gui::stopSong();
+	}
+	void MainWindow::toggleEditMode()
+	{
+		gui::toggleEditMode();
 	}
 }

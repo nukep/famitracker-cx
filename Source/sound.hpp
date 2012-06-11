@@ -6,6 +6,7 @@
 class SoundSink : public ICallback
 {
 public:
+	virtual ~SoundSink(){}
 	virtual void flush() = 0;
 };
 

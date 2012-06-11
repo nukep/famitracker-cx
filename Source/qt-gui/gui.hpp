@@ -27,6 +27,7 @@ namespace gui
 	void newDocument(bool close_active);
 
 	bool isPlaying();
+	bool isEditing();
 	void playSong();
 	void stopSong();
 	static inline void toggleSong()
@@ -40,6 +41,7 @@ namespace gui
 			playSong();
 		}
 	}
+	void toggleEditMode();
 
 	class DocInfo
 	{
@@ -55,6 +57,7 @@ namespace gui
 		unsigned int currentChannel() const{ return m_currentChannel; }
 		unsigned int currentRow() const{ return m_currentRow; }
 		unsigned int framePlayLength(unsigned int frame) const;
+		void calculateFramePlayLengths();
 	protected:
 		FtmDocument * m_doc;
 		unsigned int m_currentFrame, m_currentChannel, m_currentRow;

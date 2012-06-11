@@ -20,6 +20,27 @@ namespace gui
 		PatternView_Header()
 		{
 			setFixedHeight(header_height);
+
+			m_gradientPixmap = new QPixmap(1, header_height);
+
+			QPainter p;
+			p.begin(m_gradientPixmap);
+			{
+				QLinearGradient lg(0, 0, 0, 1);
+				lg.setColorAt(0, QColor(204,204,204));
+				lg.setColorAt(0.25, QColor(255,255,255));
+				lg.setColorAt(1, QColor(128,128,128));
+				lg.setCoordinateMode(QGradient::ObjectBoundingMode);
+
+				p.setPen(Qt::NoPen);
+				p.setBrush(lg);
+				p.drawRect(0, 0, 1, header_height);
+			}
+			p.end();
+		}
+		~PatternView_Header()
+		{
+			delete m_gradientPixmap;
 		}
 
 		void paintEvent(QPaintEvent *)
@@ -27,14 +48,12 @@ namespace gui
 			QPainter p;
 			p.begin(this);
 
-			p.setPen(Qt::NoPen);
-			p.setBrush(Qt::red);
-
-			p.drawRect(rect());
+			p.drawPixmap(0,0,width(), height(), *m_gradientPixmap);
 
 			p.end();
 		}
 
+		QPixmap *m_gradientPixmap;
 	};
 
 	static const float vertical_factor = 1.25f;
@@ -335,7 +354,14 @@ namespace gui
 			QPixmap *highlight;
 			if (pvParent()->hasFocus())
 			{
-				highlight = m_currentRowHighlightPixmap;
+				if (gui::isEditing())
+				{
+					highlight = m_currentRowRecordHighlightPixmap;
+				}
+				else
+				{
+					highlight = m_currentRowHighlightPixmap;
+				}
 			}
 			else
 			{
@@ -488,6 +514,10 @@ namespace gui
 		if (k == Qt::Key_Enter || k == Qt::Key_Return)
 		{
 			gui::toggleSong();
+		}
+		if (k == Qt::Key_Space)
+		{
+			gui::toggleEditMode();
 		}
 		if (gui::isPlaying())
 			return;
