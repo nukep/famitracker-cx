@@ -345,7 +345,12 @@ namespace gui
 
 			unsigned int currentframe_playlength = dinfo->framePlayLength(frame);
 
-			for (int i = 0; i < currentframe_playlength; i++)
+			int from = row - y_offset / px_vspace;
+			int to = row + y_offset / px_vspace;
+
+			int highlight_to = to+1>currentframe_playlength?currentframe_playlength:to+1;
+
+			for (int i = from<0?0:from; i < highlight_to; i++)
 			{
 				if (i == row)
 					continue;
@@ -361,9 +366,6 @@ namespace gui
 					p.drawPixmap(row_x, i*px_vspace, rowWidth, px_vspace, *m_secondaryHighlightPixmap);
 				}
 			}
-
-			int from = row - y_offset / px_vspace;
-			int to = row + y_offset / px_vspace;
 
 			if (from < 0)
 			{
@@ -480,6 +482,28 @@ namespace gui
 		viewport()->setLayout(l);
 	}
 
+	void PatternView::keyPressEvent(QKeyEvent *e)
+	{
+		int k = e->key();
+		if (k == Qt::Key_Enter || k == Qt::Key_Return)
+		{
+			gui::toggleSong();
+		}
+		if (gui::isPlaying())
+			return;
+		DocInfo *dinfo = gui::activeDocInfo();
+		if (k == Qt::Key_Up)
+		{
+			dinfo->scrollFrameBy(-1);
+			gui::updateFrameChannel();
+		}
+		if (k == Qt::Key_Down)
+		{
+			dinfo->scrollFrameBy(1);
+			gui::updateFrameChannel();
+		}
+	}
+
 	void PatternView::wheelEvent(QWheelEvent *e)
 	{
 		if (gui::isPlaying())
@@ -488,37 +512,7 @@ namespace gui
 		DocInfo *dinfo = gui::activeDocInfo();
 		bool down = e->delta() < 0;
 
-		int f = dinfo->currentFrame();
-		int r = dinfo->currentRow();
-		r = down ? r+4 : r-4;
-
-		if (r < 0)
-		{
-			if (f == 0)
-			{
-				// wrap to the end
-				f = dinfo->doc()->GetFrameCount()-1;
-			}
-			else
-			{
-				f--;
-			}
-			r = dinfo->framePlayLength(f) + r;
-		}
-		else if (r >= dinfo->framePlayLength(f))
-		{
-			r = r - dinfo->framePlayLength(f);
-			f++;
-			if (f >= dinfo->doc()->GetFrameCount())
-			{
-				// wrap to the beginning
-				f = 0;
-			}
-		}
-
-		dinfo->setCurrentFrame(f);
-		dinfo->setCurrentRow(r);
-
+		dinfo->scrollFrameBy(down ? 4 : -4);
 		gui::updateFrameChannel();
 	}
 	void PatternView::focusInEvent(QFocusEvent *e)

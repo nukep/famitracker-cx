@@ -29,6 +29,17 @@ namespace gui
 	bool isPlaying();
 	void playSong();
 	void stopSong();
+	static inline void toggleSong()
+	{
+		if (isPlaying())
+		{
+			stopSong();
+		}
+		else
+		{
+			playSong();
+		}
+	}
 
 	class DocInfo
 	{
@@ -39,6 +50,7 @@ namespace gui
 		void setCurrentFrame(unsigned int frame);
 		void setCurrentChannel(unsigned int chan);
 		void setCurrentRow(unsigned int row);
+		void scrollFrameBy(int delta);
 		unsigned int currentFrame() const{ return m_currentFrame; }
 		unsigned int currentChannel() const{ return m_currentChannel; }
 		unsigned int currentRow() const{ return m_currentRow; }

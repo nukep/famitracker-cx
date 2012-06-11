@@ -18,6 +18,7 @@ namespace gui
 		if (m_thread != NULL)
 			return;
 
+		m_thread_running = true;
 		m_thread = new boost::thread(_job, this);
 	}
 	void SoundGenThread::wait()
@@ -52,7 +53,6 @@ namespace gui
 
 	void SoundGenThread::_job(SoundGenThread *t)
 	{
-		t->m_thread_running = true;
 		t->m_gen->run();
 		t->m_thread_running = false;
 	}

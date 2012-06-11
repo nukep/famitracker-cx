@@ -17,6 +17,7 @@ namespace gui
 		void update(bool modified=false);
 
 	protected:
+		void keyPressEvent(QKeyEvent *);
 		void wheelEvent(QWheelEvent *);
 		void focusInEvent(QFocusEvent *);
 		void focusOutEvent(QFocusEvent *);

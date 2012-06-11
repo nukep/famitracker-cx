@@ -45,6 +45,40 @@ namespace gui
 			row = framePlayLength(m_currentFrame)-1;
 		m_currentRow = row;
 	}
+	void DocInfo::scrollFrameBy(int delta)
+	{
+		int f = currentFrame();
+		int r = currentRow();
+		r += delta;
+
+		if (r < 0)
+		{
+			if (f == 0)
+			{
+				// wrap to the end
+				f = doc()->GetFrameCount()-1;
+			}
+			else
+			{
+				f--;
+			}
+			r = framePlayLength(f) + r;
+		}
+		else if (r >= framePlayLength(f))
+		{
+			r = r - framePlayLength(f);
+			f++;
+			if (f >= doc()->GetFrameCount())
+			{
+				// wrap to the beginning
+				f = 0;
+			}
+		}
+
+		setCurrentFrame(f);
+		setCurrentRow(r);
+	}
+
 	unsigned int DocInfo::framePlayLength(unsigned int frame) const
 	{
 		return m_framePlayLengths[frame];
