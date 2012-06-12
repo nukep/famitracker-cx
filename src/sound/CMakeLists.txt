@@ -5,3 +5,7 @@ include_directories("..")
 
 add_library(fami-alsa-sound MODULE alsa.cpp alsa.hpp)
 target_link_libraries(fami-alsa-sound ${ALSA_LIBRARY})
+
+install(TARGETS fami-alsa-sound
+	LIBRARY DESTINATION lib
+)

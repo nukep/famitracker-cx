@@ -15,6 +15,8 @@ if ("${CMAKE_SYSTEM}" MATCHES "Linux")
 	set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -Wl,--no-as-needed")
 endif()
 
+option(INSTALL_PORTABLE "Optimize installation for portable packaging" OFF)
+
 option(UI_QT "Build the Qt GUI" ON)
 
 add_subdirectory("src")

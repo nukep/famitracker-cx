@@ -76,3 +76,7 @@ include_directories(${Boost_INCLUDE_DIR})
 
 add_library(fami-core SHARED ${SRC})
 target_link_libraries(fami-core ${CMAKE_DL_LIBS} ${Boost_LIBRARIES})
+
+install(TARGETS fami-core
+	LIBRARY DESTINATION lib
+)

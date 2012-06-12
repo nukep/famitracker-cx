@@ -46,3 +46,11 @@ add_executable(famitracker-qt ${SRC} ${MOC_SRC} ${MOC_INC} ${UI_SRC})
 target_link_libraries(famitracker-qt fami-core)
 target_link_libraries(famitracker-qt ${QT_LIBRARIES} ${Boost_LIBRARIES})
 
+install(TARGETS famitracker-qt
+	RUNTIME DESTINATION bin
+)
+if (INSTALL_PORTABLE)
+	install(PROGRAMS install/famitracker-qt.sh
+		DESTINATION .
+	)
+endif()
