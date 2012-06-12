@@ -58,7 +58,7 @@ static void tracker_update(SoundGen *g)
 {
 	TrackerController *c = g->trackerController();
 	int frame = c->frame();
-	printf("[ %02X: %02X/%02X : ", frame, c->row(), c->document()->GetPatternLength());
+	printf("[ %02X/%02X: %02X/%02X : ", frame, c->document()->GetFrameCount()-1, c->row(), c->document()->GetPatternLength());
 	for (int i = 0; i < c->document()->GetAvailableChannels(); i++)
 	{
 		printf("%02X ", c->document()->GetPatternAtFrame(frame, i));
@@ -120,6 +120,9 @@ int main(int argc, char *argv[])
 		sg->run();
 		delete sg;
 		delete sink;
+
+		fflush(stdout);
+		printf("\n");
 	}
 
 	return 0;
