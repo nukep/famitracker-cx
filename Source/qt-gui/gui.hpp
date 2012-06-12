@@ -11,6 +11,7 @@ class FtmDocument;
 namespace gui
 {
 	void init(int &argc, char **argv);
+	void init_2(const char *sound_name);
 	void destroy();
 	void spin();
 

@@ -2,6 +2,11 @@
 #include <stdio.h>
 #include "alsa.hpp"
 
+SoundSink * sound_create()
+{
+	return new AlsaSound;
+}
+
 AlsaSound::AlsaSound()
 	: m_handle(NULL)
 {

@@ -9,7 +9,7 @@
 #include "../FtmDocument.hpp"
 #include "../sound.hpp"
 #include "../TrackerController.hpp"
-#include "../alsa.hpp"
+#include "../App.hpp"
 
 namespace gui
 {
@@ -113,9 +113,15 @@ namespace gui
 
 	void init(int &argc, char **argv)
 	{
+		app = new QApplication(argc, argv);
+		app->setApplicationName(QApplication::tr("FamiTracker"));
+	}
+
+	void init_2(const char *sound_name)
+	{
 		active_doc_index = -1;
 
-		sink = new AlsaSound;
+		sink = (SoundSinkPlayback*)app::loadSoundSink(sound_name);
 		sink->initialize(48000, 1, 150);
 		sgen = new SoundGen;
 		sgen->setSoundSink(sink);
@@ -124,9 +130,6 @@ namespace gui
 		sgen_thread = new SoundGenThread(sgen);
 
 		newDocument(false);
-
-		app = new QApplication(argc, argv);
-		app->setApplicationName(QApplication::tr("FamiTracker"));
 
 		mw = new MainWindow;
 		mw->resize(1024, 768);

@@ -18,5 +18,5 @@ endif()
 add_subdirectory("Source")
 
 add_executable(famitracker Source/main.cpp)
-target_link_libraries(famitracker core qt-gui)
+target_link_libraries(famitracker fami-core qt-gui)
 target_link_libraries(famitracker ${FT_LIBS})

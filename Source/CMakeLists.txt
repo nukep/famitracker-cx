@@ -6,8 +6,6 @@ set(SRC
 	exceptions.cpp
 	exceptions.hpp
 
-	alsa.cpp
-	alsa.hpp
 	wavoutput.cpp
 	wavoutput.hpp
 	sound.cpp
@@ -54,17 +52,30 @@ set(SRC
 	Settings.h
 )
 
+set(CUR_SRC "${CMAKE_CURRENT_SOURCE_DIR}")
+
+macro (add_sources)
+	file (RELATIVE_PATH _relPath "${CUR_SRC}" "${CMAKE_CURRENT_SOURCE_DIR}")
+	foreach (_src ${ARGN})
+		if (_relPath)
+			list (APPEND SRC "${_relPath}/${_src}")
+		else()
+			list (APPEND SRC "${_src}")
+		endif()
+	endforeach()
+	if (_relPath)
+		# propagate SRCS to parent directory
+		set (SRC ${SRC} PARENT_SCOPE)
+	endif()
+endmacro()
+
 add_subdirectory("APU")
 
+add_subdirectory("sound")
 add_subdirectory("qt-gui")
-
-find_package(ALSA REQUIRED)
-include(${ALSA_INCLUDE_DIR})
-setup_libs("${ALSA_LIBRARY}")
 
 find_package(Boost REQUIRED thread)
 include_directories(${Boost_INCLUDE_DIR})
-setup_libs("${Boost_LIBRARIES}")
 
-add_library(core ${SRC})
-target_link_libraries(core apu)
+add_library(fami-core SHARED ${SRC})
+target_link_libraries(fami-core ${CMAKE_DL_LIBS} ${Boost_LIBRARIES})

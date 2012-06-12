@@ -1,7 +1,4 @@
-project(apu)
-cmake_minimum_required(VERSION 2.6)
-
-set(SRC
+set(APU_SRC
 	../Blip_Buffer/Blip_Buffer.cpp
 	../Blip_Buffer/Blip_Buffer.h
 
@@ -42,5 +39,4 @@ set(SRC
 	vrc7tone.h
 )
 
-add_library(apu ${SRC})
-
+add_sources(${APU_SRC})

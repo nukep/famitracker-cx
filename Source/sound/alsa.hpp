@@ -1,7 +1,9 @@
 #ifndef _ALSA_HPP_
 #define _ALSA_HPP_
 
-#include "sound.hpp"
+#include "../sound.hpp"
+
+extern "C" SoundSink * sound_create();
 
 class AlsaSound : public SoundSinkPlayback
 {
