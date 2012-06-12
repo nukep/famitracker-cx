@@ -1,7 +1,7 @@
 #ifndef _ALSA_HPP_
 #define _ALSA_HPP_
 
-#include "../sound.hpp"
+#include "core/sound.hpp"
 
 extern "C" SoundSink * sound_create();
 

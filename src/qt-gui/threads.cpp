@@ -1,6 +1,6 @@
 #include <boost/thread.hpp>
 #include "threads.hpp"
-#include "../sound.hpp"
+#include "core/sound.hpp"
 
 namespace gui
 {

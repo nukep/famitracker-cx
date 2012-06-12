@@ -15,8 +15,6 @@ if ("${CMAKE_SYSTEM}" MATCHES "Linux")
 	set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -Wl,--no-as-needed")
 endif()
 
-add_subdirectory("src")
+option(UI_QT "Build the Qt GUI" ON)
 
-add_executable(famitracker src/main.cpp)
-target_link_libraries(famitracker fami-core qt-gui)
-target_link_libraries(famitracker ${FT_LIBS})
+add_subdirectory("src")

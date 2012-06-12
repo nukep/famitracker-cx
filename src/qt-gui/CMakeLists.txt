@@ -1,6 +1,8 @@
 project(qt-gui)
 
 set(SRC
+	main.cpp
+
 	gui.cpp
 	gui.hpp
 
@@ -34,8 +36,13 @@ setup_libs("${Boost_LIBRARIES}")
 include_directories("${CMAKE_CURRENT_BINARY_DIR}")
 include_directories(".")
 
+include_directories("..")
+
 QT4_WRAP_UI(UI_SRC ${UI_FILES})
 
 QT4_WRAP_CPP(MOC_SRC ${MOC_INC})
 
-add_library(qt-gui ${SRC} ${MOC_SRC} ${MOC_INC} ${UI_SRC})
+add_executable(famitracker-qt ${SRC} ${MOC_SRC} ${MOC_INC} ${UI_SRC})
+target_link_libraries(famitracker-qt fami-core)
+target_link_libraries(famitracker-qt ${QT_LIBRARIES} ${Boost_LIBRARIES})
+

@@ -8,7 +8,7 @@
 #include <string.h>
 #include "PatternView.hpp"
 #include "gui.hpp"
-#include "../FtmDocument.hpp"
+#include "core/FtmDocument.hpp"
 
 namespace gui
 {

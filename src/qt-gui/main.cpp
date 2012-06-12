@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <string.h>
-#include "qt-gui/gui.hpp"
-#include "App.hpp"
+#include "gui.hpp"
+#include "core/App.hpp"
 
 const char *default_sound="alsa";
 
