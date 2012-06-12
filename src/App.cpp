@@ -39,7 +39,7 @@ namespace app
 			// not found
 			sound_handle_t h;
 			char libname[128];
-			sprintf(libname, "./Source/sound/libfami-%s-sound.so", name);
+			sprintf(libname, "./src/sound/libfami-%s-sound.so", name);
 			h.handle = dlopen(libname, RTLD_LAZY);
 			if (h.handle == NULL)
 			{
