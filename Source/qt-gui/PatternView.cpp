@@ -579,7 +579,7 @@ namespace gui
 		m_currentChannel = dinfo->currentChannel();
 
 		verticalScrollBar()->blockSignals(true);
-		verticalScrollBar()->setRange(0, dinfo->framePlayLength(m_currentFrame));
+		verticalScrollBar()->setRange(0, dinfo->framePlayLength(m_currentFrame)-1);
 		verticalScrollBar()->setValue(m_currentRow);
 		verticalScrollBar()->blockSignals(false);
 
