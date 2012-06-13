@@ -12,9 +12,13 @@ public:
 	void flush(){}
 
 	void finalize();
+
+	int sampleRate() const{ return m_sampleRate; }
 private:
 	IO *m_io;
 	Quantity m_size;
+
+	int m_sampleRate;
 };
 
 #endif

@@ -60,7 +60,7 @@ void SoundGen::setDocument(FtmDocument *doc)
 	generateVibratoTable(doc->GetVibratoStyle());
 
 	// TODO - dan: load settings
-	m_apu.SetupSound(48000, 1, doc->GetMachine());
+	m_apu.SetupSound(m_sink->sampleRate(), 1, doc->GetMachine());
 	m_apu.SetupMixer(16, 12000, 24, 100);
 
 	loadMachineSettings(doc->GetMachine(), doc->GetEngineSpeed());

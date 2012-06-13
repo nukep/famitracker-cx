@@ -25,6 +25,8 @@ void AlsaSound::initialize(unsigned int sampleRate, unsigned int channels, unsig
 
 	int err;
 
+	m_sampleRate = sampleRate;
+
 	if ((err = snd_pcm_open(&handle, "default", SND_PCM_STREAM_PLAYBACK, 0)) < 0)
 	{
 		// error
@@ -85,4 +87,10 @@ void AlsaSound::flush()
 	snd_pcm_t *handle = (snd_pcm_t*)m_handle;
 
 	snd_pcm_prepare(handle);
+}
+
+int AlsaSound::sampleRate() const
+{
+	// TODO - dan
+	return m_sampleRate;
 }

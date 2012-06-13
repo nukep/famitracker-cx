@@ -8,6 +8,7 @@ class SoundSink : public ICallback
 public:
 	virtual ~SoundSink(){}
 	virtual void flush() = 0;
+	virtual int sampleRate() const = 0;
 };
 
 class SoundSinkPlayback : public SoundSink

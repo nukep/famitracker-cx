@@ -14,8 +14,11 @@ public:
 	void close();
 	void FlushBuffer(int16 *Buffer, uint32 Size);
 	void flush();
+
+	int sampleRate() const;
 private:
 	void * m_handle;
+	int m_sampleRate;
 };
 
 #endif
