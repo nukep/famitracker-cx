@@ -1295,7 +1295,7 @@ void FtmDocument::DecreaseEffect(unsigned int Frame, unsigned int Channel, unsig
 	}
 }
 
-void FtmDocument::SetNoteData(unsigned int Frame, unsigned int Channel, unsigned int Row, stChanNote *Data)
+void FtmDocument::SetNoteData(unsigned int Frame, unsigned int Channel, unsigned int Row, const stChanNote *Data)
 {
 	ftm_Assert(Frame < MAX_FRAMES);
 	ftm_Assert(Channel < MAX_CHANNELS);
@@ -1316,7 +1316,7 @@ void FtmDocument::GetNoteData(unsigned int Frame, unsigned int Channel, unsigned
 	memcpy(Data, m_pSelectedTune->GetPatternData(Channel, Pattern, Row), sizeof(stChanNote));
 }
 
-void FtmDocument::SetDataAtPattern(unsigned int Track, unsigned int Pattern, unsigned int Channel, unsigned int Row, stChanNote *Data)
+void FtmDocument::SetDataAtPattern(unsigned int Track, unsigned int Pattern, unsigned int Channel, unsigned int Row, const stChanNote *Data)
 {
 	ftm_Assert(Track < MAX_TRACKS);
 	ftm_Assert(Pattern < MAX_PATTERN);
@@ -1415,25 +1415,13 @@ bool FtmDocument::DeleteNote(unsigned int Frame, unsigned int Channel, unsigned 
 	{
 		Note->Vol = 0x10;
 	}
-	else if (Column == C_EFF_NUM || Column == C_EFF_PARAM1 || Column == C_EFF_PARAM2)
+	else
 	{
-		Note->EffNumber[0]	= 0;
-		Note->EffParam[0]	= 0;
-	}
-	else if (Column == C_EFF2_NUM || Column == C_EFF2_PARAM1 || Column == C_EFF2_PARAM2)
-	{
-		Note->EffNumber[1]	= 0;
-		Note->EffParam[1]	= 0;
-	}
-	else if (Column == C_EFF3_NUM || Column == C_EFF3_PARAM1 || Column == C_EFF3_PARAM2)
-	{
-		Note->EffNumber[2]	= 0;
-		Note->EffParam[2]	= 0;
-	}
-	else if (Column == C_EFF4_NUM || Column == C_EFF4_PARAM1 || Column == C_EFF4_PARAM2)
-	{
-		Note->EffNumber[3]	= 0;
-		Note->EffParam[3]	= 0;
+		int eff = (Column - C_EFF_NUM) / (C_EFF_COL_COUNT);
+		if (eff >= MAX_EFFECT_COLUMNS)
+			return false;
+		Note->EffNumber[eff] = 0;
+		Note->EffNumber[eff] = 0;
 	}
 
 	SetModifiedFlag();

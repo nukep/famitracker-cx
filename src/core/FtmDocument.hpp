@@ -26,15 +26,15 @@ const unsigned int DEFAULT_SPEED	    = 6;
 const unsigned int DEFAULT_MACHINE_TYPE = NTSC;
 
 // Columns
-enum {C_NOTE,
-	  C_INSTRUMENT1, C_INSTRUMENT2,
-	  C_VOLUME,
-	  C_EFF_NUM, C_EFF_PARAM1, C_EFF_PARAM2,
-	  C_EFF2_NUM, C_EFF2_PARAM1, C_EFF2_PARAM2,
-	  C_EFF3_NUM, C_EFF3_PARAM1, C_EFF3_PARAM2,
-	  C_EFF4_NUM, C_EFF4_PARAM1, C_EFF4_PARAM2};
-
-const unsigned int COLUMNS = 7;
+enum
+{
+	C_NOTE=0,
+	C_INSTRUMENT1, C_INSTRUMENT2,
+	C_VOLUME,
+	C_EFF_NUM, C_EFF_PARAM1, C_EFF_PARAM2,
+	C_EFF_COL_COUNT=3,
+	C_EFF_PARAM_COUNT=2
+};
 
 // Old sequence list, kept for compability
 struct stSequence {
@@ -111,10 +111,10 @@ public:
 	void			IncreaseEffect(unsigned int Frame, unsigned int Channel, unsigned int Row, unsigned int Index);
 	void			DecreaseEffect(unsigned int Frame, unsigned int Channel, unsigned int Row, unsigned int Index);
 
-	void			SetNoteData(unsigned int Frame, unsigned int Channel, unsigned int Row, stChanNote *Data);
+	void			SetNoteData(unsigned int Frame, unsigned int Channel, unsigned int Row, const stChanNote *Data);
 	void			GetNoteData(unsigned int Frame, unsigned int Channel, unsigned int Row, stChanNote *Data) const;
 
-	void			SetDataAtPattern(unsigned int Track, unsigned int Pattern, unsigned int Channel, unsigned int Row, stChanNote *Data);
+	void			SetDataAtPattern(unsigned int Track, unsigned int Pattern, unsigned int Channel, unsigned int Row, const stChanNote *Data);
 	void			GetDataAtPattern(unsigned int Track, unsigned int Pattern, unsigned int Channel, unsigned int Row, stChanNote *Data) const;
 
 	unsigned int	GetNoteEffectType(unsigned int Frame, unsigned int Channel, unsigned int Row, int Index) const;
