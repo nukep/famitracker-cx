@@ -73,6 +73,7 @@ namespace gui
 				dinfo->setCurrentFrame(frame);
 			}
 			dinfo->setCurrentChannel(chan);
+			dinfo->setCurrentChannelColumn(0);
 			gui::updateFrameChannel();
 		}
 	}

@@ -1,6 +1,9 @@
 project(qt-gui)
 
 set(SRC
+	../parse_arguments.cpp
+	../parse_arguments.hpp
+
 	main.cpp
 
 	gui.cpp

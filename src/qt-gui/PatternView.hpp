@@ -16,7 +16,10 @@ namespace gui
 
 		void update(bool modified=false);
 
+		void deleteColumn();
+		void enterNote(int note, int octave);
 	protected:
+		bool event(QEvent *);
 		void keyPressEvent(QKeyEvent *);
 		void wheelEvent(QWheelEvent *);
 		void focusInEvent(QFocusEvent *);

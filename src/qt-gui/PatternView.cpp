@@ -64,6 +64,69 @@ namespace gui
 	static const char noteletters[] = "CCDDEFFGGAAB";
 	static const char notesharps[] =  " # #  # # # ";
 
+	static bool scancodeToNote(int scancode, int octave_base, int &note, int &octave)
+	{
+		// TODO: mac version
+		// the nice thing about scan codes is it doesn't matter what locale
+		// your keyboard is.
+		// TODO: other keyboard note styles
+
+		// This maps to FastTracker 2/FL Studio style
+
+		int ob = octave_base;
+
+		const int b1 = 10;	// top black row		(1)
+		const int w1 = 24;	// top white row		(Q)
+		const int b2 = 38;	// bottom black row		(A)
+		const int w2 = 52;	// bottom white row		(Z)
+
+		switch (scancode)
+		{
+		// number row
+		case b1+1: note = Cs; octave = ob+1; break;
+		case b1+2: note = Ds; octave = ob+1; break;
+		case b1+4: note = Fs; octave = ob+1; break;
+		case b1+5: note = Gs; octave = ob+1; break;
+		case b1+6: note = As; octave = ob+1; break;
+		case b1+8: note = Cs; octave = ob+2; break;
+		case b1+9: note = Ds; octave = ob+2; break;
+
+		case w1+0: note = C; octave = ob+1; break;
+		case w1+1: note = D; octave = ob+1; break;
+		case w1+2: note = E; octave = ob+1; break;
+		case w1+3: note = F; octave = ob+1; break;
+		case w1+4: note = G; octave = ob+1; break;
+		case w1+5: note = A; octave = ob+1; break;
+		case w1+6: note = B; octave = ob+1; break;
+		case w1+7: note = C; octave = ob+2; break;
+		case w1+8: note = D; octave = ob+2; break;
+		case w1+9: note = E; octave = ob+2; break;
+		case w1+10: note = F; octave = ob+2; break;
+
+		case b2+1: note = Cs; octave = ob; break;
+		case b2+2: note = Ds; octave = ob; break;
+		case b2+4: note = Fs; octave = ob; break;
+		case b2+5: note = Gs; octave = ob; break;
+		case b2+6: note = As; octave = ob; break;
+		case b2+8: note = Cs; octave = ob+1; break;
+		case b2+9: note = Ds; octave = ob+1; break;
+
+		case w2+0: note = C; octave = ob; break;
+		case w2+1: note = D; octave = ob; break;
+		case w2+2: note = E; octave = ob; break;
+		case w2+3: note = F; octave = ob; break;
+		case w2+4: note = G; octave = ob; break;
+		case w2+5: note = A; octave = ob; break;
+		case w2+6: note = B; octave = ob; break;
+		case w2+7: note = C; octave = ob+1; break;
+		case w2+8: note = D; octave = ob+1; break;
+
+		default:
+			return false;
+		}
+		return true;
+	}
+
 	class PatternView_Body : public QWidget
 	{
 	public:
@@ -319,6 +382,29 @@ namespace gui
 			return height()/2 - px_vspace/2;
 		}
 
+		int patterncol_offset(unsigned int c) const
+		{
+			switch(c)
+			{
+			case C_NOTE: return 0;
+			case C_INSTRUMENT1: return px_unit*3 + colspace;
+			case C_INSTRUMENT2: return px_unit*4 + colspace;
+			case C_VOLUME: return px_unit*5 + colspace*2;
+		//	case C_EFF_NUM: return px_unit*6 + colspace*3;
+			default:
+			{
+				int off = px_unit*6 + colspace*3;
+				c = c - C_EFF_NUM;
+				off += c*px_unit + (c/C_EFF_COL_COUNT)*colspace;
+				return off;
+			}
+			}
+		}
+		int channel_width(int effColumns) const
+		{
+			return px_unit*6 + colspace*3 + (px_unit*C_EFF_COL_COUNT + colspace)*(effColumns+1);
+		}
+
 		void paintEvent(QPaintEvent *)
 		{
 			const DocInfo *dinfo = gui::activeDocInfo();
@@ -368,6 +454,19 @@ namespace gui
 				highlight = m_currentRowNoFocusHighlightPixmap;
 			}
 			p.drawPixmap(row_x, row*px_vspace, rowWidth, px_vspace, *highlight);
+
+			int chancol_hwidth = 1;
+			int cur_chancol = dinfo->currentChannelColumn();
+			if (cur_chancol == 0)
+				chancol_hwidth = 3;
+			int chancol_x = px_unit*3 + patterncol_offset(cur_chancol);
+			for (unsigned int i = 0; i < dinfo->currentChannel(); i++)
+			{
+				chancol_x += channel_width(d->GetEffColumns(i));
+			}
+			p.setPen(Qt::NoPen);
+			p.setBrush(Qt::darkGray);
+			p.drawRect(chancol_x, row*px_vspace, chancol_hwidth*px_unit, px_vspace);
 
 			unsigned int currentframe_playlength = dinfo->framePlayLength(frame);
 
@@ -508,9 +607,66 @@ namespace gui
 		viewport()->setLayout(l);
 	}
 
+	bool PatternView::event(QEvent *e)
+	{
+		if (e->type() == QEvent::KeyPress)
+		{
+			QKeyEvent *k = (QKeyEvent*)e;
+			int key = k->key();
+			if (key == Qt::Key_Backtab || key == Qt::Key_Tab)
+			{
+				// intercept tab/backtab, which usually take away focus
+				keyPressEvent(k);
+				return true;
+			}
+		}
+		return QAbstractScrollArea::event(e);
+	}
 	void PatternView::keyPressEvent(QKeyEvent *e)
 	{
+		DocInfo *dinfo = gui::activeDocInfo();
+
+		if (dinfo->currentChannelColumn() == C_NOTE)
+		{
+			int scan = e->nativeScanCode();
+			int octave_base = 3;
+			int note=-1, octave=-1;
+			if (scancodeToNote(scan, octave_base, note, octave))
+			{
+				enterNote(note, octave);
+				return;
+			}
+		}
 		int k = e->key();
+		if (k == Qt::Key_Delete)
+		{
+			deleteColumn();
+			return;
+		}
+		if (k == Qt::Key_Tab)
+		{
+			dinfo->scrollChannelBy(1);
+			gui::updateFrameChannel();
+			return;
+		}
+		if (k == Qt::Key_Backtab)
+		{
+			dinfo->scrollChannelBy(-1);
+			gui::updateFrameChannel();
+			return;
+		}
+		if (k == Qt::Key_Left)
+		{
+			dinfo->scrollChannelColumnBy(-1);
+			gui::updateFrameChannel();
+			return;
+		}
+		if (k == Qt::Key_Right)
+		{
+			dinfo->scrollChannelColumnBy(1);
+			gui::updateFrameChannel();
+			return;
+		}
 		if (k == Qt::Key_Enter || k == Qt::Key_Return)
 		{
 			gui::toggleSong();
@@ -521,7 +677,6 @@ namespace gui
 		}
 		if (gui::isPlaying())
 			return;
-		DocInfo *dinfo = gui::activeDocInfo();
 		if (k == Qt::Key_Up)
 		{
 			dinfo->scrollFrameBy(-1);
@@ -562,6 +717,40 @@ namespace gui
 
 		DocInfo *dinfo = gui::activeDocInfo();
 		dinfo->setCurrentRow(verticalScrollBar()->value());
+		gui::updateFrameChannel();
+	}
+	void PatternView::deleteColumn()
+	{
+		if (!gui::isEditing())
+			return;
+		DocInfo *dinfo = gui::activeDocInfo();
+
+		dinfo->doc()->DeleteNote(dinfo->currentFrame(), dinfo->currentChannel(), dinfo->currentRow(), dinfo->currentChannelColumn());
+
+		dinfo->scrollFrameBy(1);
+
+		gui::updateFrameChannel();
+	}
+
+	void PatternView::enterNote(int note, int octave)
+	{
+		if (!gui::isEditing())
+			return;
+		DocInfo *dinfo = gui::activeDocInfo();
+
+		stChanNote n;
+		dinfo->doc()->GetNoteData(dinfo->currentFrame(), dinfo->currentChannel(), dinfo->currentRow(), &n);
+
+		if (note >= 0)
+			n.Note = note;
+		if (octave >= 0)
+			n.Octave = octave;
+
+		n.Instrument = dinfo->currentInstrument();
+
+		dinfo->doc()->SetNoteData(dinfo->currentFrame(), dinfo->currentChannel(), dinfo->currentRow(), &n);
+
+		dinfo->scrollFrameBy(1);
 		gui::updateFrameChannel();
 	}
 
