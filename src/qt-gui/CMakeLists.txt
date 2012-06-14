@@ -41,11 +41,13 @@ include_directories(".")
 
 include_directories("..")
 
+QT4_ADD_RESOURCES(RES_SRC resources.qrc)
+
 QT4_WRAP_UI(UI_SRC ${UI_FILES})
 
 QT4_WRAP_CPP(MOC_SRC ${MOC_INC})
 
-add_executable(famitracker-qt ${SRC} ${MOC_SRC} ${MOC_INC} ${UI_SRC})
+add_executable(famitracker-qt ${SRC} ${RES_SRC} ${MOC_SRC} ${MOC_INC} ${UI_SRC})
 target_link_libraries(famitracker-qt fami-core)
 target_link_libraries(famitracker-qt ${QT_LIBRARIES} ${Boost_LIBRARIES})
 

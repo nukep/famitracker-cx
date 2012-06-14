@@ -1,0 +1,11 @@
+<RCC>
+    <qresource prefix="/inst">
+        <file alias="fds">res/fds_64.png</file>
+        <file alias="vrc6">res/vrc6_64.png</file>
+        <file alias="vrc7">res/vrc7_64.png</file>
+        <file alias="2a03">res/2a03_64.png</file>
+    </qresource>
+    <qresource prefix="/">
+        <file alias="appicon">res/famitracker.png</file>
+    </qresource>
+</RCC>

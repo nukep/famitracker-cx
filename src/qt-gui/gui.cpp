@@ -195,6 +195,7 @@ namespace gui
 	{
 		app = new QApplication(argc, argv);
 		app->setApplicationName(QApplication::tr("FamiTracker"));
+		app->setWindowIcon(QIcon(":/appicon"));
 	}
 
 	void init_2(const char *sound_name)

@@ -16,9 +16,14 @@ namespace gui
 		: m_updateCount(0)
 	{
 		setupUi(this);
+		instruments->setIconSize(QSize(16,16));
+
 		QObject::connect(actionNew, SIGNAL(triggered()), this, SLOT(newDoc()));
+		actionNew->setIcon(QIcon::fromTheme("document-new"));
 		QObject::connect(action_Open, SIGNAL(triggered()), this, SLOT(open()));
+		action_Open->setIcon(QIcon::fromTheme("document-open"));
 		QObject::connect(action_Save, SIGNAL(triggered()), this, SLOT(save()));
+		action_Save->setIcon(QIcon::fromTheme("document-save"));
 		QObject::connect(actionSave_As, SIGNAL(triggered()), this, SLOT(saveAs()));
 		QObject::connect(actionE_xit, SIGNAL(triggered()), this, SLOT(quit()));
 
@@ -39,11 +44,16 @@ namespace gui
 		QObject::connect(tempo, SIGNAL(valueChanged(int)), this, SLOT(speedTempoChange(int)));
 
 		QObject::connect(action_Play, SIGNAL(triggered()), this, SLOT(play()));
+		action_Play->setIcon(QIcon::fromTheme("media-playback-start"));
 		QObject::connect(action_Stop, SIGNAL(triggered()), this, SLOT(stop()));
+		action_Stop->setIcon(QIcon::fromTheme("media-playback-stop"));
 		QObject::connect(actionToggle_edit_mode, SIGNAL(triggered()), this, SLOT(toggleEditMode()));
+		actionToggle_edit_mode->setIcon(QIcon::fromTheme("media-record"));
 
 		QObject::connect(actionAdd_instrument, SIGNAL(triggered()), this, SLOT(addInstrument()));
+		actionAdd_instrument->setIcon(QIcon::fromTheme("list-add"));
 		QObject::connect(actionRemove_instrument, SIGNAL(triggered()), this, SLOT(removeInstrument()));
+		actionRemove_instrument->setIcon(QIcon::fromTheme("list-remove"));
 
 		updateDocument();
 	}
@@ -145,6 +155,29 @@ namespace gui
 			CInstrument *inst = d->GetInstrument(i);
 
 			QListWidgetItem *item = new QListWidgetItem;
+			const char *res;
+			switch (inst->GetType())
+			{
+			case INST_NONE:
+			case INST_2A03:
+				res = ":/inst/2a03";
+				break;
+			case INST_VRC6:
+				res = ":/inst/vrc6";
+				break;
+			case INST_VRC7:
+				res = ":/inst/vrc7";
+				break;
+			case INST_FDS:
+				res = ":/inst/fds";
+				break;
+			default:
+				res = NULL;
+				break;
+			}
+
+			if (res != NULL)
+				item->setIcon(QIcon(res));
 			setInstrumentName(item, i, inst->GetName());
 
 			item->setData(Qt::UserRole, qVariantFromValue(i));
@@ -295,7 +328,6 @@ namespace gui
 		instrumentName->setText(inst->GetName());
 
 		gui::activeDocInfo()->setCurrentInstrument(i);
-	//	qDebug() << instruments->currentIndex();
 	}
 	void MainWindow::instrumentNameChange(QString s)
 	{
