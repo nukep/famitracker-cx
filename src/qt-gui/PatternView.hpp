@@ -18,6 +18,7 @@ namespace gui
 
 		void deleteColumn();
 		void enterNote(int note, int octave);
+		void enterKeyAtColumn(int key);
 	protected:
 		bool event(QEvent *);
 		void keyPressEvent(QKeyEvent *);

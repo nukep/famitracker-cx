@@ -26,6 +26,8 @@ namespace gui
 
 		void sendUpdateEvent();
 		void updateEditMode();
+
+		void refreshInstruments();
 	protected:
 		bool event(QEvent *event);
 	private:
@@ -49,6 +51,9 @@ namespace gui
 		void play();
 		void stop();
 		void toggleEditMode();
+
+		void addInstrument();
+		void removeInstrument();
 	private:
 		int m_updateCount;	// number of queued up update events
 		QMutex m_updateCountMutex;

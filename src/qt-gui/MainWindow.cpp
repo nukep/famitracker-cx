@@ -42,6 +42,9 @@ namespace gui
 		QObject::connect(action_Stop, SIGNAL(triggered()), this, SLOT(stop()));
 		QObject::connect(actionToggle_edit_mode, SIGNAL(triggered()), this, SLOT(toggleEditMode()));
 
+		QObject::connect(actionAdd_instrument, SIGNAL(triggered()), this, SLOT(addInstrument()));
+		QObject::connect(actionRemove_instrument, SIGNAL(triggered()), this, SLOT(removeInstrument()));
+
 		updateDocument();
 	}
 
@@ -120,8 +123,20 @@ namespace gui
 		setSong(-1);
 		frameView->update();
 
+		refreshInstruments();
+	}
+
+	void MainWindow::refreshInstruments()
+	{
+		FtmDocument *d = gui::activeDocument();
+
+		int current = gui::activeDocInfo()->currentInstrument();
+
 		instruments->clear();
 		int instc = d->GetInstrumentCount();
+
+		instrumentName->clear();
+		instrumentName->setEnabled(instc > 0);
 		for (int i = 0; i < 64; i++)
 		{
 			if (!d->IsInstrumentUsed(i))
@@ -132,15 +147,14 @@ namespace gui
 			QListWidgetItem *item = new QListWidgetItem;
 			setInstrumentName(item, i, inst->GetName());
 
-			item->setData(Qt::UserRole, qVariantFromValue((void*)inst));
+			item->setData(Qt::UserRole, qVariantFromValue(i));
 			instruments->addItem(item);
-		//	i++;
-		}
-		instrumentName->clear();
-		instrumentName->setEnabled(instc > 0);
-		if (instc > 0)
-		{
-			instruments->setCurrentRow(0);
+
+			if (i == current)
+			{
+				instruments->setCurrentItem(item);
+				instrumentName->setText(inst->GetName());
+			}
 		}
 	}
 
@@ -243,7 +257,7 @@ namespace gui
 		{
 			doc->IncreasePattern(current_frame, current_channel, 1);
 		}
-		frameView->update(true);
+		gui::updateFrameChannel(true);
 
 		doc->unlock();
 	}
@@ -267,15 +281,20 @@ namespace gui
 		{
 			doc->DecreasePattern(current_frame, current_channel, 1);
 		}
-		frameView->update(true);
+		gui::updateFrameChannel(true);
 
 		doc->unlock();
 	}
 	void MainWindow::instrumentSelect()
 	{
 		QModelIndex idx = instruments->currentIndex();
-		CInstrument *inst = (CInstrument*)idx.data(Qt::UserRole).value<void*>();
+		int i = idx.data(Qt::UserRole).value<int>();
+		CInstrument *inst = gui::activeDocument()->GetInstrument(i);
+		if (inst == NULL)
+			return;
 		instrumentName->setText(inst->GetName());
+
+		gui::activeDocInfo()->setCurrentInstrument(i);
 	//	qDebug() << instruments->currentIndex();
 	}
 	void MainWindow::instrumentNameChange(QString s)
@@ -284,7 +303,8 @@ namespace gui
 		if (idx.row() < 0)
 			return;
 
-		CInstrument *inst = (CInstrument*)idx.data(Qt::UserRole).value<void*>();
+		int i = idx.data(Qt::UserRole).value<int>();
+		CInstrument *inst = gui::activeDocument()->GetInstrument(i);
 		inst->SetName(s.toAscii());
 		setInstrumentName(instruments->currentItem(), idx.row(), s.toAscii());
 	}
@@ -309,5 +329,55 @@ namespace gui
 	void MainWindow::toggleEditMode()
 	{
 		gui::toggleEditMode();
+	}
+
+	void MainWindow::addInstrument()
+	{
+		FtmDocument *d = gui::activeDocument();
+		int inst = d->AddInstrument("New instrument", SNDCHIP_NONE);
+
+		gui::activeDocInfo()->setCurrentInstrument(inst);
+
+		refreshInstruments();
+		patternView->update();
+	}
+	void MainWindow::removeInstrument()
+	{
+		FtmDocument *d = gui::activeDocument();
+
+		int inst = gui::activeDocInfo()->currentInstrument();
+
+		d->RemoveInstrument(inst);
+
+		int ni = -1;
+
+		for (int i = inst+1; i < MAX_INSTRUMENTS; i++)
+		{
+			if (d->GetInstrument(i) != NULL)
+			{
+				ni = i;
+				break;
+			}
+		}
+		if (ni == -1)
+		{
+			for (int i = inst-1; i >= 0; i--)
+			{
+				if (d->GetInstrument(i) != NULL)
+				{
+					ni = i;
+					break;
+				}
+			}
+		}
+		if (ni == -1)
+		{
+			ni = 0;
+		}
+
+		gui::activeDocInfo()->setCurrentInstrument(ni);
+
+		refreshInstruments();
+		patternView->update();
 	}
 }

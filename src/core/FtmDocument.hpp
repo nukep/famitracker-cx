@@ -125,6 +125,8 @@ public:
 	bool			ClearRow(unsigned int Frame, unsigned int Channel, unsigned int Row);
 	bool			RemoveNote(unsigned int Frame, unsigned int Channel, unsigned int Row);
 
+	bool			setColumnKey(int key, unsigned int frame, unsigned int channel, unsigned int row, unsigned int column);
+
 	// Global (module) data
 	void			SetEngineSpeed(unsigned int Speed);
 	void			SetMachine(unsigned int Machine);

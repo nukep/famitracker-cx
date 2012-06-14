@@ -1481,6 +1481,104 @@ bool FtmDocument::RemoveNote(unsigned int Frame, unsigned int Channel, unsigned 
 	return true;
 }
 
+static inline int hexFromChar(char c)
+{
+	if (c >= '0' && c <= '9')
+		return c - '0';
+	if (c >= 'A' && c <= 'F')
+		return c - 'A' + 10;
+	if (c >= 'a' && c <= 'f')
+		return c - 'a' + 10;
+
+	return -1;
+}
+static inline int charToEffNum(char c)
+{
+	for (int i = 0; i < EF_COUNT-1; i++)
+	{
+		if (EFF_CHAR[i] == c)
+		{
+			return i+1;
+		}
+	}
+	return -1;
+}
+
+bool FtmDocument::setColumnKey(int key, unsigned int frame, unsigned int channel, unsigned int row, unsigned int column)
+{
+	stChanNote note;
+	GetNoteData(frame, channel, row, &note);
+	switch(column)
+	{
+	case C_NOTE: return false;
+	case C_INSTRUMENT1:
+	{
+		int i = hexFromChar(key);
+		if (i < 0)
+			return false;
+		if (note.Instrument == MAX_INSTRUMENTS)
+			note.Instrument = 0;
+		note.Instrument = (i<<4) | (note.Instrument & 0x0F);
+		if (note.Instrument >= MAX_INSTRUMENTS)
+			note.Instrument = MAX_INSTRUMENTS-1;
+	}
+		break;
+	case C_INSTRUMENT2:
+	{
+		int i = hexFromChar(key);
+		if (i < 0)
+			return false;
+		if (note.Instrument == MAX_INSTRUMENTS)
+			note.Instrument = 0;
+		note.Instrument = (note.Instrument & 0xF0) | i;
+		if (note.Instrument >= MAX_INSTRUMENTS)
+			note.Instrument = MAX_INSTRUMENTS-1;
+	}
+		break;
+	case C_VOLUME:
+	{
+		int i = hexFromChar(key);
+		if (i < 0)
+			return false;
+		note.Vol = i;
+	}
+		break;
+	default:
+	{
+		int c = column - C_EFF_NUM;
+		int ec = c % C_EFF_COL_COUNT;
+		int en = c / C_EFF_COL_COUNT;
+
+		if (en >= MAX_EFFECT_COLUMNS)
+			return false;
+
+		if (ec == 0)
+		{
+			int n = charToEffNum(key);
+			if (n < 0)
+				return false;
+			note.EffNumber[en] = n;
+			note.EffParam[en] = 0;
+		}
+		else
+		{
+			if (note.EffNumber[en] == EF_NONE)
+				return false;
+			int i = hexFromChar(key);
+			if (i < 0)
+				return false;
+			if (ec == 1)
+				note.EffParam[en] = (i<<4) | (note.EffParam[en] & 0x0F);
+			else if (ec == 2)
+				note.EffParam[en] = (note.EffParam[en] & 0xF0) | i;
+		}
+	}
+		break;
+	}
+	SetNoteData(frame, channel, row, &note);
+	return true;
+}
+
 void FtmDocument::SetEngineSpeed(unsigned int Speed)
 {
 	ftm_Assert(Speed <= 800); // hardcoded at the moment, TODO: fix this

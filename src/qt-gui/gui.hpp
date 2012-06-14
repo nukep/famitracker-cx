@@ -15,7 +15,7 @@ namespace gui
 	void destroy();
 	void spin();
 
-	void updateFrameChannel();
+	void updateFrameChannel(bool modified=false);
 
 	class DocInfo;
 
@@ -29,6 +29,7 @@ namespace gui
 
 	bool isPlaying();
 	bool isEditing();
+	static bool canEdit(){ return isEditing() && (!isPlaying()); }
 	void playSong();
 	void stopSong();
 	static inline void toggleSong()

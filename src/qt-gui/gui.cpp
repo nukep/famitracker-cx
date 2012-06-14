@@ -232,9 +232,9 @@ namespace gui
 		app->exec();
 	}
 
-	void updateFrameChannel()
+	void updateFrameChannel(bool modified)
 	{
-		mw->updateFrameChannel();
+		mw->updateFrameChannel(modified);
 	}
 
 	static void setActiveDocument(int idx)

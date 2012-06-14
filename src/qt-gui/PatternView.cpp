@@ -231,6 +231,8 @@ namespace gui
 			const QColor primary = selected ? Qt::green : Qt::darkGreen;
 			const QColor volcol = selected ? QColor(128, 128, 255) : QColor(64, 64, 128);
 			const QColor effcol = selected ? QColor(255, 128, 128) : QColor(128, 64, 64);
+			const QColor instcol = primary;
+			const QColor noinstcol = selected ? Qt::red : Qt::darkRed;
 			bool terminate = false;
 
 			char buf[6];
@@ -281,13 +283,23 @@ namespace gui
 				x += px_unit + colspace;
 			}
 
+			const QColor *use_instcol = &instcol;
 			if (n.Instrument >= MAX_INSTRUMENTS)
+			{
 				sprintf(buf, "  ");
+			}
 			else
+			{
+				if (gui::activeDocument()->GetInstrument(n.Instrument) == NULL)
+				{
+					// instrument does not exist
+					use_instcol = &noinstcol;
+				}
 				sprintf(buf, "%02X", n.Instrument);
-			drawChar(p, x, y, buf[0], primary, selected);
+			}
+			drawChar(p, x, y, buf[0], *use_instcol, selected);
 			x += px_unit;
-			drawChar(p, x, y, buf[1], primary, selected);
+			drawChar(p, x, y, buf[1], *use_instcol, selected);
 			x += px_unit + colspace;
 
 			if (n.Vol > 0xF)
@@ -670,10 +682,12 @@ namespace gui
 		if (k == Qt::Key_Enter || k == Qt::Key_Return)
 		{
 			gui::toggleSong();
+			return;
 		}
 		if (k == Qt::Key_Space)
 		{
 			gui::toggleEditMode();
+			return;
 		}
 		if (gui::isPlaying())
 			return;
@@ -681,12 +695,16 @@ namespace gui
 		{
 			dinfo->scrollFrameBy(-1);
 			gui::updateFrameChannel();
+			return;
 		}
 		if (k == Qt::Key_Down)
 		{
 			dinfo->scrollFrameBy(1);
 			gui::updateFrameChannel();
+			return;
 		}
+
+		enterKeyAtColumn(k);
 	}
 
 	void PatternView::wheelEvent(QWheelEvent *e)
@@ -721,7 +739,7 @@ namespace gui
 	}
 	void PatternView::deleteColumn()
 	{
-		if (!gui::isEditing())
+		if (!gui::canEdit())
 			return;
 		DocInfo *dinfo = gui::activeDocInfo();
 
@@ -729,12 +747,12 @@ namespace gui
 
 		dinfo->scrollFrameBy(1);
 
-		gui::updateFrameChannel();
+		gui::updateFrameChannel(true);
 	}
 
 	void PatternView::enterNote(int note, int octave)
 	{
-		if (!gui::isEditing())
+		if (!gui::canEdit())
 			return;
 		DocInfo *dinfo = gui::activeDocInfo();
 
@@ -751,7 +769,25 @@ namespace gui
 		dinfo->doc()->SetNoteData(dinfo->currentFrame(), dinfo->currentChannel(), dinfo->currentRow(), &n);
 
 		dinfo->scrollFrameBy(1);
-		gui::updateFrameChannel();
+		gui::updateFrameChannel(true);
+	}
+
+	void PatternView::enterKeyAtColumn(int key)
+	{
+		if (!gui::canEdit())
+			return;
+		DocInfo *dinfo = gui::activeDocInfo();
+
+		if (!dinfo->doc()->setColumnKey(key, dinfo->currentFrame(),
+										dinfo->currentChannel(),
+										dinfo->currentRow(),
+										dinfo->currentChannelColumn()))
+		{
+			return;
+		}
+
+		dinfo->scrollFrameBy(1);
+		gui::updateFrameChannel(true);
 	}
 
 	void PatternView::update(bool modified)

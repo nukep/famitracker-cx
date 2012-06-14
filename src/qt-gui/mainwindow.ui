@@ -96,7 +96,6 @@
    <addaction name="action_Save"/>
    <addaction name="separator"/>
    <addaction name="action_Play"/>
-   <addaction name="actionPlay_and_loop"/>
    <addaction name="action_Stop"/>
    <addaction name="actionToggle_edit_mode"/>
    <addaction name="separator"/>
