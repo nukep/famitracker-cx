@@ -39,31 +39,7 @@ public:
 	CPatternData(unsigned int PatternLength, unsigned int Speed, unsigned int Tempo);
 	~CPatternData();
 
-	void SetEffect(unsigned int Channel, unsigned int Pattern, unsigned int Row, unsigned int Column, char EffNumber, char EffParam);
-	void SetInstrument(unsigned int Channel, unsigned int Pattern, unsigned int Row, char Instrument);
-	void SetNote(unsigned int Channel, unsigned int Pattern, unsigned int Row, char Note);
-	void SetOctave(unsigned int Channel, unsigned int Pattern, unsigned int Row, char Octave);
-	void SetVolume(unsigned int Channel, unsigned int Pattern, unsigned int Row, char Volume);
-
 	// None of these are const because accessing an unallocated pattern will allocate it
-
-	char GetNote(unsigned int Channel, unsigned int Pattern, unsigned int Row) 
-		{ return GetPatternData(Channel, Pattern, Row)->Note; }
-
-	char GetOctave(unsigned int Channel, unsigned int Pattern, unsigned int Row) 
-		{ return GetPatternData(Channel, Pattern, Row)->Octave; }
-
-	char GetInstrument(unsigned int Channel, unsigned int Pattern, unsigned int Row) 
-		{ return GetPatternData(Channel, Pattern, Row)->Instrument; }
-
-	char GetVolume(unsigned int Channel, unsigned int Pattern, unsigned int Row) 
-		{ return GetPatternData(Channel, Pattern, Row)->Vol; }
-
-	char GetEffect(unsigned int Channel, unsigned int Pattern, unsigned int Row, unsigned int Column) 
-		{ return GetPatternData(Channel, Pattern, Row)->EffNumber[Column]; }
-
-	char GetEffectParam(unsigned int Channel, unsigned int Pattern, unsigned int Row, unsigned int Column) 
-		{ return GetPatternData(Channel, Pattern, Row)->EffParam[Column]; }
 
 	bool IsCellFree(unsigned int Channel, unsigned int Pattern, unsigned int Row);
 	bool IsPatternEmpty(unsigned int Channel, unsigned int Pattern);
@@ -78,7 +54,8 @@ public:
 	void ClearEverything();
 	void ClearPattern(int Channel, int Pattern);
 
-	stChanNote *GetPatternData(int Channel, int Pattern, int Row);
+	void GetPatternData(int Channel, int Pattern, int Row, stChanNote *note);
+	void SetPatternData(int Channel, int Pattern, int Row, const stChanNote *note);
 
 	unsigned int GetPatternLength() const		{ return m_iPatternLength;	 }
 	unsigned int GetFrameCount() const			{ return m_iFrameCount;		 }
@@ -95,6 +72,7 @@ public:
 
 private:
 	void AllocatePattern(int Channel, int Patterns);
+	stChanNote *GetPatternData(int Channel, int Pattern, int Row);
 
 	// Pattern data
 private:

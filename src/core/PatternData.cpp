@@ -55,39 +55,13 @@ CPatternData::~CPatternData()
 	}
 }
 
-void CPatternData::SetEffect(unsigned int Channel, unsigned int Pattern, unsigned int Row, unsigned int Column, char EffNumber, char EffParam)
-{
-	GetPatternData(Channel, Pattern, Row)->EffNumber[Column] = EffNumber;
-	GetPatternData(Channel, Pattern, Row)->EffParam[Column] = EffParam;
-}
-
-void CPatternData::SetInstrument(unsigned int Channel, unsigned int Pattern, unsigned int Row, char Instrument)
-{
-	GetPatternData(Channel, Pattern, Row)->Instrument = Instrument;
-}
-
-void CPatternData::SetNote(unsigned int Channel, unsigned int Pattern, unsigned int Row, char Note)
-{
-	GetPatternData(Channel, Pattern, Row)->Note = Note;
-}
-
-void CPatternData::SetOctave(unsigned int Channel, unsigned int Pattern, unsigned int Row, char Octave)
-{
-	GetPatternData(Channel, Pattern, Row)->Octave = Octave;
-}
-
-void CPatternData::SetVolume(unsigned int Channel, unsigned int Pattern, unsigned int Row, char Volume)
-{
-	GetPatternData(Channel, Pattern, Row)->Vol = Volume;
-}
-
 bool CPatternData::IsCellFree(unsigned int Channel, unsigned int Pattern, unsigned int Row)
 {
 	stChanNote *Note = GetPatternData(Channel, Pattern, Row);
 
-	bool IsFree = Note->Note == NONE && 
-		Note->EffNumber[0] == 0 && Note->EffNumber[1] == 0 && 
-		Note->EffNumber[2] == 0 && Note->EffNumber[3] == 0 && 
+	bool IsFree = Note->Note == NONE &&
+		Note->EffNumber[0] == 0 && Note->EffNumber[1] == 0 &&
+		Note->EffNumber[2] == 0 && Note->EffNumber[3] == 0 &&
 		Note->Vol == 0x10 && Note->Instrument == MAX_INSTRUMENTS;
 
 	return IsFree;
@@ -121,6 +95,18 @@ stChanNote *CPatternData::GetPatternData(int Channel, int Pattern, int Row)
 		AllocatePattern(Channel, Pattern);
 
 	return m_pPatternData[Channel][Pattern] + Row;
+}
+void CPatternData::GetPatternData(int Channel, int Pattern, int Row, stChanNote *note)
+{
+	stChanNote *n = GetPatternData(Channel, Pattern, Row);
+	memcpy(note, n, sizeof(stChanNote));
+}
+void CPatternData::SetPatternData(int Channel, int Pattern, int Row, const stChanNote *note)
+{
+	if (!m_pPatternData[Channel][Pattern])		// Allocate pattern if accessed for the first time
+		AllocatePattern(Channel, Pattern);
+
+	*(m_pPatternData[Channel][Pattern] + Row) = *note;
 }
 
 void CPatternData::AllocatePattern(int Channel, int Pattern)
