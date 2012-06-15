@@ -1,5 +1,4 @@
 # Created for Linux port by Dan Spencer
-# Dependencies include Qt4 and ALSA
 
 project(famitracker)
 cmake_minimum_required(VERSION 2.6)
@@ -18,5 +17,7 @@ endif()
 option(INSTALL_PORTABLE "Optimize installation for portable packaging" OFF)
 
 option(UI_QT "Build the Qt GUI" ON)
+
+set(CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake-modules" CACHE STRING "")
 
 add_subdirectory("src")
