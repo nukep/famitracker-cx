@@ -66,15 +66,12 @@ namespace gui
 		unsigned int currentChannelColumn_pos() const;
 		unsigned int currentRow() const{ return m_currentRow; }
 		unsigned int currentInstrument() const{ return m_currentInstrument; }
-		unsigned int framePlayLength(unsigned int frame) const;
 		unsigned int patternColumns(unsigned int chan) const;
-		void calculateFramePlayLengths();
 	protected:
 		FtmDocument * m_doc;
 		unsigned int m_currentFrame, m_currentChannel, m_currentRow;
 		unsigned int m_currentChannelColumn;
 		unsigned int m_currentInstrument;
-		unsigned int m_framePlayLengths[MAX_FRAMES];
 
 		void destroy();
 	};

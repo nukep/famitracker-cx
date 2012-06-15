@@ -480,7 +480,8 @@ namespace gui
 			p.setBrush(Qt::darkGray);
 			p.drawRect(chancol_x, row*px_vspace, chancol_hwidth*px_unit, px_vspace);
 
-			unsigned int currentframe_playlength = dinfo->framePlayLength(frame);
+
+			unsigned int currentframe_playlength = d->getFramePlayLength(frame);
 
 			int from = row - y_offset / px_vspace;
 			int to = row + y_offset / px_vspace;
@@ -509,7 +510,7 @@ namespace gui
 				// draw the previous frame
 				if (frame > 0)
 				{
-					int prevlen = dinfo->framePlayLength(frame-1);
+					int prevlen = d->getFramePlayLength(frame-1);
 					int prevlen_pix = prevlen*px_vspace;
 
 					p.translate(0, -prevlen_pix);
@@ -555,6 +556,7 @@ namespace gui
 				y--;
 
 			DocInfo *dinfo = gui::activeDocInfo();
+			FtmDocument *d = dinfo->doc();
 
 			y += dinfo->currentRow();
 
@@ -565,17 +567,17 @@ namespace gui
 				if (frame == 0)
 					return;
 				frame--;
-				y += dinfo->framePlayLength(frame);
+				y += d->getFramePlayLength(frame);
 				if (y < 0)
 					return;
 			}
-			else if (y >= dinfo->framePlayLength(frame))
+			else if (y >= d->getFramePlayLength(frame))
 			{
 				frame++;
 				if (frame == dinfo->doc()->GetFrameCount())
 					return;
-				y -= dinfo->framePlayLength(frame-1);
-				if (y >= dinfo->framePlayLength(frame))
+				y -= d->getFramePlayLength(frame-1);
+				if (y >= d->getFramePlayLength(frame))
 					return;
 			}
 
@@ -778,6 +780,8 @@ namespace gui
 			return;
 		DocInfo *dinfo = gui::activeDocInfo();
 
+		unsigned int playlen = dinfo->doc()->getFramePlayLength(dinfo->currentFrame());
+
 		if (!dinfo->doc()->setColumnKey(key, dinfo->currentFrame(),
 										dinfo->currentChannel(),
 										dinfo->currentRow(),
@@ -786,7 +790,10 @@ namespace gui
 			return;
 		}
 
-		dinfo->scrollFrameBy(1);
+		if (dinfo->doc()->getFramePlayLength(dinfo->currentFrame()) == playlen)
+		{
+			dinfo->scrollFrameBy(1);
+		}
 		gui::updateFrameChannel(true);
 	}
 
@@ -804,7 +811,7 @@ namespace gui
 		m_currentChannel = dinfo->currentChannel();
 
 		verticalScrollBar()->blockSignals(true);
-		verticalScrollBar()->setRange(0, dinfo->framePlayLength(m_currentFrame)-1);
+		verticalScrollBar()->setRange(0, dinfo->doc()->getFramePlayLength(m_currentFrame)-1);
 		verticalScrollBar()->setValue(m_currentRow);
 		verticalScrollBar()->blockSignals(false);
 

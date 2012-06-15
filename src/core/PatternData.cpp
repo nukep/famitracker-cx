@@ -107,12 +107,58 @@ void CPatternData::SetPatternData(int Channel, int Pattern, int Row, const stCha
 		AllocatePattern(Channel, Pattern);
 
 	*(m_pPatternData[Channel][Pattern] + Row) = *note;
+	m_patternPlayLengths[Channel][Pattern] = -1;
+}
+
+void CPatternData::SetPatternLength(unsigned int Length)
+{
+	m_iPatternLength = Length;
+}
+
+unsigned int CPatternData::getPatternPlayLength(int channel, int pattern)
+{
+	int &l = m_patternPlayLengths[channel][pattern];
+	if (l == -1)
+	{
+		for (unsigned int i = 0; i < MAX_PATTERN_LENGTH; i++)
+		{
+			const stChanNote *n = GetPatternData(channel, pattern, i);
+			for (unsigned int j = 0; j <= GetEffectColumnCount(channel); j++)
+			{
+				char en = n->EffNumber[j];
+				if (en == EF_JUMP || en == EF_SKIP || en == EF_HALT)
+				{
+					l = i+1;
+					if (l > m_iPatternLength)
+						return m_iPatternLength;
+					return l;
+				}
+			}
+		}
+		l = MAX_PATTERN_LENGTH;
+	}
+	if (l > m_iPatternLength)
+		return m_iPatternLength;
+	return l;
+}
+
+unsigned int CPatternData::getFramePlayLength(int frame, int channels)
+{
+	unsigned int l = MAX_PATTERN_LENGTH;
+	for (unsigned int i = 0; i < channels; i++)
+	{
+		unsigned int cl = getPatternPlayLength(i, m_iFrameList[frame][i]);
+		if (cl < l)
+			l = cl;
+	}
+	return l;
 }
 
 void CPatternData::AllocatePattern(int Channel, int Pattern)
 {
 	// Allocate memory
 	m_pPatternData[Channel][Pattern] = new stChanNote[MAX_PATTERN_LENGTH];
+	m_patternPlayLengths[Channel][Pattern] = m_iPatternLength;
 
 	// Clear memory
 	for (int i = 0; i < MAX_PATTERN_LENGTH; i++)
@@ -147,6 +193,7 @@ void CPatternData::ClearEverything()
 				delete [] m_pPatternData[i][j];
 				m_pPatternData[i][j] = NULL;
 			}
+			m_patternPlayLengths[i][j] = -1;
 		}
 	}
 
@@ -161,6 +208,7 @@ void CPatternData::ClearPattern(int Channel, int Pattern)
 		delete[] m_pPatternData[Channel][Pattern];
 		m_pPatternData[Channel][Pattern] = NULL;
 	}
+	m_patternPlayLengths[Channel][Pattern] = -1;
 }
 
 unsigned short CPatternData::GetFramePattern(int Frame, int Channel) const

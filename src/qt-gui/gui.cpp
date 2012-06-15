@@ -17,7 +17,6 @@ namespace gui
 		: m_doc(d), m_currentChannel(0), m_currentFrame(0), m_currentRow(0),
 		  m_currentChannelColumn(0), m_currentInstrument(0)
 	{
-		calculateFramePlayLengths();
 	}
 	void DocInfo::destroy()
 	{
@@ -67,8 +66,8 @@ namespace gui
 
 	void DocInfo::setCurrentRow(unsigned int row)
 	{
-		if (row >= framePlayLength(m_currentFrame))
-			row = framePlayLength(m_currentFrame)-1;
+		if (row >= doc()->getFramePlayLength(m_currentFrame))
+			row = doc()->getFramePlayLength(m_currentFrame)-1;
 		m_currentRow = row;
 	}
 	void DocInfo::scrollFrameBy(int delta)
@@ -88,11 +87,11 @@ namespace gui
 			{
 				f--;
 			}
-			r = framePlayLength(f) + r;
+			r = doc()->getFramePlayLength(f) + r;
 		}
-		else if (r >= framePlayLength(f))
+		else if (r >= doc()->getFramePlayLength(f))
 		{
-			r = r - framePlayLength(f);
+			r = r - doc()->getFramePlayLength(f);
 			f++;
 			if (f >= doc()->GetFrameCount())
 			{
@@ -151,22 +150,10 @@ namespace gui
 		return c;
 	}
 
-	unsigned int DocInfo::framePlayLength(unsigned int frame) const
-	{
-		return m_framePlayLengths[frame];
-	}
 	unsigned int DocInfo::patternColumns(unsigned int chan) const
 	{
 		int effcol = doc()->GetEffColumns(chan);
 		return C_EFF_NUM + C_EFF_COL_COUNT*(effcol+1);
-	}
-
-	void DocInfo::calculateFramePlayLengths()
-	{
-		for (unsigned int i = 0; i < doc()->GetFrameCount(); i++)
-		{
-			m_framePlayLengths[i] = doc()->getFramePlayLength(i);
-		}
 	}
 
 	typedef std::vector<DocInfo> DocsList;

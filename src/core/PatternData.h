@@ -62,10 +62,13 @@ public:
 	unsigned int GetSongSpeed() const			{ return m_iSongSpeed;		 }
 	unsigned int GetSongTempo() const			{ return m_iSongTempo;		 }
 
-	void SetPatternLength(unsigned int Length)	{ m_iPatternLength = Length; }
+	void SetPatternLength(unsigned int Length);
 	void SetFrameCount(unsigned int Count)		{ m_iFrameCount = Count;	 }
 	void SetSongSpeed(unsigned int Speed)		{ m_iSongSpeed = Speed;		 }
 	void SetSongTempo(unsigned int Tempo)		{ m_iSongTempo = Tempo;		 }
+
+	unsigned int getPatternPlayLength(int channel, int pattern);
+	unsigned int getFramePlayLength(int frame, int channels);
 
 	unsigned short GetFramePattern(int Frame, int Channel) const;
 	void SetFramePattern(int Frame, int Channel, int Pattern);
@@ -78,7 +81,8 @@ private:
 private:
 
 	// List of the patterns assigned to frames
-	unsigned short m_iFrameList[MAX_FRAMES][MAX_CHANNELS];		
+	unsigned short m_iFrameList[MAX_FRAMES][MAX_CHANNELS];
+	int m_patternPlayLengths[MAX_CHANNELS][MAX_PATTERN];
 
 	unsigned int m_iPatternLength;			// Amount of rows in one pattern
 	unsigned int m_iFrameCount;				// Number of frames

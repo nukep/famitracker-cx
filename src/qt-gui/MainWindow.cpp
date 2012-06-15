@@ -251,7 +251,6 @@ namespace gui
 		gui::stopSong();
 
 		d->SelectTrack(i);
-		dinfo->calculateFramePlayLengths();
 
 		speed->blockSignals(true);
 		tempo->blockSignals(true);

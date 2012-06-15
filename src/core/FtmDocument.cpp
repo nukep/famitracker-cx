@@ -1067,29 +1067,7 @@ unsigned int FtmDocument::getFramePlayLength(unsigned int frame) const
 {
 	ftm_Assert(frame < GetFrameCount());
 
-	unsigned int track = GetSelectedTrack();
-
-	stChanNote note;
-
-	for (unsigned int i = 0; i < GetPatternLength(); i++)
-	{
-		for (unsigned int j = 0; j < GetAvailableChannels(); j++)
-		{
-			unsigned int pattern = GetPatternAtFrame(frame, j);
-			GetDataAtPattern(track, pattern, j, i, &note);
-
-			for (unsigned int k = 0; k <= GetEffColumns(j); k++)
-			{
-				unsigned char eff = note.EffNumber[k];
-				if (eff == EF_JUMP || eff == EF_SKIP || eff == EF_HALT)
-				{
-					return i+1;
-				}
-			}
-		}
-	}
-
-	return GetPatternLength();
+	return m_pSelectedTune->getFramePlayLength(frame, GetAvailableChannels());
 }
 
 unsigned int FtmDocument::GetEffColumns(int Track, unsigned int Channel) const
