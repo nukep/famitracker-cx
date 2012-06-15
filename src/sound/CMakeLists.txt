@@ -13,7 +13,7 @@ install(TARGETS fami-alsa-sound
 find_package(Jack)
 
 if (JACK_FOUND)
-	option(WITH_JACK "Use JACK audio" ON)
+	option(WITH_JACK "Use JACK audio" OFF)
 	if (WITH_JACK)
 		include(${JACK_INCLUDE_DIR})
 		add_library(fami-jack-sound MODULE jack.cpp jack.hpp)
