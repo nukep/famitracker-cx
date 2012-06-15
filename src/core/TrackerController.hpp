@@ -31,6 +31,7 @@ private:
 	CTrackerChannel * const * m_trackerChannels;
 
 	bool m_jumped;
+	bool m_didJump;
 	bool m_halted;
 	unsigned int m_frame, m_row;
 	unsigned int m_jumpFrame, m_jumpRow;

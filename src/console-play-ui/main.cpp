@@ -74,7 +74,8 @@ int main(int argc, char *argv[])
 
 	if (argc <= 1)
 	{
-		printf("Please specify a song\n");
+		printf("Please specify a song\n\n");
+		printf("Usage: %s FILE [TRACK]\n", argv[0]);
 		return 1;
 	}
 	else

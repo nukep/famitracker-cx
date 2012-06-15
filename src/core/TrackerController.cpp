@@ -49,6 +49,7 @@ void TrackerController::playRow()
 	int channels = m_document->GetAvailableChannels();
 
 	m_jumped = false;
+	m_didJump = false;
 
 	m_frame = m_jumpFrame;
 	m_row = m_jumpRow;
@@ -140,11 +141,13 @@ void TrackerController::evaluateGlobalEffects(const stChanNote *noteData, int ef
 
 		// Bxx: Jump to frame xx
 		case EF_JUMP:
+			m_didJump = true;
 			setFrame(effParam);
 			break;
 
 		// Dxx: Skip to next frame and start at row xx
 		case EF_SKIP:
+			if (!m_didJump)
 			skip(effParam);
 			break;
 
