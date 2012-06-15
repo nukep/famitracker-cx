@@ -308,6 +308,9 @@ namespace gui
 		if (sgen_thread->isRunning())
 			return;
 
+		if (mw != NULL)
+			mw->setPlaying(true);
+
 		const DocInfo *dinfo = activeDocInfo();
 
 		sgen->trackerController()->startAt(dinfo->currentFrame(), 0);
@@ -322,6 +325,9 @@ namespace gui
 			sgen->requestStop();
 		}
 		sgen_thread->wait();
+
+		if (mw != NULL)
+			mw->setPlaying(false);
 	}
 
 	void toggleEditMode()

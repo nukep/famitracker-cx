@@ -42,6 +42,8 @@ namespace gui
 
 		QObject::connect(speed, SIGNAL(valueChanged(int)), this, SLOT(speedTempoChange(int)));
 		QObject::connect(tempo, SIGNAL(valueChanged(int)), this, SLOT(speedTempoChange(int)));
+		QObject::connect(rows, SIGNAL(valueChanged(int)), this, SLOT(rowsChange(int)));
+		QObject::connect(frames, SIGNAL(valueChanged(int)), this, SLOT(framesChange(int)));
 
 		QObject::connect(action_Play, SIGNAL(triggered()), this, SLOT(play()));
 		action_Play->setIcon(QIcon::fromTheme("media-playback-start"));
@@ -87,6 +89,11 @@ namespace gui
 		bool b = gui::isEditing();
 		actionToggle_edit_mode->setChecked(b);
 		patternView->update();
+	}
+	void MainWindow::setPlaying(bool playing)
+	{
+		rows->setEnabled(!playing);
+		frames->setEnabled(!playing);
 	}
 
 	bool MainWindow::event(QEvent *event)
@@ -254,6 +261,8 @@ namespace gui
 
 		speed->blockSignals(true);
 		tempo->blockSignals(true);
+		rows->blockSignals(true);
+		frames->blockSignals(true);
 
 		speed->setValue(d->GetSongSpeed());
 		tempo->setValue(d->GetSongTempo());
@@ -263,6 +272,8 @@ namespace gui
 		dinfo->setCurrentFrame(0);
 		dinfo->setCurrentRow(0);
 
+		frames->blockSignals(false);
+		rows->blockSignals(false);
 		tempo->blockSignals(false);
 		speed->blockSignals(false);
 
@@ -348,6 +359,28 @@ namespace gui
 		d->SetSongTempo(tempo->value());
 
 		d->unlock();
+	}
+	void MainWindow::rowsChange(int i)
+	{
+		FtmDocument *d = gui::activeDocument();
+		d->lock();
+
+		d->SetPatternLength(i);
+
+		d->unlock();
+
+		gui::updateFrameChannel(true);
+	}
+	void MainWindow::framesChange(int i)
+	{
+		FtmDocument *d = gui::activeDocument();
+		d->lock();
+
+		d->SetFrameCount(i);
+
+		d->unlock();
+
+		gui::updateFrameChannel(true);
 	}
 	void MainWindow::play()
 	{

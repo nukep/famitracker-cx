@@ -26,6 +26,7 @@ namespace gui
 
 		void sendUpdateEvent();
 		void updateEditMode();
+		void setPlaying(bool playing);
 
 		void refreshInstruments();
 	protected:
@@ -47,6 +48,8 @@ namespace gui
 		void instrumentSelect();
 		void instrumentNameChange(QString);
 		void speedTempoChange(int);
+		void rowsChange(int);
+		void framesChange(int);
 
 		void play();
 		void stop();

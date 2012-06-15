@@ -420,10 +420,14 @@ namespace gui
 		void paintEvent(QPaintEvent *)
 		{
 			const DocInfo *dinfo = gui::activeDocInfo();
-			const FtmDocument *d = dinfo->doc();
+			FtmDocument *d = dinfo->doc();
+
+			d->lock();
 
 			unsigned int frame = dinfo->currentFrame();
 			unsigned int channels = d->GetAvailableChannels();
+
+			d->unlock();
 
 			QPainter p;
 			p.begin(this);
@@ -801,6 +805,8 @@ namespace gui
 	{
 		DocInfo *dinfo = gui::activeDocInfo();
 
+		dinfo->doc()->lock();
+
 		if (modified || m_currentFrame != dinfo->currentFrame())
 		{
 			m_body->setModified();
@@ -814,6 +820,8 @@ namespace gui
 		verticalScrollBar()->setRange(0, dinfo->doc()->getFramePlayLength(m_currentFrame)-1);
 		verticalScrollBar()->setValue(m_currentRow);
 		verticalScrollBar()->blockSignals(false);
+
+		dinfo->doc()->unlock();
 
 		m_body->repaint();
 	}
