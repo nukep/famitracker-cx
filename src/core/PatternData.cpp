@@ -158,7 +158,7 @@ void CPatternData::AllocatePattern(int Channel, int Pattern)
 {
 	// Allocate memory
 	m_pPatternData[Channel][Pattern] = new stChanNote[MAX_PATTERN_LENGTH];
-	m_patternPlayLengths[Channel][Pattern] = m_iPatternLength;
+	m_patternPlayLengths[Channel][Pattern] = MAX_PATTERN_LENGTH;
 
 	// Clear memory
 	for (int i = 0; i < MAX_PATTERN_LENGTH; i++)
