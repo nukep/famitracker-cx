@@ -300,9 +300,10 @@ namespace gui
 		{
 			doc->IncreasePattern(current_frame, current_channel, 1);
 		}
-		gui::updateFrameChannel(true);
 
 		doc->unlock();
+
+		gui::updateFrameChannel(true);
 	}
 	void MainWindow::decrementPattern()
 	{
@@ -324,9 +325,10 @@ namespace gui
 		{
 			doc->DecreasePattern(current_frame, current_channel, 1);
 		}
-		gui::updateFrameChannel(true);
 
 		doc->unlock();
+
+		gui::updateFrameChannel(true);
 	}
 	void MainWindow::instrumentSelect()
 	{
