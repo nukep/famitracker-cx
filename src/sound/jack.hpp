@@ -1,7 +1,7 @@
 #ifndef _JACK_HPP_
 #define _JACK_HPP_
 
-#include "core/sound.hpp"
+#include "famitracker-core/sound.hpp"
 
 extern "C" SoundSink * sound_create();
 

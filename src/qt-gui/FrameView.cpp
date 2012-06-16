@@ -3,7 +3,7 @@
 #include <QMouseEvent>
 #include "gui.hpp"
 #include "FrameView.hpp"
-#include "core/FtmDocument.hpp"
+#include "famitracker-core/FtmDocument.hpp"
 #include <QDebug>
 
 namespace gui

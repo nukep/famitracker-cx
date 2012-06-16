@@ -1,8 +1,8 @@
 #ifndef _GUI_HPP_
 #define _GUI_HPP_
 
-#include "core/Document.hpp"
-#include "core/FamiTrackerTypes.h"
+#include "famitracker-core/Document.hpp"
+#include "famitracker-core/FamiTrackerTypes.h"
 
 class QFile;
 class QString;

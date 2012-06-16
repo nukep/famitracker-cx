@@ -1,7 +1,7 @@
 #ifndef _ALSA_HPP_
 #define _ALSA_HPP_
 
-#include "core/sound.hpp"
+#include "famitracker-core/sound.hpp"
 
 extern "C" SoundSink * sound_create();
 

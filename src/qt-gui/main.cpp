@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <string.h>
 #include "gui.hpp"
-#include "core/App.hpp"
+#include "famitracker-core/App.hpp"
 
 const char *default_sound="alsa";
 

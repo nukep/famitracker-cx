@@ -1,6 +1,6 @@
 #include <boost/thread.hpp>
 #include "threads.hpp"
-#include "core/sound.hpp"
+#include "famitracker-core/sound.hpp"
 
 namespace gui
 {

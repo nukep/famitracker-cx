@@ -8,7 +8,7 @@
 #include <string.h>
 #include "PatternView.hpp"
 #include "gui.hpp"
-#include "core/FtmDocument.hpp"
+#include "famitracker-core/FtmDocument.hpp"
 
 namespace gui
 {

@@ -6,10 +6,10 @@
 #include "gui.hpp"
 #include "MainWindow.hpp"
 #include "threads.hpp"
-#include "core/FtmDocument.hpp"
-#include "core/sound.hpp"
-#include "core/TrackerController.hpp"
-#include "core/App.hpp"
+#include "famitracker-core/FtmDocument.hpp"
+#include "famitracker-core/sound.hpp"
+#include "famitracker-core/TrackerController.hpp"
+#include "famitracker-core/App.hpp"
 
 namespace gui
 {

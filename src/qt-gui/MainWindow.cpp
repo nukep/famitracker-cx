@@ -2,7 +2,7 @@
 #include <QDebug>
 #include "MainWindow.hpp"
 #include "gui.hpp"
-#include "core/FtmDocument.hpp"
+#include "famitracker-core/FtmDocument.hpp"
 
 namespace gui
 {
