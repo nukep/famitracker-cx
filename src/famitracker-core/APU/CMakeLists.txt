@@ -1,6 +1,6 @@
 set(APU_SRC
-	../Blip_Buffer/Blip_Buffer.cpp
-	../Blip_Buffer/Blip_Buffer.h
+	Blip_Buffer/Blip_Buffer.cpp
+	Blip_Buffer/Blip_Buffer.h
 
 	APU.cpp
 	Mixer.cpp
