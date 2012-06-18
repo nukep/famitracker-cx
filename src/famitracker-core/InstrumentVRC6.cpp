@@ -86,7 +86,7 @@ bool CInstrumentVRC6::Load(Document *doc)
 	return true;
 }
 
-void CInstrumentVRC6::SaveFile(IO *file, FtmDocument *doc)
+void CInstrumentVRC6::SaveFile(core::IO *file, FtmDocument *doc)
 {
 	// Sequences
 	unsigned char SeqCount = SEQUENCE_COUNT;
@@ -124,7 +124,7 @@ void CInstrumentVRC6::SaveFile(IO *file, FtmDocument *doc)
 	}
 }
 
-bool CInstrumentVRC6::LoadFile(IO *file, int iVersion, FtmDocument *doc)
+bool CInstrumentVRC6::LoadFile(core::IO *file, int iVersion, FtmDocument *doc)
 {
 	// Sequences
 	stSequence OldSequence;

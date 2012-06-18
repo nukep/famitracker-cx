@@ -58,7 +58,6 @@ const int SPEED_PAL		= 2;
 // Used to play the audio when the buffer is full
 class ICallback {
 public:
-	virtual void FlushBuffer(int16 *Buffer, uint32 Size) = 0;
 };
 
 

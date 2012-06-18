@@ -1,5 +1,7 @@
-project(core)
+project(famitracker-core)
 cmake_minimum_required(VERSION 2.6)
+
+include_directories("..")
 
 set(SRC
 	common.hpp
@@ -75,7 +77,7 @@ find_package(Boost REQUIRED thread)
 include_directories(${Boost_INCLUDE_DIR})
 
 add_library(fami-core SHARED ${SRC})
-target_link_libraries(fami-core ${CMAKE_DL_LIBS} ${Boost_LIBRARIES})
+target_link_libraries(fami-core core ${Boost_LIBRARIES})
 
 install(TARGETS fami-core
 	LIBRARY DESTINATION lib

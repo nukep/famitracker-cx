@@ -2,7 +2,7 @@
 #include <stdio.h>
 #include "alsa.hpp"
 
-SoundSink * sound_create()
+core_api_SoundSink * sound_create()
 {
 	return new AlsaSound;
 }
@@ -58,7 +58,7 @@ void AlsaSound::close()
 	}
 }
 
-void AlsaSound::FlushBuffer(int16 *buffer, uint32 size)
+void AlsaSound::flushBuffer(core::s16 *buffer, core::u32 size)
 {
 	snd_pcm_t *handle = (snd_pcm_t*)m_handle;
 	snd_pcm_sframes_t frames;

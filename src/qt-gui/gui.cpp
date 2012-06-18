@@ -161,7 +161,7 @@ namespace gui
 	int active_doc_index;
 	SoundGen *sgen;
 	SoundGenThread *sgen_thread;
-	SoundSinkPlayback *sink;
+	core::SoundSinkPlayback *sink;
 
 	QApplication *app;
 	MainWindow *mw;
@@ -189,7 +189,7 @@ namespace gui
 	{
 		active_doc_index = -1;
 
-		sink = (SoundSinkPlayback*)app::loadSoundSink(sound_name);
+		sink = (core::SoundSinkPlayback*)core::loadSoundSink(sound_name);
 		sink->initialize(48000, 1, 150);
 		sgen = new SoundGen;
 		sgen->setSoundSink(sink);
@@ -266,7 +266,7 @@ namespace gui
 		setActiveDocument(active_doc_index-1);
 	}
 
-	void openDocument(FileIO *io, bool close_active)
+	void openDocument(core::IO *io, bool close_active)
 	{
 		if (close_active)
 			closeActiveDocument();
@@ -334,50 +334,5 @@ namespace gui
 	{
 		edit_mode = !edit_mode;
 		mw->updateEditMode();
-	}
-
-	FileIO::FileIO(const QString &name, bool reading)
-	{
-		f = new QFile(name);
-		if (!f->open(reading ? QIODevice::ReadOnly : QIODevice::WriteOnly))
-		{
-			abort();
-		}
-	}
-	FileIO::~FileIO()
-	{
-		delete f;
-	}
-
-	Quantity FileIO::read(void *buf, Quantity sz)
-	{
-		return f->read((char*)buf, sz);
-	}
-	Quantity FileIO::write(const void *buf, Quantity sz)
-	{
-		return f->write((const char*)buf, sz);
-	}
-	bool FileIO::seek(int offset, SeekOrigin o)
-	{
-		switch(o)
-		{
-		case IO_SEEK_SET:
-			return f->seek(offset);
-			break;
-		case IO_SEEK_CUR:
-			return f->seek(f->pos() + offset);
-			break;
-		case IO_SEEK_END:
-			return f->seek(f->size());
-			break;
-		}
-	}
-	bool FileIO::isReadable()
-	{
-		return f->isReadable();
-	}
-	bool FileIO::isWritable()
-	{
-		return f->isWritable();
 	}
 }

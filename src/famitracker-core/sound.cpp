@@ -47,7 +47,7 @@ SoundGen::~SoundGen()
 	}
 }
 
-void SoundGen::setSoundSink(SoundSink *s)
+void SoundGen::setSoundSink(core::SoundSink *s)
 {
 	m_sink = s;
 	m_apu.SetCallback(s);

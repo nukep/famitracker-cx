@@ -211,7 +211,7 @@ namespace gui
 		if (path.isEmpty())
 			return;
 
-		FileIO io(path, true);
+		core::FileIO io(path.toLocal8Bit(), core::IO_READ);
 
 		gui::openDocument(&io, true);
 

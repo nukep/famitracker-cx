@@ -1,17 +1,10 @@
 #include <jack/jack.h>
-#include <jack/ringbuffer.h>
-#include <boost/thread/condition.hpp>
-#include <boost/thread/mutex.hpp>
 #include <cmath>
 #include <malloc.h>
 #include <stdio.h>
 #include "jack.hpp"
 
-typedef boost::mutex::scoped_lock lock;
-boost::mutex monitor;
-boost::condition cnd;
-
-SoundSink * sound_create()
+core_api_SoundSink * sound_create()
 {
 	return new JackSound;
 }
@@ -23,27 +16,16 @@ struct jacksound_info_t
 	jack_client_t * client;
 
 	jack_port_t * out;
-
-	jack_ringbuffer_t *buffer;
 };
 
 static int process(jack_nframes_t frames, void *arg)
 {
+	// this is the moment when the last period should be playing
+	// notify time dispatcher to tick for the duration of this period
+
 	jacksound_info_t *handle = (jacksound_info_t*)arg;
 
 	void *buf = jack_port_get_buffer(handle->out, frames);
-
-	int availableRead = jack_ringbuffer_read_space(handle->buffer);
-
-	if (availableRead == 0)
-		return 0;
-
-	if (availableRead < frames*sizeof(sample_t))
-		return 0;	// blip
-
-	jack_ringbuffer_read(handle->buffer, (char*)buf, frames*sizeof(sample_t));
-
-	cnd.notify_one();
 
 	return 0;
 }
@@ -74,9 +56,6 @@ void JackSound::initialize(unsigned int sampleRate, unsigned int channels, unsig
 	}
 
 	sampleRate = jack_get_sample_rate(m_handle->client);
-	m_handle->buffer = jack_ringbuffer_create(sampleRate*sizeof(sample_t));
-
-	jack_ringbuffer_mlock(m_handle->buffer);
 
 	jack_set_process_callback(m_handle->client, process, m_handle);
 
@@ -114,30 +93,12 @@ void JackSound::close()
 	jack_client_close(m_handle->client);
 	m_handle->client = NULL;
 }
-void JackSound::FlushBuffer(int16 *Buffer, uint32 Size)
+void JackSound::flushBuffer(core::s16 *Buffer, core::u32 Size)
 {
-//	int availableWrite = ;
 
-	while (jack_ringbuffer_write_space(m_handle->buffer)/sizeof(sample_t) < Size)
-	{
-		// block until there's more room
-		lock lk(monitor);
-		cnd.wait(lk);
-	}
-
-	sample_t *src = new sample_t[Size];
-	// convert s16 to float
-	for (int i = 0; i < Size; i++)
-	{
-		src[i] = sample_t(Buffer[i])/sample_t(65535.0);
-	}
-
-	jack_ringbuffer_write(m_handle->buffer, (const char*)src, Size*sizeof(sample_t));
-	delete[] src;
 }
 void JackSound::flush()
 {
-	jack_ringbuffer_reset(m_handle->buffer);
 }
 int JackSound::sampleRate() const
 {

@@ -1,6 +1,6 @@
 #include "wavoutput.hpp"
 
-WavOutput::WavOutput(IO *io, int chans, int sampleRate)
+WavOutput::WavOutput(core::IO *io, int chans, int sampleRate)
 	: m_io(io), m_size(0), m_sampleRate(sampleRate)
 {
 	int bpsmp = 2;	// bytes per sample (per channel)
@@ -22,7 +22,7 @@ WavOutput::WavOutput(IO *io, int chans, int sampleRate)
 	io->writeInt(0);						// size of following data
 }
 
-void WavOutput::FlushBuffer(int16 *Buffer, uint32 Size)
+void WavOutput::flushBuffer(core::s16 *Buffer, core::u32 Size)
 {
 	m_io->write(Buffer, Size*2);
 	m_size += Size*2;
@@ -31,10 +31,10 @@ void WavOutput::FlushBuffer(int16 *Buffer, uint32 Size)
 void WavOutput::finalize()
 {
 	// write final size
-	m_io->seek(4, IO_SEEK_SET);
+	m_io->seek(4, core::IO_SEEK_SET);
 	m_io->writeInt(m_size+44 - 8);
 
 	// write data size
-	m_io->seek(40, IO_SEEK_SET);
+	m_io->seek(40, core::IO_SEEK_SET);
 	m_io->writeInt(m_size);
 }

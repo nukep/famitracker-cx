@@ -7,53 +7,6 @@
 
 const char *default_sound="alsa";
 
-class FileIO : public IO
-{
-public:
-	FileIO(const char *filename, const char *mode)
-	{
-		f = fopen(filename, mode);
-	}
-
-	Quantity read(void *buf, Quantity sz)
-	{
-		if (f == NULL)
-			return 0;
-		return fread(buf, 1, sz, f);
-	}
-
-	Quantity write(const void *buf, Quantity sz)
-	{
-		if (f == NULL)
-			return 0;
-		return fwrite(buf, 1, sz, f);
-	}
-	bool seek(int offset, SeekOrigin o)
-	{
-		if (f == NULL)
-			return false;
-		fseek(f, offset, SEEK_SET);
-		return true;
-	}
-	bool isReadable()
-	{
-		return f != NULL;
-	}
-	bool isWritable()
-	{
-		return f != NULL;
-	}
-
-	~FileIO()
-	{
-		if (f != NULL)
-		{
-			fclose(f);
-		}
-	}
-	FILE *f;
-};
-
 static void tracker_update(SoundGen *g)
 {
 	TrackerController *c = g->trackerController();
@@ -89,7 +42,7 @@ int main(int argc, char *argv[])
 
 	FtmDocument doc;
 	{
-		FileIO ftm_io(song, "rb");
+		core::FileIO ftm_io(song, core::IO_READ);
 		if (!ftm_io.isReadable())
 		{
 			printf("Cannot open file\n");
@@ -106,7 +59,7 @@ int main(int argc, char *argv[])
 	{
 		unsigned int rate = 48000;
 
-		SoundSinkPlayback *sink = (SoundSinkPlayback*)app::loadSoundSink(default_sound);
+		core::SoundSinkPlayback *sink = (core::SoundSinkPlayback*)core::loadSoundSink(default_sound);
 		if (sink == NULL)
 		{
 			return 1;

@@ -23,8 +23,7 @@ namespace gui
 	FtmDocument * activeDocument();
 	DocInfo * activeDocInfo();
 	void closeActiveDocument();
-	class FileIO;
-	void openDocument(FileIO *io, bool close_active);
+	void openDocument(core::IO *io, bool close_active);
 	void newDocument(bool close_active);
 
 	bool isPlaying();
@@ -74,20 +73,6 @@ namespace gui
 		unsigned int m_currentInstrument;
 
 		void destroy();
-	};
-
-	class FileIO : public IO
-	{
-	public:
-		FileIO(const QString &name, bool reading);
-		~FileIO();
-		Quantity read(void *buf, Quantity sz);
-		Quantity write(const void *buf, Quantity sz);
-		bool seek(int offset, SeekOrigin o);
-		bool isReadable();
-		bool isWritable();
-	private:
-		QFile *f;
 	};
 }
 

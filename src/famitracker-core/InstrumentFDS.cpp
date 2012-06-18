@@ -80,7 +80,7 @@ CInstrument *CInstrumentFDS::Clone()
 	return pNewInst;
 }
 
-void CInstrumentFDS::StoreInstSequence(IO *file, CSequence *pSeq)
+void CInstrumentFDS::StoreInstSequence(core::IO *file, CSequence *pSeq)
 {
 	int i;
 	// Store number of items in this sequence
@@ -103,7 +103,7 @@ void CInstrumentFDS::StoreInstSequence(IO *file, CSequence *pSeq)
 	}
 }
 
-bool CInstrumentFDS::LoadInstSequence(IO *file, CSequence *pSeq)
+bool CInstrumentFDS::LoadInstSequence(core::IO *file, CSequence *pSeq)
 {
 	int SeqCount;
 	int LoopPoint;
@@ -258,7 +258,7 @@ bool CInstrumentFDS::Load(Document *pDocFile)
 	return true;
 }
 
-void CInstrumentFDS::SaveFile(IO *file, FtmDocument *pDoc)
+void CInstrumentFDS::SaveFile(core::IO *file, FtmDocument *pDoc)
 {
 	// Write wave
 	for (int i = 0; i < WAVE_SIZE; i++)
@@ -289,7 +289,7 @@ void CInstrumentFDS::SaveFile(IO *file, FtmDocument *pDoc)
 	StoreInstSequence(file, m_pPitch);
 }
 
-bool CInstrumentFDS::LoadFile(IO *file, int iVersion, FtmDocument *pDoc)
+bool CInstrumentFDS::LoadFile(core::IO *file, int iVersion, FtmDocument *pDoc)
 {
 	// Read wave
 	for (int i = 0; i < WAVE_SIZE; i++)

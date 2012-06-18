@@ -3,78 +3,7 @@
 
 #include <string>
 #include "types.hpp"
-
-enum SeekOrigin
-{
-	IO_SEEK_SET=0,
-	IO_SEEK_CUR=1,
-	IO_SEEK_END=2
-};
-
-class IO
-{
-public:
-	virtual Quantity read(void *buf, Quantity sz) = 0;
-	virtual Quantity write(const void *buf, Quantity sz) = 0;
-	virtual bool seek(int offset, SeekOrigin o) = 0;
-	virtual bool isReadable() = 0;
-	virtual bool isWritable() = 0;
-	virtual ~IO(){ }
-
-	bool read_e(void *buf, Quantity sz)
-	{
-		return read(buf, sz) == sz;
-	}
-	bool write_e(const void *buf, Quantity sz)
-	{
-		return write(buf, sz) == sz;
-	}
-	void read_exc(void *buf, Quantity sz)
-	{
-		ftm_Assert(read_e(buf, sz));
-	}
-	void write_exc(const void *buf, Quantity sz)
-	{
-		ftm_Assert(write_e(buf, sz));
-	}
-
-	bool readInt(int *i)
-	{
-		unsigned char buf[4];
-		if (!read_e(buf, 4))
-			return false;
-		*i = (buf[3] << 24) | (buf[2] << 16) | (buf[1] << 8) | buf[0];
-		return true;
-	}
-	bool readInt(unsigned int *i)
-	{
-		return readInt((int*)i);
-	}
-	bool writeInt(int i)
-	{
-		return write_e(&i, 4);
-	}
-	bool readChar(char &c)
-	{
-		return read_e(&c, 1);
-	}
-	bool readChar(signed char &c)
-	{
-		return read_e(&c, 1);
-	}
-	bool readChar(unsigned char &c)
-	{
-		return read_e(&c, 1);
-	}
-	bool writeChar(char c)
-	{
-		return write_e(&c, 1);
-	}
-	bool writeShort(short c)
-	{
-		return write_e(&c, 2);
-	}
-};
+#include "core/io.hpp"
 
 class Document
 {
@@ -82,7 +11,7 @@ public:
 	Document();
 	~Document();
 
-	bool checkValidity(IO *io);
+	bool checkValidity(core::IO *io);
 
 	unsigned int getFileVersion() const{ return m_iFileVersion; }
 
@@ -97,7 +26,7 @@ public:
 	void writeBlockChar(char);
 
 	const char *blockID() const{ return m_cBlockID; }
-	bool readBlock(IO *io);
+	bool readBlock(core::IO *io);
 	void getBlock(void *buf, unsigned int size);
 	void writeBlock(const void *data, unsigned int size);
 	void createBlock(const char *id, int version);

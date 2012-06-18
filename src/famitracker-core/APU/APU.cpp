@@ -41,6 +41,7 @@
 #include <cstdio>
 #include <memory>
 #include "APU.h"
+#include "core/soundsink.hpp"
 
 #include "Square.h"
 #include "Triangle.h"
@@ -265,7 +266,7 @@ void CAPU::EndFrame()
 
 	int SamplesAvail = m_pMixer->FinishBuffer(m_iFrameCycles);
 	int ReadSamples	= m_pMixer->ReadBuffer(SamplesAvail, m_pSoundBuffer, m_bStereoEnabled);
-	m_pParent->FlushBuffer(m_pSoundBuffer, ReadSamples);
+	m_pParent->flushBuffer(m_pSoundBuffer, ReadSamples);
 	
 	m_iFrameClock /*+*/= m_iFrameCycleCount;
 	m_iFrameCycles = 0;

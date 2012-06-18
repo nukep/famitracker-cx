@@ -129,7 +129,7 @@ bool CInstrument2A03::Load(Document *doc)
 	return true;
 }
 
-void CInstrument2A03::SaveFile(IO *file, FtmDocument *pDoc)
+void CInstrument2A03::SaveFile(core::IO *file, FtmDocument *pDoc)
 {
 	// Saves an 2A03 instrument
 	// Current version 2.2
@@ -230,7 +230,7 @@ void CInstrument2A03::SaveFile(IO *file, FtmDocument *pDoc)
 	}
 }
 
-bool CInstrument2A03::LoadFile(IO *file, int iVersion, FtmDocument *pDoc)
+bool CInstrument2A03::LoadFile(core::IO *file, int iVersion, FtmDocument *pDoc)
 {
 	// Reads an FTI file
 	//

@@ -2,21 +2,7 @@
 #define _SOUND_HPP_
 
 #include "APU/APU.h"
-
-class SoundSink : public ICallback
-{
-public:
-	virtual ~SoundSink(){}
-	virtual void flush() = 0;
-	virtual int sampleRate() const = 0;
-};
-
-class SoundSinkPlayback : public SoundSink
-{
-public:
-	virtual void initialize(unsigned int sampleRate, unsigned int channels, unsigned int latency_ms) = 0;
-	virtual void close() = 0;
-};
+#include "core/soundsink.hpp"
 
 class CDSample;
 struct stChanNote;
@@ -39,7 +25,7 @@ public:
 	SoundGen();
 	~SoundGen();
 
-	void setSoundSink(SoundSink *s);
+	void setSoundSink(core::SoundSink *s);
 
 	bool isRunning() const{ return m_bRunning; }
 
@@ -95,7 +81,7 @@ private:
 	// Sound
 	CSampleMem m_samplemem;
 	CAPU m_apu;
-	SoundSink *m_sink;
+	core::SoundSink *m_sink;
 
 	unsigned int m_iChannels;
 

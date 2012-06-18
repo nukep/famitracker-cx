@@ -190,7 +190,7 @@ void FtmDocument::createEmpty()
 	SetModifiedFlag(0);
 }
 
-void FtmDocument::read(IO *io)
+void FtmDocument::read(core::IO *io)
 {
 	Document doc;
 	bForceBackup = false;
@@ -243,13 +243,13 @@ void FtmDocument::read(IO *io)
 	}
 }
 
-bool FtmDocument::readOld(Document *doc, IO *io)
+bool FtmDocument::readOld(Document *doc, core::IO *io)
 {
 	// TODO
 	return false;
 }
 
-bool FtmDocument::readNew(Document *doc, IO *io)
+bool FtmDocument::readNew(Document *doc, core::IO *io)
 {
 	while (!doc->isFileDone())
 	{
@@ -984,7 +984,7 @@ bool FtmDocument::readNew_sequences_vrc6(Document *doc)
 	return true;
 }
 
-void FtmDocument::write(IO *io)
+void FtmDocument::write(core::IO *io)
 {
 }
 /*
@@ -1929,7 +1929,7 @@ int FtmDocument::FindFreeInstrumentSlot()
 	return -1;
 }
 
-void FtmDocument::SaveInstrument(unsigned int Instrument, IO *io)
+void FtmDocument::SaveInstrument(unsigned int Instrument, core::IO *io)
 {
 	CInstrument *pInstrument = GetInstrument(Instrument);
 
@@ -1954,7 +1954,7 @@ void FtmDocument::SaveInstrument(unsigned int Instrument, IO *io)
 	pInstrument->SaveFile(io, this);
 }
 
-int FtmDocument::LoadInstrument(IO *io)
+int FtmDocument::LoadInstrument(core::IO *io)
 {
 	int Slot = FindFreeInstrumentSlot();
 

@@ -38,7 +38,10 @@ enum {
 class Document;
 class CSequence;
 class FtmDocument;
-class IO;
+namespace core
+{
+	class IO;
+}
 
 // TODO - dan: CCompiler
 
@@ -56,8 +59,8 @@ public:
 	virtual CInstrument* Clone() = 0;												// Creates a copy
 	virtual void Store(Document *doc) = 0;											// Saves the instrument to the module
 	virtual bool Load(Document *doc) = 0;											// Loads the instrument from a module
-	virtual void SaveFile(IO *file, FtmDocument *pDoc) = 0;							// Saves to an FTI file
-	virtual bool LoadFile(IO *file, int iVersion, FtmDocument *pDoc) = 0;			// Loads from an FTI file
+	virtual void SaveFile(core::IO *file, FtmDocument *pDoc) = 0;							// Saves to an FTI file
+	virtual bool LoadFile(core::IO *file, int iVersion, FtmDocument *pDoc) = 0;			// Loads from an FTI file
 //	virtual int CompileSize(CCompiler *pCompiler) = 0;								// Gets the compiled size
 //	virtual int Compile(CCompiler *pCompiler, int Index) = 0;						// Compiles the instrument for NSF generation
 	virtual bool CanRelease(FtmDocument *doc) const = 0;
@@ -74,8 +77,8 @@ public:
 	virtual CInstrument* Clone();
 	virtual void Store(Document *doc);
 	virtual bool Load(Document *doc);
-	virtual void SaveFile(IO *file, FtmDocument *pDoc);
-	virtual bool LoadFile(IO *file, int iVersion, FtmDocument *pDoc);
+	virtual void SaveFile(core::IO *file, FtmDocument *pDoc);
+	virtual bool LoadFile(core::IO *file, int iVersion, FtmDocument *pDoc);
 //	virtual int CompileSize(CCompiler *pCompiler);
 //	virtual int Compile(CCompiler *pCompiler, int Index);
 	virtual bool CanRelease(FtmDocument *doc) const;
@@ -124,8 +127,8 @@ public:
 	virtual CInstrument* Clone();
 	virtual void Store(Document *pDocFile);
 	virtual bool Load(Document *pDocFile);
-	virtual void SaveFile(IO *file, FtmDocument *doc);
-	virtual bool LoadFile(IO *pFile, int iVersion, FtmDocument *pDoc);
+	virtual void SaveFile(core::IO *file, FtmDocument *doc);
+	virtual bool LoadFile(core::IO *pFile, int iVersion, FtmDocument *pDoc);
 //	virtual int CompileSize(CCompiler *pCompiler);
 //	virtual int Compile(CCompiler *pCompiler, int Index);
 	virtual bool CanRelease(FtmDocument *doc) const;
@@ -153,8 +156,8 @@ public:
 	virtual CInstrument* Clone();
 	virtual void Store(Document *pDocFile);
 	virtual bool Load(Document *pDocFile);
-	virtual void SaveFile(IO *pFile, FtmDocument *pDoc);
-	virtual bool LoadFile(IO *pFile, int iVersion, FtmDocument *pDoc);
+	virtual void SaveFile(core::IO *pFile, FtmDocument *pDoc);
+	virtual bool LoadFile(core::IO *pFile, int iVersion, FtmDocument *pDoc);
 	virtual int CompileSize(CCompiler *pCompiler);
 	virtual int Compile(CCompiler *pCompiler, int Index);
 	virtual bool CanRelease(FtmDocument *doc) const;
@@ -179,8 +182,8 @@ public:
 	virtual CInstrument* Clone();
 	virtual void Store(Document *pDocFile);
 	virtual bool Load(Document *pDocFile);
-	virtual void SaveFile(IO *file, FtmDocument *pDoc);
-	virtual bool LoadFile(IO *file, int iVersion, FtmDocument *pDoc);
+	virtual void SaveFile(core::IO *file, FtmDocument *pDoc);
+	virtual bool LoadFile(core::IO *file, int iVersion, FtmDocument *pDoc);
 //	virtual int CompileSize(CCompiler *pCompiler);
 //	virtual int Compile(CCompiler *pCompiler, int Index);
 	virtual bool CanRelease(FtmDocument *doc) const;
@@ -204,8 +207,8 @@ public:
 private:
 	void StoreSequence(Document *pDocFile, CSequence *pSeq);
 	bool LoadSequence(Document *pDocFile, CSequence *pSeq);
-	void StoreInstSequence(IO *file, CSequence *pSeq);
-	bool LoadInstSequence(IO *pFile, CSequence *pSeq);
+	void StoreInstSequence(core::IO *file, CSequence *pSeq);
+	bool LoadInstSequence(core::IO *pFile, CSequence *pSeq);
 public:
 	static const int WAVE_SIZE = 64;
 	static const int MOD_SIZE = 32;
@@ -236,8 +239,8 @@ public:
 	virtual CInstrument* Clone();
 	virtual void Store(Document *pDocFile);
 	virtual bool Load(Document *pDocFile);
-	virtual void SaveFile(IO *pFile, FtmDocument *pDoc);
-	virtual bool LoadFile(IO *pFile, int iVersion, FtmDocument *pDoc);
+	virtual void SaveFile(core::IO *pFile, FtmDocument *pDoc);
+	virtual bool LoadFile(core::IO *pFile, int iVersion, FtmDocument *pDoc);
 	virtual int CompileSize(CCompiler *pCompiler);
 	virtual int Compile(CCompiler *pCompiler, int Index);
 	virtual bool CanRelease(FtmDocument *doc) const;
@@ -273,8 +276,8 @@ public:
 	virtual CInstrument* Clone();
 	virtual void Store(Document *pDocFile);
 	virtual bool Load(Document *pDocFile);
-	virtual void SaveFile(IO *pFile, FtmDocument *pDoc);
-	virtual bool LoadFile(IO *pFile, int iVersion, FtmDocument *pDoc);
+	virtual void SaveFile(core::IO *pFile, FtmDocument *pDoc);
+	virtual bool LoadFile(core::IO *pFile, int iVersion, FtmDocument *pDoc);
 	virtual int CompileSize(CCompiler *pCompiler);
 	virtual int Compile(CCompiler *pCompiler, int Index);
 	virtual bool CanRelease(FtmDocument *doc) const;

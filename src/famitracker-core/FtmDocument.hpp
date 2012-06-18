@@ -11,7 +11,10 @@
 
 class CPatternData;
 class Document;
-class IO;
+namespace core
+{
+	class IO;
+}
 class CTrackerChannel;
 
 namespace boost
@@ -55,8 +58,8 @@ public:
 
 	void createEmpty();
 
-	void read(IO *io);
-	void write(IO *io);
+	void read(core::IO *io);
+	void write(core::IO *io);
 
 	bool doForceBackup() const{ return bForceBackup; }
 
@@ -171,8 +174,8 @@ public:
 	int				CloneInstrument(unsigned int Index);						// Create a copy of an instrument
 	CInstrument		*CreateInstrument(int InstType);							// Creates a new instrument of InstType
 	int				FindFreeInstrumentSlot();
-	void			SaveInstrument(unsigned int Instrument, IO *io);
-	int 			LoadInstrument(IO *io);
+	void			SaveInstrument(unsigned int Instrument, core::IO *io);
+	int 			LoadInstrument(core::IO *io);
 	int				GetInstrumentType(unsigned int Index) const;
 
 	// Sequences functions
@@ -211,8 +214,8 @@ public:
 
 private:
 	bool bForceBackup;
-	bool readOld(Document *doc, IO *io);
-	bool readNew(Document *doc, IO *io);
+	bool readOld(Document *doc, core::IO *io);
+	bool readNew(Document *doc, core::IO *io);
 
 	bool readNew_params(Document *doc);
 	bool readNew_header(Document *doc);

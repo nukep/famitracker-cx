@@ -26,6 +26,11 @@
 #include "../Common.h"
 #include "Mixer.h"
 
+namespace core
+{
+	class SoundSink;
+}
+
 const uint8 SNDCHIP_NONE  = 0;
 const uint8 SNDCHIP_VRC6  = 1;			// Konami VRCVI
 const uint8 SNDCHIP_VRC7  = 2;			// Konami VRCVII
@@ -56,7 +61,7 @@ public:
 	CAPU(CSampleMem *pSampleMem);
 	~CAPU();
 
-	void	SetCallback(ICallback *callback)
+	void	SetCallback(core::SoundSink *callback)
 	{
 		m_pParent = callback;
 	}
@@ -108,7 +113,7 @@ private:
 		
 private:
 	CMixer		*m_pMixer;
-	ICallback	*m_pParent;
+	core::SoundSink	*m_pParent;
 
 	// Internal channels
 	CSquare		*m_pSquare1;

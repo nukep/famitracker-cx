@@ -18,7 +18,7 @@ Document::~Document()
 		delete[] m_pBlockData;
 }
 
-bool Document::checkValidity(IO *io)
+bool Document::checkValidity(core::IO *io)
 {
 	char buf[256];
 	if (!io->read_e(buf, sizeof(FILE_HEADER_ID)-1))
@@ -39,7 +39,7 @@ bool Document::checkValidity(IO *io)
 	return true;
 }
 
-bool Document::readBlock(IO *io)
+bool Document::readBlock(core::IO *io)
 {
 	m_iBlockPointer = 0;
 	memset(m_cBlockID, 0, 16);
