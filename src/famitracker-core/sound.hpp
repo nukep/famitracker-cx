@@ -3,6 +3,7 @@
 
 #include "APU/APU.h"
 #include "core/soundsink.hpp"
+#include "core/ringbuffer.hpp"
 
 class CDSample;
 struct stChanNote;
@@ -55,6 +56,18 @@ public:
 	void requestStop();
 
 private:
+	void requestFrame();
+	core::u32 requestSound(core::s16 *buf, core::u32 sz, core::u32 *idx);
+	void timeCallback(core::u32 skip, void *data);
+	struct rowframe_t
+	{
+		unsigned int row, frame;
+	};
+
+	typedef core::RingBuffer<core::s16, 16384> SoundRingBuffer;
+
+	core::RingBuffer<rowframe_t, 64> m_queued_rowframes;
+	SoundRingBuffer *m_queued_sound;
 	// Internal initialization
 	void createChannels();
 	void setupChannels();

@@ -20,6 +20,8 @@ public:
 	void flush();
 
 	int sampleRate() const;
+
+	void setPlaying(bool playing);
 private:
 	jacksound_info_t * m_handle;
 };

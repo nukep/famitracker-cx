@@ -1,6 +1,7 @@
 #include <jack/jack.h>
 #include <cmath>
 #include <malloc.h>
+#include <memory.h>
 #include <stdio.h>
 #include "jack.hpp"
 
@@ -13,9 +14,12 @@ typedef jack_default_audio_sample_t sample_t;
 
 struct jacksound_info_t
 {
+	JackSound * sink;
 	jack_client_t * client;
 
 	jack_port_t * out;
+
+	core::s16 *buf;
 };
 
 static int process(jack_nframes_t frames, void *arg)
@@ -25,7 +29,25 @@ static int process(jack_nframes_t frames, void *arg)
 
 	jacksound_info_t *handle = (jacksound_info_t*)arg;
 
-	void *buf = jack_port_get_buffer(handle->out, frames);
+	handle->sink->performTimeCallback();
+
+	if (!handle->sink->isPlaying())
+	{
+		// don't play anything
+		sample_t *buf = (sample_t*)jack_port_get_buffer(handle->out, frames);
+		memset(buf, 0, frames*sizeof(sample_t));
+		return 0;
+	}
+
+	handle->sink->performSoundCallback(handle->buf, frames);
+
+	sample_t *buf = (sample_t*)jack_port_get_buffer(handle->out, frames);
+
+	// convert s16 to float
+	for (int i = 0; i < frames; i++)
+	{
+		buf[i] = sample_t(handle->buf[i])/sample_t(32768.0);
+	}
 
 	return 0;
 }
@@ -33,11 +55,13 @@ static int process(jack_nframes_t frames, void *arg)
 JackSound::JackSound()
 {
 	m_handle = new jacksound_info_t;
+	m_handle->sink = this;
 	m_handle->client = NULL;
 }
 JackSound::~JackSound()
 {
 	JackSound::close();
+	delete[] m_handle->buf;
 	delete m_handle;
 }
 
@@ -60,6 +84,9 @@ void JackSound::initialize(unsigned int sampleRate, unsigned int channels, unsig
 	jack_set_process_callback(m_handle->client, process, m_handle);
 
 	m_handle->out = jack_port_register(m_handle->client, "output", JACK_DEFAULT_AUDIO_TYPE, JackPortIsOutput, 0);
+
+	jack_nframes_t bufsize = jack_get_buffer_size(m_handle->client);
+	m_handle->buf = new core::s16[bufsize];
 
 	if (jack_activate(m_handle->client))
 	{
@@ -103,4 +130,8 @@ void JackSound::flush()
 int JackSound::sampleRate() const
 {
 	return jack_get_sample_rate(m_handle->client);
+}
+void JackSound::setPlaying(bool playing)
+{
+	SoundSinkPlayback::setPlaying(playing);
 }

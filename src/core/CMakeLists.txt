@@ -11,15 +11,17 @@ set(SRC
 
 	soundsink.cpp
 	soundsink.hpp
+
+	ringbuffer.hpp
 )
 
-find_package(Boost REQUIRED)
+find_package(Boost REQUIRED thread)
 if (Boost_FOUND)
 	include_directories(${Boost_INCLUDE_DIR})
 endif()
 
 add_library(core SHARED ${SRC})
-target_link_libraries(core ${CMAKE_DL_LIBS})
+target_link_libraries(core ${CMAKE_DL_LIBS} ${Boost_LIBRARIES})
 
 install(TARGETS core
 	LIBRARY DESTINATION lib

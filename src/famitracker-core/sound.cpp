@@ -30,10 +30,12 @@ SoundGen::SoundGen()
 	createChannels();
 
 	m_trackerctlr = new TrackerController;
+	m_queued_sound = new SoundRingBuffer;
 }
 
 SoundGen::~SoundGen()
 {
+	delete m_queued_sound;
 	delete m_trackerctlr;
 
 	// Remove channels
@@ -374,6 +376,51 @@ void SoundGen::playSample(CDSample *sample, int offset, int pitch)
 	m_apu.Write(0x4013, length);			// length
 	m_apu.Write(0x4015, 0x0F);
 	m_apu.Write(0x4015, 0x1F);				// fire sample
+}
+
+void SoundGen::requestFrame()
+{
+}
+
+core::u32 SoundGen::requestSound(core::s16 *buf, core::u32 sz, core::u32 *idx)
+{
+	core::u32 c = 0;
+	core::u32 off = 0;
+	if (!m_queued_sound->isEmpty())
+	{
+		core::Quantity read = m_queued_sound->read(buf, sz);
+		buf += read;
+		sz -= read;
+		off += read;
+	}
+	while (sz != 0)
+	{
+		requestFrame();
+		idx[c++] = off;
+		rowframe_t rf;
+		rf.row = trackerController()->row();
+		rf.frame = trackerController()->frame();
+		m_queued_rowframes.write(&rf, 1);
+
+		core::Quantity read = m_queued_sound->read(buf, sz);
+		buf += read;
+		sz -= read;
+		off += read;
+	}
+}
+
+void SoundGen::timeCallback(core::u32 skip, void *data)
+{
+	if (skip > 1)
+	{
+		m_queued_rowframes.skipRead(skip-1);
+	}
+	rowframe_t rf;
+	if (m_queued_rowframes.read(&rf, 1) != 1)
+	{
+		// uh oh
+		return;
+	}
 }
 
 void SoundGen::run()
