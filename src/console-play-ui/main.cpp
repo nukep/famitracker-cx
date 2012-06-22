@@ -7,14 +7,13 @@
 
 const char *default_sound="alsa";
 
-static void tracker_update(SoundGen *g)
+static void tracker_update(SoundGen::rowframe_t rf, FtmDocument *doc)
 {
-	TrackerController *c = g->trackerController();
-	int frame = c->frame();
-	printf("[ %02X/%02X: %02X/%02X : ", frame, c->document()->GetFrameCount()-1, c->row(), c->document()->getFramePlayLength(frame)-1);
-	for (int i = 0; i < c->document()->GetAvailableChannels(); i++)
+	int frame = rf.frame;
+	printf("[ %02X/%02X: %02X/%02X : ", frame, doc->GetFrameCount()-1, rf.row, doc->getFramePlayLength(frame)-1);
+	for (int i = 0; i < doc->GetAvailableChannels(); i++)
 	{
-		printf("%02X ", c->document()->GetPatternAtFrame(frame, i));
+		printf("%02X ", doc->GetPatternAtFrame(frame, i));
 	}
 	printf("]\r");
 	fflush(stdout);
@@ -71,7 +70,9 @@ int main(int argc, char *argv[])
 		sg->setDocument(&doc);
 		sg->setTrackerUpdate(tracker_update);
 
-		sg->run();
+		sg->start();
+		sink->blockUntilStopped();
+
 		delete sg;
 		delete sink;
 

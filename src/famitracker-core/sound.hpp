@@ -22,7 +22,11 @@ typedef enum { SONG_TIME_LIMIT, SONG_LOOP_LIMIT } RENDER_END;
 class SoundGen
 {
 public:
-	typedef void (*trackerupdate_f)(SoundGen*);
+	struct rowframe_t
+	{
+		unsigned int row, frame;
+	};
+	typedef void (*trackerupdate_f)(rowframe_t rf, FtmDocument *doc);
 	SoundGen();
 	~SoundGen();
 
@@ -52,22 +56,21 @@ public:
 	void addCycles(int count);
 
 	void run();
+	void start();
+	void stop();
 
 	void requestStop();
 
 private:
-	void requestFrame();
+	static void apuCallback(const int16 *buf, uint32 sz, void *data);
+	static core::u32 soundCallback(core::s16 *buf, core::u32 sz, void *data, core::u32 *idx);
+	static void timeCallback(core::u32 skip, void *data);
+
+	bool requestFrame();
 	core::u32 requestSound(core::s16 *buf, core::u32 sz, core::u32 *idx);
-	void timeCallback(core::u32 skip, void *data);
-	struct rowframe_t
-	{
-		unsigned int row, frame;
-	};
 
-	typedef core::RingBuffer<core::s16, 16384> SoundRingBuffer;
-
-	core::RingBuffer<rowframe_t, 64> m_queued_rowframes;
-	SoundRingBuffer *m_queued_sound;
+	core::RingBuffer m_queued_rowframes;
+	core::RingBuffer m_queued_sound;
 	// Internal initialization
 	void createChannels();
 	void setupChannels();

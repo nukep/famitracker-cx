@@ -24,18 +24,22 @@ static const double OLD_VIBRATO_DEPTH[] = {
 
 SoundGen::SoundGen()
 	: m_apu(&m_samplemem), m_iConsumedCycles(0), m_pDocument(NULL),
-	  m_trackerUpdateCallback(NULL)
+	  m_trackerUpdateCallback(NULL), m_sink(NULL),
+	  m_queued_rowframes(sizeof(rowframe_t)),
+	  m_queued_sound(sizeof(core::s16))
 {
 	// Create all kinds of channels
 	createChannels();
 
 	m_trackerctlr = new TrackerController;
-	m_queued_sound = new SoundRingBuffer;
+
+	m_queued_rowframes.resize(64);
+	m_queued_sound.resize(16384);
+	m_apu.SetCallback(apuCallback, this);
 }
 
 SoundGen::~SoundGen()
 {
-	delete m_queued_sound;
 	delete m_trackerctlr;
 
 	// Remove channels
@@ -51,8 +55,16 @@ SoundGen::~SoundGen()
 
 void SoundGen::setSoundSink(core::SoundSink *s)
 {
+	if (m_sink != NULL)
+	{
+		m_sink->setPlaying(false);
+	}
+	m_queued_sound.clear();
+	m_queued_rowframes.clear();
 	m_sink = s;
-	m_apu.SetCallback(s);
+	m_sink->setCallbackData(this);
+	m_sink->setSoundCallback(soundCallback);
+	m_sink->setTimeCallback(timeCallback);
 }
 
 void SoundGen::setDocument(FtmDocument *doc)
@@ -378,49 +390,151 @@ void SoundGen::playSample(CDSample *sample, int offset, int pitch)
 	m_apu.Write(0x4015, 0x1F);				// fire sample
 }
 
-void SoundGen::requestFrame()
+// return true if row changed
+bool SoundGen::requestFrame()
 {
+	runFrame();
+
+	m_bPlayerHalted = m_trackerctlr->isHalted() || m_bRequestStop;
+
+	for (int i = 0; i < CHANNELS; i++)
+	{
+		if (m_pChannels[i] == NULL)
+			continue;
+
+		if (m_pTrackerChannels[i]->NewNoteData())
+		{
+			stChanNote note = m_pTrackerChannels[i]->GetNote();
+
+			playNote(i, &note, m_pDocument->GetEffColumns(i) + 1);
+		}
+
+		// Pitch wheel
+		int pitch = m_pTrackerChannels[i]->GetPitch();
+		m_pChannels[i]->SetPitch(pitch);
+
+		// Update volume meters
+		m_pTrackerChannels[i]->SetVolumeMeter(m_apu.GetVol(i));
+	}
+
+	if (m_bPlayerHalted)
+	{
+		for (int i = 0; i < CHANNELS; i++)
+		{
+			if (m_pChannels[i] != NULL)
+			{
+				m_pChannels[i]->MakeSilent();
+			}
+		}
+		m_bRunning = false;
+		return true;
+	}
+
+	const int CHANNEL_DELAY = 250;
+
+	m_iConsumedCycles = 0;
+
+	int frameRate = m_pDocument->GetFrameRate();
+
+	// Update channels and channel registers
+	for (int i = 0; i < CHANNELS; i++)
+	{
+		if (m_pChannels[i] != NULL)
+		{
+			m_pChannels[i]->ProcessChannel();
+			m_pChannels[i]->RefreshChannel();
+			m_apu.Process();
+			// Add some delay between each channel update
+			if (frameRate == CAPU::FRAME_RATE_NTSC || frameRate == CAPU::FRAME_RATE_PAL)
+				addCycles(CHANNEL_DELAY);
+		}
+	}
+
+	// Finish the audio frame
+	m_apu.AddTime(m_iUpdateCycles - m_iConsumedCycles);
+	m_apu.Process();
+
+	unsigned int row = m_trackerctlr->row();
+	unsigned int frame = m_trackerctlr->frame();
+
+	bool updated = (m_lastRow != row) || (m_lastFrame != frame);
+
+	m_lastRow = row;
+	m_lastFrame = frame;
+
+	return updated;
+}
+
+void SoundGen::apuCallback(const int16 *buf, uint32 sz, void *data)
+{
+	SoundGen *sg = (SoundGen*)data;
+	sg->m_queued_sound.write(buf, sz);
+}
+
+core::u32 SoundGen::soundCallback(core::s16 *buf, core::u32 sz, void *data, core::u32 *idx)
+{
+	SoundGen *sg = (SoundGen*)data;
+	return sg->requestSound(buf, sz, idx);
 }
 
 core::u32 SoundGen::requestSound(core::s16 *buf, core::u32 sz, core::u32 *idx)
 {
 	core::u32 c = 0;
 	core::u32 off = 0;
-	if (!m_queued_sound->isEmpty())
+	// read remaining sound buffer data from the last callback
+	if (!m_queued_sound.isEmpty())
 	{
-		core::Quantity read = m_queued_sound->read(buf, sz);
+		core::Quantity read = m_queued_sound.read(buf, sz);
 		buf += read;
 		sz -= read;
 		off += read;
 	}
 	while (sz != 0)
 	{
-		requestFrame();
-		idx[c++] = off;
-		rowframe_t rf;
-		rf.row = trackerController()->row();
-		rf.frame = trackerController()->frame();
-		m_queued_rowframes.write(&rf, 1);
+		if (!m_bRunning)
+		{
+			// silence the rest of the buffer
+			memset(buf, 0, sz*sizeof(core::s16));
+			break;
+		}
+		bool rowchange = requestFrame();
+		if (rowchange)
+		{
+			idx[c++] = off;
+			rowframe_t rf;
+			rf.row = trackerController()->row();
+			rf.frame = trackerController()->frame();
+			m_queued_rowframes.write(&rf, 1);
+		}
 
-		core::Quantity read = m_queued_sound->read(buf, sz);
+		core::Quantity read = m_queued_sound.read(buf, sz);
 		buf += read;
 		sz -= read;
 		off += read;
 	}
+	if (!m_bRunning)
+	{
+		m_sink->setPlaying(false);
+	}
+	return c;
 }
 
 void SoundGen::timeCallback(core::u32 skip, void *data)
 {
+	SoundGen *sg = (SoundGen*)data;
 	if (skip > 1)
 	{
-		m_queued_rowframes.skipRead(skip-1);
+		sg->m_queued_rowframes.skipRead(skip-1);
 	}
 	rowframe_t rf;
-	if (m_queued_rowframes.read(&rf, 1) != 1)
+	if (sg->m_queued_rowframes.read(&rf, 1) != 1)
 	{
 		// uh oh
 		return;
 	}
+
+	if (sg->m_trackerUpdateCallback != NULL)
+		(*sg->m_trackerUpdateCallback)(rf, sg->trackerController()->document());
 }
 
 void SoundGen::run()
@@ -436,88 +550,39 @@ void SoundGen::run()
 
 	while (m_bRunning)
 	{
-		m_iFrameCounter++;
-
-		runFrame();
-
-		m_bPlayerHalted = m_trackerctlr->isHalted() || m_bRequestStop;
-
-		for (int i = 0; i < CHANNELS; i++)
+		if (requestFrame())
 		{
-			if (m_pChannels[i] == NULL)
-				continue;
-
-			if (m_pTrackerChannels[i]->NewNoteData())
-			{
-				stChanNote note = m_pTrackerChannels[i]->GetNote();
-
-				playNote(i, &note, m_pDocument->GetEffColumns(i) + 1);
-			}
-
-			// Pitch wheel
-			int pitch = m_pTrackerChannels[i]->GetPitch();
-			m_pChannels[i]->SetPitch(pitch);
-
-			// Update volume meters
-			m_pTrackerChannels[i]->SetVolumeMeter(m_apu.GetVol(i));
-		}
-
-		if (m_bPlayerHalted)
-		{
-			for (int i = 0; i < CHANNELS; i++)
-			{
-				if (m_pChannels[i] != NULL)
-				{
-					m_pChannels[i]->MakeSilent();
-				}
-			}
-			m_bRunning = false;
 			if (m_trackerUpdateCallback != NULL)
 			{
-				(*m_trackerUpdateCallback)(this);
-			}
-			continue;
-		}
-
-		const int CHANNEL_DELAY = 250;
-
-		m_iConsumedCycles = 0;
-
-		int frameRate = m_pDocument->GetFrameRate();
-
-		// Update channels and channel registers
-		for (int i = 0; i < CHANNELS; i++)
-		{
-			if (m_pChannels[i] != NULL)
-			{
-				m_pChannels[i]->ProcessChannel();
-				m_pChannels[i]->RefreshChannel();
-				m_apu.Process();
-				// Add some delay between each channel update
-				if (frameRate == CAPU::FRAME_RATE_NTSC || frameRate == CAPU::FRAME_RATE_PAL)
-					addCycles(CHANNEL_DELAY);
+				rowframe_t rf;
+				rf.row = trackerController()->row();
+				rf.frame = trackerController()->frame();
+				(*m_trackerUpdateCallback)(rf, trackerController()->document());
 			}
 		}
-
-		// Finish the audio frame
-		m_apu.AddTime(m_iUpdateCycles - m_iConsumedCycles);
-		m_apu.Process();
-
-		unsigned int row = m_trackerctlr->row();
-		unsigned int frame = m_trackerctlr->frame();
-
-		bool updated = (m_lastRow != row) || (m_lastFrame != frame);
-
-		if (updated && m_trackerUpdateCallback != NULL)
-		{
-			(*m_trackerUpdateCallback)(this);
-		}
-
-		m_lastRow = row;
-		m_lastFrame = frame;
 	}
 
 	m_sink->flush();
+}
+void SoundGen::start()
+{
+	if (m_sink->isPlaying())
+		return;
+
+	m_bRunning = true;
+	m_bPlayerHalted = false;
+	m_bRequestStop = false;
+	m_iDelayedStart = 0;
+	m_iFrameCounter = 0;
+
+	setupChannels();
+	resetTempo();
+
+	m_sink->setPlaying(true);
+}
+void SoundGen::stop()
+{
+	m_sink->setPlaying(false);
 }
 
 void SoundGen::requestStop()

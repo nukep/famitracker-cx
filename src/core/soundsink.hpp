@@ -18,18 +18,19 @@ namespace core
 		virtual ~SoundSink();
 		virtual void flush() = 0;
 		virtual int sampleRate() const = 0;
-		virtual void flushBuffer(core::s16 *buffer, core::u32 size) = 0;
+		virtual void flushBuffer(const core::s16 *buffer, core::u32 size) = 0;
 
-		virtual void setPlaying(bool playing){ m_playing = playing; }
+		virtual void setPlaying(bool playing);
 
 		bool isPlaying() const{ return m_playing; }
 		void setSoundCallback(sound_callback_t c){ m_soundCallback = c; }
 		void setTimeCallback(time_callback_t c){ m_timeCallback = c; }
-
 		void setCallbackData(void *data){ m_callbackData = data; }
 
 		void performSoundCallback(core::s16 *buf, core::u32 sz);
 		void performTimeCallback();
+
+		void blockUntilStopped();
 	private:
 		sound_callback_t m_soundCallback;
 		time_callback_t m_timeCallback;

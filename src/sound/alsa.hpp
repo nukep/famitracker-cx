@@ -14,7 +14,7 @@ public:
 	~AlsaSound();
 	void initialize(unsigned int sampleRate, unsigned int channels, unsigned int latency_ms);
 	void close();
-	void flushBuffer(core::s16 *Buffer, core::u32 Size);
+	void flushBuffer(const core::s16 *Buffer, core::u32 Size);
 	void flush();
 
 	int sampleRate() const;

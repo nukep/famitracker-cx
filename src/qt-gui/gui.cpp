@@ -168,12 +168,11 @@ namespace gui
 
 	bool edit_mode = false;
 
-	static void trackerUpdate(SoundGen *gen)
+	static void trackerUpdate(SoundGen::rowframe_t rf, FtmDocument *doc)
 	{
 		// happens on non-gui thread
-		const TrackerController *c = gen->trackerController();
-		activeDocInfo()->setCurrentFrame(c->frame());
-		activeDocInfo()->setCurrentRow(c->row());
+		activeDocInfo()->setCurrentFrame(rf.frame);
+		activeDocInfo()->setCurrentRow(rf.row);
 
 		mw->sendUpdateEvent();
 	}

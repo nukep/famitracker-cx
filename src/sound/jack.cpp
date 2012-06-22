@@ -24,11 +24,11 @@ struct jacksound_info_t
 
 static int process(jack_nframes_t frames, void *arg)
 {
-	// this is the moment when the last period should be playing
-	// notify time dispatcher to tick for the duration of this period
-
 	jacksound_info_t *handle = (jacksound_info_t*)arg;
 
+	// this is the moment when the last period should be playing
+	// notify time dispatcher to tick for the duration of this period
+	// TODO: accomodate timing for periods > 2
 	handle->sink->performTimeCallback();
 
 	if (!handle->sink->isPlaying())
@@ -48,7 +48,10 @@ static int process(jack_nframes_t frames, void *arg)
 	{
 		buf[i] = sample_t(handle->buf[i])/sample_t(32768.0);
 	}
-
+/*
+	printf("%u\n", jack_frames_since_cycle_start(handle->client));
+	fflush(stdout);
+*/
 	return 0;
 }
 
@@ -63,6 +66,10 @@ JackSound::~JackSound()
 	JackSound::close();
 	delete[] m_handle->buf;
 	delete m_handle;
+}
+void JackSound::setPlaying(bool playing)
+{
+	SoundSink::setPlaying(playing);
 }
 
 void JackSound::initialize(unsigned int sampleRate, unsigned int channels, unsigned int latency_ms)
@@ -120,18 +127,15 @@ void JackSound::close()
 	jack_client_close(m_handle->client);
 	m_handle->client = NULL;
 }
-void JackSound::flushBuffer(core::s16 *Buffer, core::u32 Size)
-{
-
-}
-void JackSound::flush()
-{
-}
 int JackSound::sampleRate() const
 {
 	return jack_get_sample_rate(m_handle->client);
 }
-void JackSound::setPlaying(bool playing)
+
+// useless
+void JackSound::flushBuffer(const core::s16 *Buffer, core::u32 Size)
 {
-	SoundSinkPlayback::setPlaying(playing);
+}
+void JackSound::flush()
+{
 }

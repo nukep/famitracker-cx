@@ -58,7 +58,7 @@ void AlsaSound::close()
 	}
 }
 
-void AlsaSound::flushBuffer(core::s16 *buffer, core::u32 size)
+void AlsaSound::flushBuffer(const core::s16 *buffer, core::u32 size)
 {
 	snd_pcm_t *handle = (snd_pcm_t*)m_handle;
 	snd_pcm_sframes_t frames;

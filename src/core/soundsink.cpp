@@ -3,6 +3,8 @@
 #include <map>
 #include <string>
 #include <boost/thread.hpp>
+#include <boost/thread/mutex.hpp>
+#include <boost/thread/condition.hpp>
 #include <unistd.h>
 #include "soundsink.hpp"
 
@@ -11,6 +13,8 @@ namespace core
 	struct _soundsink_threading_t
 	{
 		boost::thread *t;
+		boost::mutex mtx_playing;
+		boost::condition cond_playing;
 		volatile bool running;
 
 		void delthread()
@@ -21,7 +25,7 @@ namespace core
 	};
 
 	SoundSink::SoundSink()
-		: m_curtimeidxbuf(0), m_timeidxsz(0)
+		: m_curtimeidxbuf(0), m_timeidxsz(0), m_playing(false)
 	{
 		m_threading = new _soundsink_threading_t;
 		m_threading->t = NULL;
@@ -39,6 +43,14 @@ namespace core
 		}
 
 		delete m_threading;
+	}
+	void SoundSink::setPlaying(bool playing)
+	{
+		{
+			boost::lock_guard<boost::mutex> lock(m_threading->mtx_playing);
+			m_playing = playing;
+		}
+		m_threading->cond_playing.notify_one();
 	}
 
 	struct timestamp_t
@@ -159,6 +171,15 @@ namespace core
 		// swap buffers
 		m_curtimeidxbuf = (m_curtimeidxbuf == 0) ? 1 : 0;
 		m_timeidxsz = 0;
+	}
+
+	void SoundSink::blockUntilStopped()
+	{
+		boost::unique_lock<boost::mutex> lock(m_threading->mtx_playing);
+		while (m_playing)
+		{
+			m_threading->cond_playing.wait(lock);
+		}
 	}
 
 	struct sound_handle_t

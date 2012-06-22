@@ -61,9 +61,12 @@ public:
 	CAPU(CSampleMem *pSampleMem);
 	~CAPU();
 
-	void	SetCallback(core::SoundSink *callback)
+	typedef void (*callback_t)(const int16 *buf, uint32 sz, void *data);
+
+	void	SetCallback(callback_t callback, void *data)
 	{
 		m_pParent = callback;
+		m_pParentData = data;
 	}
 
 	void	Reset();
@@ -113,7 +116,8 @@ private:
 		
 private:
 	CMixer		*m_pMixer;
-	core::SoundSink	*m_pParent;
+	callback_t	m_pParent;
+	void		*m_pParentData;
 
 	// Internal channels
 	CSquare		*m_pSquare1;
