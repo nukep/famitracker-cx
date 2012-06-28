@@ -2,10 +2,12 @@
 #define CORE_SOUNDSINK_HPP
 
 #include "types.hpp"
+#include "ringbuffer.hpp"
 
 namespace core
 {
 	struct _soundsink_threading_t;
+	struct timestamp_t;
 	class SoundSink
 	{
 	public:
@@ -16,9 +18,7 @@ namespace core
 
 		SoundSink();
 		virtual ~SoundSink();
-		virtual void flush() = 0;
 		virtual int sampleRate() const = 0;
-		virtual void flushBuffer(const core::s16 *buffer, core::u32 size) = 0;
 
 		virtual void setPlaying(bool playing);
 
@@ -28,18 +28,23 @@ namespace core
 		void setCallbackData(void *data){ m_callbackData = data; }
 
 		void performSoundCallback(core::s16 *buf, core::u32 sz);
-		void performTimeCallback();
+//		void performTimeCallback();
+		void applyTime(core::s32 delay_us);
 
 		void blockUntilStopped();
 	private:
+		bool _timeloop_read(core::timestamp_t &);
+		void _timeloop();
+		static void _timeloop_bootstrap(SoundSink *);
 		sound_callback_t m_soundCallback;
 		time_callback_t m_timeCallback;
 		void *m_callbackData;
 		volatile bool m_playing;
-		core::u32 m_timeidx[2][MAX_TIMEIDX];
-		int m_curtimeidxbuf;
+
 		core::u32 m_timeidxsz;
 		_soundsink_threading_t *m_threading;
+		core::u32 m_timeidx[MAX_TIMEIDX];
+		core::RingBuffer m_timeidx_ringbuffer;
 	};
 
 	class SoundSinkPlayback : public SoundSink

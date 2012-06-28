@@ -3,17 +3,30 @@
 
 #include <QMainWindow>
 #include <QEvent>
-#include <QMutex>
+#include <boost/thread/mutex.hpp>
+#include <boost/thread/condition.hpp>
 #include "ui_mainwindow.h"
 
 namespace gui
 {
 #define UPDATEEVENT QEvent::User
+#define STOPPEDSONGEVENT (QEvent::Type)((int)QEvent::User+1)
+
+	class MainWindow;
+
+	typedef void(*stopsong_callback)(MainWindow*, void*);
 
 	class UpdateEvent : public QEvent
 	{
 	public:
-		UpdateEvent();
+		UpdateEvent() : QEvent(UPDATEEVENT){}
+	};
+	class StoppedSongEvent : public QEvent
+	{
+	public:
+		StoppedSongEvent() : QEvent(STOPPEDSONGEVENT){}
+		stopsong_callback callback;
+		void *callback_data;
 	};
 
 	class MainWindow : public QMainWindow, Ui_MainWindow
@@ -25,14 +38,24 @@ namespace gui
 		void updateFrameChannel(bool modified=false);
 
 		void sendUpdateEvent();
+		void sendStoppedSongEvent(stopsong_callback, void *data);
 		void updateEditMode();
 		void setPlaying(bool playing);
 
 		void refreshInstruments();
+
+		void stopSongConcurrent(void(*mainthread_callback)(void *data));
 	protected:
+		void closeEvent(QCloseEvent *);
 		bool event(QEvent *event);
 	private:
 		void updateDocument();
+
+		void setSong_mw_cb();
+		static void setSong_cb(MainWindow*, void*);
+
+		static void newDoc_cb(MainWindow*, void*);
+		static void open_cb(MainWindow*, void*);
 	public slots:
 		void newDoc();
 		void open();
@@ -58,8 +81,8 @@ namespace gui
 		void addInstrument();
 		void removeInstrument();
 	private:
-		int m_updateCount;	// number of queued up update events
-		QMutex m_updateCountMutex;
+		boost::mutex m_mtx_updateEvent;
+		boost::condition m_cond_updateEvent;
 	};
 }
 

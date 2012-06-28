@@ -3,9 +3,9 @@
 #include <vector>
 #include <QDebug>
 #include <QThread>
+#include <boost/thread.hpp>
 #include "gui.hpp"
 #include "MainWindow.hpp"
-#include "threads.hpp"
 #include "famitracker-core/FtmDocument.hpp"
 #include "famitracker-core/sound.hpp"
 #include "famitracker-core/TrackerController.hpp"
@@ -160,7 +160,6 @@ namespace gui
 	DocsList loaded_documents;
 	int active_doc_index;
 	SoundGen *sgen;
-	SoundGenThread *sgen_thread;
 	core::SoundSinkPlayback *sink;
 
 	QApplication *app;
@@ -171,6 +170,7 @@ namespace gui
 	static void trackerUpdate(SoundGen::rowframe_t rf, FtmDocument *doc)
 	{
 		// happens on non-gui thread
+
 		activeDocInfo()->setCurrentFrame(rf.frame);
 		activeDocInfo()->setCurrentRow(rf.row);
 
@@ -194,8 +194,6 @@ namespace gui
 		sgen->setSoundSink(sink);
 		sgen->setTrackerUpdate(trackerUpdate);
 
-		sgen_thread = new SoundGenThread(sgen);
-
 		newDocument(false);
 
 		mw = new MainWindow;
@@ -203,12 +201,8 @@ namespace gui
 	}
 	void destroy()
 	{
-		stopSong();
-
 		delete mw;
 		delete app;
-
-		delete sgen_thread;
 
 		delete sgen;
 		delete sink;
@@ -257,8 +251,6 @@ namespace gui
 		if (active_doc_index < 0)
 			return;
 
-		stopSong();
-
 		loaded_documents[active_doc_index].destroy();
 		loaded_documents.erase(loaded_documents.begin()+active_doc_index);
 
@@ -295,16 +287,19 @@ namespace gui
 
 	bool isPlaying()
 	{
-		return sgen_thread->isRunning();
+		return sink->isPlaying();
 	}
 	bool isEditing()
 	{
 		return edit_mode;
 	}
 
+	volatile bool stopping_song = false;
+	boost::thread *stopping_song_thread = NULL;
+
 	void playSong()
 	{
-		if (sgen_thread->isRunning())
+		if (stopping_song)
 			return;
 
 		if (mw != NULL)
@@ -314,19 +309,61 @@ namespace gui
 
 		sgen->trackerController()->startAt(dinfo->currentFrame(), 0);
 
-		sgen_thread->run();
+		sgen->start();
 	}
 
-	void stopSong()
+	void stopSong_block()
 	{
-		if (sgen_thread->isRunning())
-		{
-			sgen->requestStop();
-		}
-		sgen_thread->wait();
+		sgen->stop();
 
 		if (mw != NULL)
 			mw->setPlaying(false);
+	}
+
+	static void stopsong_thread(void (*mainthread_callback)(MainWindow *, void*), void *data)
+	{
+		sgen->stop();
+		sink->blockUntilStopped();
+		mw->sendStoppedSongEvent(mainthread_callback, data);
+		stopping_song = false;
+	}
+	static void stopsong_qevent_thread(QEvent *e)
+	{
+		sgen->stop();
+		sink->blockUntilStopped();
+		QApplication::postEvent(mw, e);
+		stopping_song = false;
+	}
+
+	void stopSongConcurrent(QEvent *event)
+	{
+		ftkr_Assert(stopping_song == false);
+
+		if (stopping_song_thread != NULL)
+			delete stopping_song_thread;
+
+		stopping_song = true;
+		stopping_song_thread = new boost::thread(stopsong_qevent_thread, event);
+	}
+	void stopSongConcurrent(void (*mainthread_callback)(MainWindow *, void*), void *data)
+	{
+		// stop the song without deadlocking the main thread
+		// should only be called from the main thread
+
+		ftkr_Assert(stopping_song == false);
+
+		if (stopping_song_thread != NULL)
+			delete stopping_song_thread;
+
+		stopping_song = true;
+		stopping_song_thread = new boost::thread(stopsong_thread, mainthread_callback, data);
+	}
+	void stopSongConcurrent()
+	{
+		if (stopping_song)
+			return;
+
+		stopSongConcurrent(NULL, NULL);
 	}
 
 	void toggleEditMode()

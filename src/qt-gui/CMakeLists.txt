@@ -12,9 +12,6 @@ set(SRC
 	MainWindow.cpp
 	PatternView.cpp
 	FrameView.cpp
-
-	threads.cpp
-	threads.hpp
 )
 
 set(MOC_INC

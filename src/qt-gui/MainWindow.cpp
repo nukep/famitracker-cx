@@ -6,14 +6,7 @@
 
 namespace gui
 {
-	UpdateEvent::UpdateEvent()
-		: QEvent(UPDATEEVENT)
-	{
-
-	}
-
 	MainWindow::MainWindow()
-		: m_updateCount(0)
 	{
 		setupUi(this);
 		instruments->setIconSize(QSize(16,16));
@@ -69,21 +62,23 @@ namespace gui
 	void MainWindow::sendUpdateEvent()
 	{
 		// called from tracker update thread
-		m_updateCountMutex.lock();
-		if (m_updateCount >= 2)
-		{
-			// forget it
-			m_updateCountMutex.unlock();
-			return;
-		}
 
-		m_updateCount++;
-		m_updateCountMutex.unlock();
+		boost::unique_lock<boost::mutex> lock(m_mtx_updateEvent);
 
 		// post an event to the main thread
 		UpdateEvent *event = new UpdateEvent;
 		QApplication::postEvent(this, event);
+
+		m_cond_updateEvent.wait(lock);
 	}
+	void MainWindow::sendStoppedSongEvent(stopsong_callback mainthread_callback, void *data)
+	{
+		StoppedSongEvent *event = new StoppedSongEvent;
+		event->callback = mainthread_callback;
+		event->callback_data = data;
+		QApplication::postEvent(this, event);
+	}
+
 	void MainWindow::updateEditMode()
 	{
 		bool b = gui::isEditing();
@@ -96,17 +91,45 @@ namespace gui
 		frames->setEnabled(!playing);
 	}
 
+	static void doclose_cb(MainWindow *mw, void *)
+	{
+		mw->close();
+	}
+
+	void MainWindow::closeEvent(QCloseEvent *e)
+	{
+		if (gui::isPlaying())
+		{
+			((QEvent*)e)->ignore();
+			gui::stopSongConcurrent(doclose_cb);
+		}
+		else
+		{
+			((QEvent*)e)->accept();
+		}
+	}
+
 	bool MainWindow::event(QEvent *event)
 	{
 		if (event->type() == UPDATEEVENT)
 		{
-			m_updateCountMutex.lock();
-			m_updateCount--;
-			m_updateCountMutex.unlock();
-
 			updateFrameChannel();
+
+			m_cond_updateEvent.notify_one();
 			return true;
 		}
+		else if (event->type() == STOPPEDSONGEVENT)
+		{
+			StoppedSongEvent *e = (StoppedSongEvent*)event;
+
+			setPlaying(false);
+			if (e->callback != NULL)
+			{
+				(*e->callback)(this, e->callback_data);
+			}
+			return true;
+		}
+
 		return QMainWindow::event(event);
 	}
 
@@ -198,11 +221,23 @@ namespace gui
 		}
 	}
 
-	void MainWindow::newDoc()
+	void MainWindow::newDoc_cb(MainWindow *mw, void*)
 	{
 		gui::newDocument(true);
+		mw->updateDocument();
+	}
 
-		updateDocument();
+	void MainWindow::open_cb(MainWindow *mw, void *data)
+	{
+		core::IO *io = (core::IO*)data;
+		gui::openDocument(io, true);
+		mw->updateDocument();
+		delete io;
+	}
+
+	void MainWindow::newDoc()
+	{
+		gui::stopSongConcurrent(newDoc_cb);
 	}
 
 	void MainWindow::open()
@@ -211,11 +246,9 @@ namespace gui
 		if (path.isEmpty())
 			return;
 
-		core::FileIO io(path.toLocal8Bit(), core::IO_READ);
+		core::FileIO *io = new core::FileIO(path.toLocal8Bit(), core::IO_READ);
 
-		gui::openDocument(&io, true);
-
-		updateDocument();
+		gui::stopSongConcurrent(open_cb, io);
 	}
 	void MainWindow::save()
 	{
@@ -244,18 +277,11 @@ namespace gui
 		this->controlPanel->setVisible(v);
 	}
 
-	void MainWindow::setSong(int i)
+	void MainWindow::setSong_mw_cb()
 	{
 		DocInfo *dinfo = gui::activeDocInfo();
 		FtmDocument *d = dinfo->doc();
-
-		if (d->GetSelectedTrack() == i)
-			return;
-
-		if (i < 0)
-			i = 0;
-
-		gui::stopSong();
+		int i = songs->currentIndex();
 
 		d->SelectTrack(i);
 
@@ -278,6 +304,22 @@ namespace gui
 		speed->blockSignals(false);
 
 		updateFrameChannel(true);
+	}
+
+	void MainWindow::setSong_cb(MainWindow *mw, void*)
+	{
+		mw->setSong_mw_cb();
+	}
+
+	void MainWindow::setSong(int i)
+	{
+		DocInfo *dinfo = gui::activeDocInfo();
+		FtmDocument *d = dinfo->doc();
+
+		if (d->GetSelectedTrack() == i)
+			return;
+
+		gui::stopSongConcurrent(setSong_cb);
 	}
 
 	void MainWindow::incrementPattern()
@@ -390,7 +432,7 @@ namespace gui
 	}
 	void MainWindow::stop()
 	{
-		gui::stopSong();
+		gui::stopSongConcurrent();
 	}
 	void MainWindow::toggleEditMode()
 	{

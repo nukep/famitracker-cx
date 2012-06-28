@@ -55,7 +55,6 @@ public:
 	// Used by channels
 	void addCycles(int count);
 
-	void run();
 	void start();
 	void stop();
 

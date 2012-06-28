@@ -5,8 +5,8 @@
 #include <boost/thread.hpp>
 #include <boost/thread/mutex.hpp>
 #include <boost/thread/condition.hpp>
-#include <unistd.h>
 #include "soundsink.hpp"
+#include "time.hpp"
 
 namespace core
 {
@@ -16,6 +16,10 @@ namespace core
 		boost::mutex mtx_playing;
 		boost::condition cond_playing;
 		volatile bool running;
+		volatile bool destructing;
+
+		boost::mutex mtx_time_ringbuffer;
+		boost::condition cond_time_ringbuffer;
 
 		void delthread()
 		{
@@ -25,122 +29,188 @@ namespace core
 	};
 
 	SoundSink::SoundSink()
-		: m_curtimeidxbuf(0), m_timeidxsz(0), m_playing(false)
+		: m_timeidxsz(0), m_playing(false),
+		  m_timeidx_ringbuffer(sizeof(core::timestamp_t))
 	{
+		// give the ring buffer a generous amount of memory
+		m_timeidx_ringbuffer.resize(MAX_TIMEIDX*16);
+
 		m_threading = new _soundsink_threading_t;
-		m_threading->t = NULL;
-		m_threading->running = false;
+		m_threading->destructing = false;
+		m_threading->running = true;
+		m_threading->t = new boost::thread(_timeloop_bootstrap, this);
 	}
 	SoundSink::~SoundSink()
 	{
 		if (m_threading->running)
 		{
+			m_threading->destructing = true;
+			m_threading->cond_time_ringbuffer.notify_one();
 			m_threading->t->join();
 		}
 		if (m_threading != NULL)
 		{
 			m_threading->delthread();
 		}
+		setPlaying(false);
 
 		delete m_threading;
 	}
 	void SoundSink::setPlaying(bool playing)
 	{
+		bool changed = playing != m_playing;
+		if (!changed)
+			return;
+
 		{
-			boost::lock_guard<boost::mutex> lock(m_threading->mtx_playing);
+			boost::lock_guard<boost::mutex>(m_threading->mtx_playing);
+
 			m_playing = playing;
+
+			if (!playing)
+			{
+				// wait for the timing thread to finish the ring buffer
+				boost::unique_lock<boost::mutex> lock(m_threading->mtx_time_ringbuffer);
+
+				while (!m_timeidx_ringbuffer.isEmpty())
+				{
+					m_threading->cond_time_ringbuffer.wait(lock);
+				}
+			}
 		}
 		m_threading->cond_playing.notify_one();
 	}
 
-	struct timestamp_t
+	static inline core::u32 us_from_idx(core::u32 v, core::u32 sr)
 	{
-		struct timeval tv;
-		void gettime()
-		{
-			gettimeofday(&tv, NULL);
-		}
-		int diff_ms(const timestamp_t &before) const
-		{
-			int s = tv.tv_sec - before.tv.tv_sec;
-			int m = (tv.tv_usec - before.tv.tv_usec)/1000;
+		core::u64 a = v;
+		a = a * 1000000 / sr;
+		return a;
+	}
 
-			return s*1000 + m;
-		}
-		bool isLessThan(const timestamp_t &before) const
-		{
-			if (tv.tv_sec < before.tv.tv_sec)
-				return true;
-			if (tv.tv_sec > before.tv.tv_sec)
-				return false;
-			if (tv.tv_usec < before.tv.tv_usec)
-				return true;
-
-			return false;
-		}
-		timestamp_t add_ms(unsigned int ms) const
-		{
-			timestamp_t t = *this;
-			t.tv.tv_usec += ms*1000;
-			t.tv.tv_sec += t.tv.tv_usec/1000000;
-			t.tv.tv_usec %= 1000000;
-			return t;
-		}
-	};
-
-	static unsigned int ms_from_idx(core::u32 v, core::u32 sr)
+	static inline core::u32 ms_from_idx(core::u32 v, core::u32 sr)
 	{
 		return v * 1000 / sr;
 	}
 
-	static void timesync(timestamp_t begin, core::u32 *idx, core::u32 sz, core::u32 sr, SoundSink::time_callback_t cb, void *data, _soundsink_threading_t *th)
+	// return true if the loop should end
+	bool SoundSink::_timeloop_read(timestamp_t &tgt)
 	{
-		bool immediate_update = false;
+		boost::unique_lock<boost::mutex> lock(m_threading->mtx_time_ringbuffer);
+		while (m_timeidx_ringbuffer.isEmpty())
+		{
+			// notify that the ringbuffer is empty
+			// (this shouldn't affect the wait we have shortly after)
+			m_threading->cond_time_ringbuffer.notify_one();
+
+			// SoundSink could be destructing. let's check
+			if (m_threading->destructing)
+			{
+				// the thread has to finish
+				return true;
+			}
+
+			// wait until the ring buffer is filled
+			m_threading->cond_time_ringbuffer.wait(lock);
+		}
+		m_timeidx_ringbuffer.read(&tgt, 1);
+		return false;
+	}
+
+	void SoundSink::_timeloop()
+	{
 		core::u32 skip = 0;
 
-		for (core::u32 i = 0; i < sz;)
+		while (true)
 		{
-			timestamp_t tgt = begin.add_ms(ms_from_idx(idx[i], sr));
+			timestamp_t tgt;
+
+			if (_timeloop_read(tgt))
+			{
+				break;
+			}
+
+compare_time:
+
 			timestamp_t cur;
 			cur.gettime();
+
 			if (tgt.isLessThan(cur))
 			{
-				immediate_update = true;
+				// the timestamp has already elapsed. skip it
 				skip++;
-				i++;
 				continue;
 			}
-
-			if (immediate_update)
+			if (skip > 0)
 			{
-				immediate_update = false;
-				(*cb)(skip, data);
+				(*m_timeCallback)(skip, m_callbackData);
 				skip = 0;
-				continue;
+				goto compare_time;
 			}
 
-			usleep(tgt.diff_ms(cur)*1000);
+			core::sleep_us(tgt.diff_us(cur));
 
-			(*cb)(1, data);
-			i++;
+			(*m_timeCallback)(1, m_callbackData);
 		}
-		if (immediate_update)
+
+		if (skip > 0)
 		{
-			(*cb)(skip, data);
+			(*m_timeCallback)(skip, m_callbackData);
 		}
 
-		th->running = false;
+		m_threading->running = false;
+	}
+
+	void SoundSink::_timeloop_bootstrap(SoundSink *s)
+	{
+		s->_timeloop();
 	}
 
 	void SoundSink::performSoundCallback(s16 *buf, u32 sz)
 	{
-		core::u32 timec = (*m_soundCallback)(buf, sz, m_callbackData, m_timeidx[m_curtimeidxbuf]);
+		core::u32 timec = (*m_soundCallback)(buf, sz, m_callbackData, m_timeidx);
 
 		m_timeidxsz = timec;
 	}
 
+	void SoundSink::applyTime(core::s32 delay_us)
+	{
+		if (m_timeidxsz == 0)
+			return;
+
+		core::timestamp_t now;
+		now.gettime();
+
+		core::u32 sr = sampleRate();
+		core::timestamp_t arr[MAX_TIMEIDX];
+		for (Quantity i = 0; i < m_timeidxsz; i++)
+		{
+			core::timestamp_t ts = now;
+			core::s32 delta = delay_us + (core::s32)us_from_idx(m_timeidx[i], sr);
+			if (delta > 0)
+			{
+				ts = ts.add_us(delta);
+			}
+			arr[i] = ts;
+		}
+
+		{
+			boost::lock_guard<boost::mutex>(m_threading->mtx_time_ringbuffer);
+
+			if (m_timeidx_ringbuffer.write(arr, m_timeidxsz) < m_timeidxsz)
+			{
+				fprintf(stderr, "m_timeidx_ringbuffer overrun\n");
+				// buffer overrun
+			}
+		}
+		// in case the timer thread is waiting on the ring buffer, signal the thread
+
+		m_threading->cond_time_ringbuffer.notify_one();
+	}
+/*
 	void SoundSink::performTimeCallback()
 	{
+		m_timeidxsz = 0;
 		if (m_timeidxsz == 0)
 			return;
 
@@ -172,7 +242,7 @@ namespace core
 		m_curtimeidxbuf = (m_curtimeidxbuf == 0) ? 1 : 0;
 		m_timeidxsz = 0;
 	}
-
+*/
 	void SoundSink::blockUntilStopped()
 	{
 		boost::unique_lock<boost::mutex> lock(m_threading->mtx_playing);

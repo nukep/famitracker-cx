@@ -26,10 +26,12 @@ static int process(jack_nframes_t frames, void *arg)
 {
 	jacksound_info_t *handle = (jacksound_info_t*)arg;
 
-	// this is the moment when the last period should be playing
-	// notify time dispatcher to tick for the duration of this period
-	// TODO: accomodate timing for periods > 2
-	handle->sink->performTimeCallback();
+	jack_latency_range_t range;
+	jack_port_get_latency_range(handle->out, JackPlaybackLatency, &range);
+	core::u64 latency_us = range.max - frames*2;
+	latency_us = latency_us * 1000000 / handle->sink->sampleRate();
+
+	handle->sink->applyTime(latency_us);
 
 	if (!handle->sink->isPlaying())
 	{
@@ -48,10 +50,7 @@ static int process(jack_nframes_t frames, void *arg)
 	{
 		buf[i] = sample_t(handle->buf[i])/sample_t(32768.0);
 	}
-/*
-	printf("%u\n", jack_frames_since_cycle_start(handle->client));
-	fflush(stdout);
-*/
+
 	return 0;
 }
 

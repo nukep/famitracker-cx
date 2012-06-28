@@ -1,6 +1,6 @@
-#include <alsa/asoundlib.h>
 #include <stdio.h>
 #include "alsa.hpp"
+#include "core/time.hpp"
 
 core_api_SoundSink * sound_create()
 {
@@ -8,33 +8,106 @@ core_api_SoundSink * sound_create()
 }
 
 AlsaSound::AlsaSound()
-	: m_handle(NULL)
+	: m_handle(NULL), m_running(false)
 {
 
 }
 AlsaSound::~AlsaSound()
 {
+	m_thread.wait();
 	AlsaSound::close();
+	setPlaying(false);
+}
+
+#define ALSA_TRY(x) if ( (err = (x)) < 0){ fprintf(stderr, "ERROR: %s\n", snd_strerror(err)); }
+
+void AlsaSound::callback(void *data)
+{
+	AlsaSound *as = (AlsaSound*)data;
+
+	int err;
+	core::u32 bufsz = as->m_buffer_size;
+	core::s16 *buf = new core::s16[bufsz];
+
+	core::u32 sr = as->sampleRate();
+
+	core::u64 latency = as->m_buffer_size;
+	latency = latency * 1000000 / sr;
+
+	while (as->m_running)
+	{
+		snd_pcm_sframes_t delayp;
+
+		core::u32 sz = as->m_period_size;
+
+		as->performSoundCallback(buf, sz);
+		snd_pcm_sframes_t frames = snd_pcm_writei(as->m_handle, buf, sz);
+		snd_pcm_delay(as->m_handle, &delayp);
+
+		core::s64 d = delayp * 1000000 / sr;
+		d -= latency;
+
+		as->applyTime(d);
+
+		if (frames < 0)
+		{
+			frames = snd_pcm_recover(as->m_handle, frames, 0);
+		}
+		if (frames < 0)
+		{
+			// error
+			fprintf(stderr, "snd_pcm_writei failed: %s\n", snd_strerror(frames));
+			continue;
+		}
+		if (frames > 0 && frames != (long)sz)
+		{
+			// error
+			fprintf(stderr, "Short write (expected %li, wrote %li)\n", (long)sz, frames);
+			continue;
+		}
+	}
+	delete[] buf;
+
+	ALSA_TRY(snd_pcm_drain(as->m_handle));
+	ALSA_TRY(snd_pcm_prepare(as->m_handle));
+}
+
+void AlsaSound::setPlaying(bool playing)
+{
+	bool changed = playing != isPlaying();
+
+	if (!changed)
+		return;
+
+	m_running = playing;
+
+	if (playing)
+	{
+		SoundSink::setPlaying(playing);
+		m_thread.run(callback, this);
+	}
+	else
+	{
+		m_thread.wait();
+		// call original setPlaying AFTER stopping the audio thread
+		SoundSink::setPlaying(playing);
+	}
 }
 
 void AlsaSound::initialize(unsigned int sampleRate, unsigned int channels, unsigned int latency_ms)
 {
 	AlsaSound::close();
 
-	snd_pcm_t *handle;
-
 	int err;
 
-	m_sampleRate = sampleRate;
-
-	if ((err = snd_pcm_open(&handle, "default", SND_PCM_STREAM_PLAYBACK, 0)) < 0)
+	if ((err = snd_pcm_open(&m_handle, "default", SND_PCM_STREAM_PLAYBACK, 0)) < 0)
 	{
 		// error
 		fprintf(stderr, "Playback open error: %s\n", snd_strerror(err));
 		return;
 	}
 
-	if ((err = snd_pcm_set_params(handle,
+	if ((err = snd_pcm_set_params(m_handle,
 								  SND_PCM_FORMAT_S16,
 								  SND_PCM_ACCESS_RW_INTERLEAVED,
 								  channels,
@@ -47,50 +120,20 @@ void AlsaSound::initialize(unsigned int sampleRate, unsigned int channels, unsig
 		return;
 	}
 
-	m_handle = handle;
+	snd_pcm_get_params(m_handle, &m_buffer_size, &m_period_size);
+
+	m_sampleRate = sampleRate;
 }
 
 void AlsaSound::close()
 {
 	if (m_handle != NULL)
 	{
-		snd_pcm_close((snd_pcm_t*)m_handle);
+		snd_pcm_close(m_handle);
 	}
-}
-
-void AlsaSound::flushBuffer(const core::s16 *buffer, core::u32 size)
-{
-	snd_pcm_t *handle = (snd_pcm_t*)m_handle;
-	snd_pcm_sframes_t frames;
-
-	frames = snd_pcm_writei(handle, buffer, size);
-	if (frames < 0)
-	{
-		frames = snd_pcm_recover(handle, frames, 0);
-	}
-	if (frames < 0)
-	{
-		// error
-		fprintf(stderr, "snd_pcm_writei failed: %s\n", snd_strerror(frames));
-		return;
-	}
-	if (frames > 0 && frames < (long)size)
-	{
-		// error
-		fprintf(stderr, "Short write (expected %li, wrote %li)\n", (long)size, frames);
-		return;
-	}
-}
-
-void AlsaSound::flush()
-{
-	snd_pcm_t *handle = (snd_pcm_t*)m_handle;
-
-	snd_pcm_prepare(handle);
 }
 
 int AlsaSound::sampleRate() const
 {
-	// TODO - dan
 	return m_sampleRate;
 }

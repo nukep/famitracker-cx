@@ -6,6 +6,7 @@
 
 class QFile;
 class QString;
+class QEvent;
 class FtmDocument;
 
 namespace gui
@@ -18,6 +19,7 @@ namespace gui
 	void updateFrameChannel(bool modified=false);
 
 	class DocInfo;
+	class MainWindow;
 
 	unsigned int loadedDocuments();
 	FtmDocument * activeDocument();
@@ -30,12 +32,15 @@ namespace gui
 	bool isEditing();
 	static bool canEdit(){ return isEditing() && (!isPlaying()); }
 	void playSong();
-	void stopSong();
+	void stopSong_block();
+	void stopSongConcurrent(QEvent *event);
+	void stopSongConcurrent(void (*mainthread_callback)(MainWindow *, void*), void *data=NULL);
+	void stopSongConcurrent();
 	static inline void toggleSong()
 	{
 		if (isPlaying())
 		{
-			stopSong();
+			stopSongConcurrent();
 		}
 		else
 		{

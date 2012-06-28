@@ -537,33 +537,6 @@ void SoundGen::timeCallback(core::u32 skip, void *data)
 		(*sg->m_trackerUpdateCallback)(rf, sg->trackerController()->document());
 }
 
-void SoundGen::run()
-{
-	m_bRunning = true;
-	m_bPlayerHalted = false;
-	m_bRequestStop = false;
-	m_iDelayedStart = 0;
-	m_iFrameCounter = 0;
-
-	setupChannels();
-	resetTempo();
-
-	while (m_bRunning)
-	{
-		if (requestFrame())
-		{
-			if (m_trackerUpdateCallback != NULL)
-			{
-				rowframe_t rf;
-				rf.row = trackerController()->row();
-				rf.frame = trackerController()->frame();
-				(*m_trackerUpdateCallback)(rf, trackerController()->document());
-			}
-		}
-	}
-
-	m_sink->flush();
-}
 void SoundGen::start()
 {
 	if (m_sink->isPlaying())
@@ -577,6 +550,9 @@ void SoundGen::start()
 
 	setupChannels();
 	resetTempo();
+
+	m_queued_sound.clear();
+	m_queued_rowframes.clear();
 
 	m_sink->setPlaying(true);
 }

@@ -2,6 +2,10 @@ project(core)
 cmake_minimum_required(VERSION 2.6)
 
 set(SRC
+	common.hpp
+	common/libraries.hpp
+	common/platform.hpp
+
 	io.cpp
 	io.hpp
 
@@ -11,8 +15,11 @@ set(SRC
 
 	soundsink.cpp
 	soundsink.hpp
+	soundthread.cpp
+	soundthread.hpp
 
 	ringbuffer.hpp
+	time.hpp
 )
 
 find_package(Boost REQUIRED thread)
