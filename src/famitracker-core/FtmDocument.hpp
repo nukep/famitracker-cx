@@ -209,6 +209,9 @@ public:
 	void			ConvertSequence(stSequence *OldSequence, CSequence *NewSequence, int Type);
 
 	void			SwitchToTrack(unsigned int Track);
+	void			reorderSequences();
+	void			convertSequences();
+
 	void			AllocateSong(unsigned int Song);
 
 	void SetModifiedFlag(bool modified=true){ m_bModified = modified; }

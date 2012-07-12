@@ -312,6 +312,16 @@ bool FtmDocument::readNew(Document *doc)
 
 #undef CMP
 
+	if (m_iFileVersion <= 0x0201)
+	{
+		reorderSequences();
+	}
+
+	if (m_iFileVersion < 0x0300)
+	{
+		convertSequences();
+	}
+
 	return true;
 }
 
@@ -2712,6 +2722,120 @@ void FtmDocument::ConvertSequence(stSequence *OldSequence, CSequence *NewSequenc
 
 		NewSequence->SetItemCount(ValPtr);
 		NewSequence->SetLoopPoint(iLoopPoint);
+	}
+}
+
+#define LIMIT(v, max, min) v = ((v > max) ? max : ((v < min) ? min : v));//  if (v > max) v = max; else if (v < min) v = min;
+
+void FtmDocument::reorderSequences()
+{
+	int Keepers[SEQ_COUNT] = {0, 0, 0, 0, 0};
+	int Indices[MAX_SEQUENCES][SEQ_COUNT];
+	int Index;
+
+	memset(Indices, 0xFF, MAX_SEQUENCES * SEQ_COUNT * sizeof(int));
+
+	CInstrument2A03	*pInst;
+
+	// Organize sequences
+	for (int i = 0; i < MAX_INSTRUMENTS; i++)
+	{
+		if (m_pInstruments[i] != NULL) {
+			pInst = (CInstrument2A03*)m_pInstruments[i];
+			for (int x = 0; x < SEQ_COUNT; x++)
+			{
+				if (pInst->GetSeqEnable(x))
+				{
+					Index = pInst->GetSeqIndex(x);
+					if (Indices[Index][x] >= 0 && Indices[Index][x] != -1)
+					{
+						pInst->SetSeqIndex(x, Indices[Index][x]);
+					}
+					else {
+						memcpy(&m_Sequences[Keepers[x]][x], &m_TmpSequences[Index], sizeof(stSequence));
+						for (unsigned int j = 0; j < m_Sequences[Keepers[x]][x].Count; j++)
+						{
+							switch (x)
+							{
+								case SEQ_VOLUME: LIMIT(m_Sequences[Keepers[x]][x].Value[j], 15, 0); break;
+								case SEQ_DUTYCYCLE: LIMIT(m_Sequences[Keepers[x]][x].Value[j], 3, 0); break;
+							}
+						}
+						Indices[Index][x] = Keepers[x];
+						pInst->SetSeqIndex(x, Keepers[x]);
+						Keepers[x]++;
+					}
+				}
+				else
+				{
+					pInst->SetSeqIndex(x, 0);
+				}
+			}
+		}
+	}
+}
+
+void FtmDocument::convertSequences()
+{
+	int i, j, k;
+	int iLength, ValPtr, Count, Value, Length;
+	stSequence	*pSeq;
+	CSequence	*pNewSeq;
+
+	// This function is used to convert the old type sequences to new type
+
+	for (i = 0; i < MAX_SEQUENCES; i++)
+	{
+		for (j = 0; j < /*MAX_SEQUENCE_ITEMS*/ SEQ_COUNT; j++)
+		{
+			pSeq = &m_Sequences[i][j];
+			if (pSeq->Count > 0 && pSeq->Count < MAX_SEQUENCE_ITEMS)
+			{
+				pNewSeq = GetSequence2A03(i, j);
+
+				// Save a pointer to this
+				int iLoopPoint = -1;
+				iLength = 0;
+				ValPtr = 0;
+
+				// Store the sequence
+				Count = pSeq->Count;
+				for (k = 0; k < Count; k++)
+				{
+					Value	= pSeq->Value[k];
+					Length	= pSeq->Length[k];
+
+					if (Length < 0)
+					{
+						iLoopPoint = 0;
+						for (int l = signed(pSeq->Count) + Length - 1; l < signed(pSeq->Count) - 1; l++)
+						{
+							iLoopPoint += (pSeq->Length[l] + 1);
+						}
+					}
+					else {
+						for (int l = 0; l < Length + 1 && ValPtr < MAX_SEQUENCE_ITEMS; l++)
+						{
+							if ((j == SEQ_PITCH || j == SEQ_HIPITCH) && l > 0)
+								pNewSeq->SetItem(ValPtr++, 0);
+							else
+								pNewSeq->SetItem(ValPtr++, (unsigned char)Value);
+							iLength++;
+						}
+					}
+				}
+
+				if (iLoopPoint != -1)
+				{
+					if (iLoopPoint > iLength)
+						iLoopPoint = iLength;
+					iLoopPoint = iLength - iLoopPoint;
+				}
+
+				pNewSeq->SetItemCount(ValPtr);
+				pNewSeq->SetLoopPoint(iLoopPoint);
+			}
+		}
 	}
 }
 
