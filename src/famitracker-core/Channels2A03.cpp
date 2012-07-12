@@ -229,7 +229,7 @@ void CChannelHandler2A03::ProcessChannel()
 
 	// Sequences
 	for (int i = 0; i < CInstrument2A03::SEQUENCE_COUNT; i++)
-		CChannelHandler::RunSequence(i, m_pDocument->GetSequence(m_iSeqIndex[i], CInstrument2A03::SEQUENCE_TYPES[i]));
+		CChannelHandler::RunSequence(i, m_pDocument->GetSequence2A03(m_iSeqIndex[i], CInstrument2A03::SEQUENCE_TYPES[i]));
 }
 
 void CChannelHandler2A03::ResetChannel()

@@ -47,11 +47,12 @@ namespace gui
 		void refreshInstruments();
 
 		void stopSongConcurrent(void(*mainthread_callback)(void *data));
+
+		void updateDocument();
 	protected:
 		void closeEvent(QCloseEvent *);
 		bool event(QEvent *event);
 	private:
-		void updateDocument();
 
 		void setSong_mw_cb();
 		static void setSong_cb(MainWindow*, void*);

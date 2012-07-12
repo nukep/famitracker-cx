@@ -11,7 +11,9 @@ public:
 	Document();
 	~Document();
 
-	bool checkValidity(core::IO *io);
+	void setIO(core::IO *io){ m_io = io; }
+
+	bool checkValidity();
 
 	unsigned int getFileVersion() const{ return m_iFileVersion; }
 
@@ -22,20 +24,27 @@ public:
 
 	bool isFileDone() const{ return m_bFileDone; }
 
+	void writeBegin(unsigned int version);
+	void writeEnd();
 	void writeBlockInt(int);
 	void writeBlockChar(char);
 
 	const char *blockID() const{ return m_cBlockID; }
-	bool readBlock(core::IO *io);
+	bool readBlock();
 	void getBlock(void *buf, unsigned int size);
 	void writeBlock(const void *data, unsigned int size);
+	bool flushBlock();
 	void createBlock(const char *id, int version);
 
 	std::string readString();
+	void writeString(const char *s);
+	void writeString(const std::string &s);
 
 	void rollbackPointer(int count);	// avoid this
 private:
 	unsigned int m_iFileVersion;
+
+	core::IO * m_io;
 
 	char m_cBlockID[16];
 	unsigned int m_iBlockSize;

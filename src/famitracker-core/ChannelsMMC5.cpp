@@ -183,7 +183,7 @@ void CChannelHandlerMMC5::ProcessChannel()
 
 	// Sequences
 	for (int i = 0; i < SEQUENCES; i++)
-		RunSequence(i, m_pDocument->GetSequence(m_iSeqIndex[i], SEQ_TYPES[i]));
+		RunSequence(i, m_pDocument->GetSequence2A03(m_iSeqIndex[i], SEQ_TYPES[i]));
 }
 
 void CChannelHandlerMMC5::ResetChannel()

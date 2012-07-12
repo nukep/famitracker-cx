@@ -197,6 +197,7 @@ namespace gui
 		newDocument(false);
 
 		mw = new MainWindow;
+		mw->updateDocument();
 		mw->resize(1024, 768);
 	}
 	void destroy()
@@ -324,7 +325,10 @@ namespace gui
 	{
 		sgen->stop();
 		sink->blockUntilStopped();
-		mw->sendStoppedSongEvent(mainthread_callback, data);
+		if (mw != NULL)
+		{
+			mw->sendStoppedSongEvent(mainthread_callback, data);
+		}
 		stopping_song = false;
 	}
 	static void stopsong_qevent_thread(QEvent *e)

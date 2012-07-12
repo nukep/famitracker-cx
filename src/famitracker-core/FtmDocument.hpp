@@ -59,7 +59,7 @@ public:
 	void createEmpty();
 
 	void read(core::IO *io);
-	void write(core::IO *io);
+	void write(core::IO *io) const;
 
 	bool doForceBackup() const{ return bForceBackup; }
 
@@ -180,14 +180,16 @@ public:
 
 	// Sequences functions
 	CSequence		*GetSequence(int Chip, int Index, int Type);
-	CSequence		*GetSequence(int Index, int Type);
+	CSequence		*GetSequence2A03(int Index, int Type);
+	CSequence		*GetSequence_readonly(int Chip, int Index, int Type) const;
+	CSequence		*GetSequence2A03_readonly(int Index, int Type) const;
 	int				GetSequenceItemCount(int Index, int Type) const;
 	int				GetFreeSequence(unsigned char Chip, int Type) const;
 	int				GetFreeSequence(int Type) const;
 	int				GetSequenceCount(int Type) const;
 
 	CSequence		*GetSequenceVRC6(int Index, int Type);
-	CSequence		*GetSequenceVRC6(int Index, int Type) const;
+	CSequence		*GetSequenceVRC6_readonly(int Index, int Type) const;
 	int				GetSequenceItemCountVRC6(int Index, int Type) const;
 	int				GetFreeSequenceVRC6(int Type) const;
 
@@ -215,8 +217,8 @@ public:
 
 private:
 	bool bForceBackup;
-	bool readOld(Document *doc, core::IO *io);
-	bool readNew(Document *doc, core::IO *io);
+	bool readOld(Document *doc);
+	bool readNew(Document *doc);
 
 	bool readNew_params(Document *doc);
 	bool readNew_header(Document *doc);
@@ -226,6 +228,18 @@ private:
 	bool readNew_patterns(Document *doc);
 	bool readNew_dsamples(Document *doc);
 	bool readNew_sequences_vrc6(Document *doc);
+
+	bool writeBlocks(Document *doc) const;
+	bool write_params(Document *doc) const;
+	bool write_songinfo(Document *doc) const;
+	bool write_header(Document *doc) const;
+	bool write_instruments(Document *doc) const;
+	bool write_sequences(Document *doc) const;
+	bool write_sequencesVRC6(Document *doc) const;
+	bool write_frames(Document *doc) const;
+	bool write_patterns(Document *doc) const;
+	bool write_dsamples(Document *doc) const;
+
 
 	// TODO - dan: Deperecate from FtmDocument and move to SoundGen
 /*

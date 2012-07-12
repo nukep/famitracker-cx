@@ -58,8 +58,6 @@ namespace gui
 		actionRemove_instrument->setIcon(QIcon::fromTheme("list-remove"));
 		QObject::connect(actionEdit_instrument, SIGNAL(triggered()), this, SLOT(editInstrument()));
 
-		updateDocument();
-
 		m_instrumenteditor = new InstrumentEditor(this);
 	}
 	MainWindow::~MainWindow()
@@ -273,7 +271,15 @@ namespace gui
 	}
 	void MainWindow::saveAs()
 	{
-		qDebug() << QFileDialog::getSaveFileName(this, tr("Save As"), QString(), tr("FamiTracker files (*.ftm);;All files (*.*)"), 0, 0);
+		QString path = QFileDialog::getSaveFileName(this, tr("Save As"), QString(), tr("FamiTracker files (*.ftm);;All files (*.*)"), 0, 0);
+		if (path.isEmpty())
+			return;
+
+		core::FileIO *io = new core::FileIO(path.toLocal8Bit(), core::IO_WRITE);
+
+		gui::activeDocument()->write(io);
+
+		delete io;
 	}
 
 	void MainWindow::quit()

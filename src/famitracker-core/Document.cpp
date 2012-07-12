@@ -8,7 +8,7 @@ const char FILE_HEADER_ID[] = "FamiTracker Module";
 const char FILE_END_ID[] = "END";
 
 Document::Document()
-	: m_pBlockData(NULL), m_bFileDone(false)
+	: m_pBlockData(NULL), m_bFileDone(false), m_io(NULL)
 {
 }
 
@@ -18,10 +18,10 @@ Document::~Document()
 		delete[] m_pBlockData;
 }
 
-bool Document::checkValidity(core::IO *io)
+bool Document::checkValidity()
 {
 	char buf[256];
-	if (!io->read_e(buf, sizeof(FILE_HEADER_ID)-1))
+	if (!m_io->read_e(buf, sizeof(FILE_HEADER_ID)-1))
 	{
 		return false;
 	}
@@ -32,19 +32,19 @@ bool Document::checkValidity(core::IO *io)
 	}
 
 	// Read file version
-	if (!io->readInt(&m_iFileVersion))
+	if (!m_io->readInt(&m_iFileVersion))
 	{
 		return false;
 	}
 	return true;
 }
 
-bool Document::readBlock(core::IO *io)
+bool Document::readBlock()
 {
 	m_iBlockPointer = 0;
 	memset(m_cBlockID, 0, 16);
 
-	Quantity bytesRead = io->read(m_cBlockID, 16);
+	Quantity bytesRead = m_io->read(m_cBlockID, 16);
 
 	if (strcmp(m_cBlockID, FILE_END_ID) == 0)
 	{
@@ -52,8 +52,8 @@ bool Document::readBlock(core::IO *io)
 		return true;
 	}
 
-	bool read_v = io->readInt(&m_iBlockVersion);
-	bool read_s = io->readInt(&m_iBlockSize);
+	bool read_v = m_io->readInt(&m_iBlockVersion);
+	bool read_s = m_io->readInt(&m_iBlockSize);
 	if (!read_v || !read_s)
 	{
 		return false;
@@ -67,7 +67,7 @@ bool Document::readBlock(core::IO *io)
 	}
 
 	init_pBlockData(m_iBlockSize);
-	if (!io->read_e(m_pBlockData, m_iBlockSize))
+	if (!m_io->read_e(m_pBlockData, m_iBlockSize))
 	{
 		return false;
 	}
@@ -110,6 +110,30 @@ void Document::writeBlock(const void *data, unsigned int size)
 	}
 }
 
+bool Document::flushBlock()
+{
+	if (m_pBlockData == NULL)
+		return false;
+
+	m_io->write(m_cBlockID, 16);
+	m_io->writeInt(m_iBlockVersion);
+	m_io->writeInt(m_iBlockPointer);
+	m_io->write(m_pBlockData, m_iBlockPointer);
+	return true;
+}
+
+void Document::writeBegin(unsigned int version)
+{
+	m_iFileVersion = version;
+
+	m_io->write(FILE_HEADER_ID, sizeof(FILE_HEADER_ID)-1);
+	m_io->writeInt(m_iFileVersion);
+}
+void Document::writeEnd()
+{
+	m_io->write(FILE_END_ID, sizeof(FILE_END_ID)-1);
+}
+
 void Document::writeBlockInt(int v)
 {
 	unsigned char d[4];
@@ -147,6 +171,20 @@ std::string Document::readString()
 		s.push_back(c);
 
 	return s;
+}
+
+void Document::writeString(const char *s)
+{
+	size_t sz = strlen(s);
+	writeBlock(s, sz);
+	writeBlockChar(0);
+}
+
+void Document::writeString(const std::string &s)
+{
+	size_t sz = s.size();
+	writeBlock(s.c_str(), sz);
+	writeBlockChar(0);
 }
 
 void Document::rollbackPointer(int count)

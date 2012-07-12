@@ -173,9 +173,10 @@ void FtmDocument::unlock()
 
 void FtmDocument::createEmpty()
 {
+	m_iMachine = DEFAULT_MACHINE_TYPE;
 	// Allocate first song
 	SwitchToTrack(0);
-	m_iTracks = 1;
+	m_iTracks = 0;
 
 	// and select 2A03 only
 	SelectExpansionChip(SNDCHIP_NONE);
@@ -194,9 +195,10 @@ void FtmDocument::createEmpty()
 void FtmDocument::read(core::IO *io)
 {
 	Document doc;
+	doc.setIO(io);
 	bForceBackup = false;
 
-	if (!doc.checkValidity(io))
+	if (!doc.checkValidity())
 	{
 		return;
 	}
@@ -212,7 +214,7 @@ void FtmDocument::read(core::IO *io)
 			return;
 		}
 
-		if (!readOld(&doc, io))
+		if (!readOld(&doc))
 		{
 			return;
 		}
@@ -234,7 +236,7 @@ void FtmDocument::read(core::IO *io)
 			return;
 		}
 
-		if (!readNew(&doc, io))
+		if (!readNew(&doc))
 		{
 			return;
 		}
@@ -244,17 +246,17 @@ void FtmDocument::read(core::IO *io)
 	}
 }
 
-bool FtmDocument::readOld(Document *doc, core::IO *io)
+bool FtmDocument::readOld(Document *doc)
 {
 	// TODO
 	return false;
 }
 
-bool FtmDocument::readNew(Document *doc, core::IO *io)
+bool FtmDocument::readNew(Document *doc)
 {
 	while (!doc->isFileDone())
 	{
-		if (!doc->readBlock(io))
+		if (!doc->readBlock())
 			return false;
 
 		if (doc->isFileDone())
@@ -535,7 +537,7 @@ bool FtmDocument::readNew_sequences(Document *doc)
 			ftm_Assert(index < MAX_SEQUENCES);
 			ftm_Assert(type < SEQ_COUNT);
 
-			CSequence *pSeq = GetSequence(index, type);
+			CSequence *pSeq = GetSequence2A03(index, type);
 
 			pSeq->Clear();
 			pSeq->SetItemCount(seqCount < MAX_SEQUENCE_ITEMS ? seqCount : MAX_SEQUENCE_ITEMS);
@@ -568,7 +570,7 @@ bool FtmDocument::readNew_sequences(Document *doc)
 					settings = doc->getBlockInt();
 					if (GetSequenceItemCount(i, x) > 0)
 					{
-						CSequence *pSeq = GetSequence(i, x);
+						CSequence *pSeq = GetSequence2A03(i, x);
 						pSeq->SetReleasePoint(releasePoint);
 						pSeq->SetSetting(settings);
 					}
@@ -584,7 +586,7 @@ bool FtmDocument::readNew_sequences(Document *doc)
 				settings = doc->getBlockInt();
 				index = Indices[i];
 				type = Types[i];
-				CSequence *pSeq = GetSequence(index, type);
+				CSequence *pSeq = GetSequence2A03(index, type);
 				pSeq->SetReleasePoint(releasePoint);
 				pSeq->SetSetting(settings);
 			}
@@ -985,39 +987,452 @@ bool FtmDocument::readNew_sequences_vrc6(Document *doc)
 	return true;
 }
 
-void FtmDocument::write(core::IO *io)
+void FtmDocument::write(core::IO *io) const
 {
-}
-/*
-void FtmDocument::ResetChannels()
-{
-	// Clears all channels from the document
-	m_iRegisteredChannels = 0;
+	Document doc;
+	doc.setIO(io);
+
+	doc.writeBegin(FILE_VER);
+
+	if (!writeBlocks(&doc))
+	{
+
+	}
+
+	doc.writeEnd();
 }
 
-void FtmDocument::RegisterChannel(CTrackerChannel *pChannel, int ChannelType, int ChipType)
+bool FtmDocument::writeBlocks(Document *doc) const
 {
-	// Adds a channel to the document
-	m_pChannels[m_iRegisteredChannels] = pChannel;
-	m_iChannelTypes[m_iRegisteredChannels] = ChannelType;
-	m_iChannelChip[m_iRegisteredChannels] = ChipType;
-	m_iRegisteredChannels++;
+	if (!write_params(doc))
+		return false;
+	if (!write_songinfo(doc))
+		return false;
+	if (!write_header(doc))
+		return false;
+	if (!write_instruments(doc))
+		return false;
+	if (!write_sequences(doc))
+		return false;
+	if (!write_frames(doc))
+		return false;
+	if (!write_patterns(doc))
+		return false;
+	if (!write_dsamples(doc))
+		return false;
+
+	if (m_iExpansionChip & SNDCHIP_VRC6)
+	{
+		if (!write_sequencesVRC6(doc))
+			return false;
+	}
+
+	return true;
 }
 
-CTrackerChannel *FtmDocument::GetChannel(int Index) const
+bool FtmDocument::write_params(Document *doc) const
 {
-	ftm_Assert(m_iRegisteredChannels != 0 && Index < m_iRegisteredChannels);
-	ftm_Assert(m_pChannels[Index] != NULL);
-	return m_pChannels[Index];
+	// Song parameters
+	doc->createBlock(FILE_BLOCK_PARAMS, 4);
+
+	doc->writeBlockChar(m_iExpansionChip);		// ver 2 change
+	doc->writeBlockInt(m_iChannelsAvailable);
+	doc->writeBlockInt(m_iMachine);
+	doc->writeBlockInt(m_iEngineSpeed);
+	doc->writeBlockInt(m_iVibratoStyle);		// ver 3 change
+	doc->writeBlockInt(m_highlight);			// ver 4 change
+	doc->writeBlockInt(m_secondHighlight);
+
+	return doc->flushBlock();
 }
 
-int FtmDocument::GetChannelType(int Channel) const
+bool FtmDocument::write_songinfo(Document *doc) const
 {
-	ftm_Assert(m_iRegisteredChannels != 0);
-	ftm_Assert(Channel < m_iRegisteredChannels);
-	return m_iChannelTypes[Channel];
+	doc->createBlock(FILE_BLOCK_INFO, 1);
+
+	doc->writeBlock(m_strName, 32);
+	doc->writeBlock(m_strArtist, 32);
+	doc->writeBlock(m_strCopyright, 32);
+
+	return doc->flushBlock();
 }
-*/
+
+bool FtmDocument::write_header(Document *doc) const
+{
+	/*
+	 *  Header data
+	 *
+	 *  Store song count and then for each channel:
+	 *  channel type and number of effect columns
+	 *
+	 */
+
+	// Version 3 adds song names
+
+	// Header data
+	doc->createBlock(FILE_BLOCK_HEADER, 3);
+
+	// Write number of tracks
+	doc->writeBlockChar(m_iTracks);
+
+	// Ver 3, store track names
+	for (unsigned int i = 0; i <= m_iTracks; ++i)
+	{
+		doc->writeString(m_sTrackNames[i]);
+	}
+
+	for (unsigned int i = 0; i < m_iChannelsAvailable; i++)
+	{
+		// Channel type
+		// TODO - dan. not fixing this may cause regressions!
+		int chantype = 0; /* m_iChannelsTypes[i]; */
+		doc->writeBlockChar(chantype);
+		for (unsigned int j = 0; j <= m_iTracks; j++)
+		{
+			ftm_Assert(m_pTunes[j] != NULL);
+			// Effect columns
+			doc->writeBlockChar(m_pTunes[j]->GetEffectColumnCount(i));
+		}
+	}
+
+	return doc->flushBlock();
+}
+
+bool FtmDocument::write_instruments(Document *doc) const
+{
+	// A bug in v0.3.0 causes a crash if this is not 2, so change only when that ver is obsolete!
+	const int BLOCK_VERSION = 2;
+	// If FDS is used then version must be at least 4 or recent files won't load
+	int Version = BLOCK_VERSION;
+
+	// Fix for FDS instruments
+	if (m_iExpansionChip & SNDCHIP_FDS)
+		Version = 4;
+
+	for (int i = 0; i < MAX_INSTRUMENTS; i++)
+	{
+		if (m_pInstruments[i] != NULL)
+		{
+			if (m_pInstruments[i]->GetType() == INST_FDS)
+				Version = 4;
+		}
+	}
+
+	int Count = 0;
+	char Type;
+
+	// Instruments block
+	doc->createBlock(FILE_BLOCK_INSTRUMENTS, Version);
+
+	// Count number of instruments
+	for (int i = 0; i < MAX_INSTRUMENTS; i++)
+	{
+		if (m_pInstruments[i] != NULL)
+			Count++;
+	}
+
+	doc->writeBlockInt(Count);
+
+	for (int i = 0; i < MAX_INSTRUMENTS; i++)
+	{
+		// Only write instrument if it's used
+		if (m_pInstruments[i] != NULL)
+		{
+
+			Type = m_pInstruments[i]->GetType();
+
+			// Write index and type
+			doc->writeBlockInt(i);
+			doc->writeBlockChar(Type);
+
+			// Store the instrument
+			m_pInstruments[i]->Store(doc);
+
+			// Store the name
+			const char *name = m_pInstruments[i]->GetName();
+			int namelen = strlen(name);
+			doc->writeBlockInt(namelen);
+			doc->writeBlock(name, namelen);
+		}
+	}
+
+	return doc->flushBlock();
+}
+
+bool FtmDocument::write_sequences(Document *doc) const
+{
+	/*
+	 * Store 2A03 sequences
+	 */
+
+	// Sequences, version 6
+	doc->createBlock(FILE_BLOCK_SEQUENCES, 6);
+
+	int Count = 0;
+
+	// Count number of used sequences
+	for (int i = 0; i < MAX_SEQUENCES; i++)
+	{
+		for (int j = 0; j < SEQ_COUNT; j++)
+		{
+			if (GetSequenceItemCount(i, j) > 0)
+				Count++;
+		}
+	}
+
+	doc->writeBlockInt(Count);
+
+	for (int i = 0; i < MAX_SEQUENCES; i++)
+	{
+		for (int j = 0; j < SEQ_COUNT; j++)
+		{
+			Count = GetSequenceItemCount(i, j);
+			if (Count > 0)
+			{
+				const CSequence *pSeq = GetSequence2A03_readonly(i, j);
+				// Store index
+				doc->writeBlockInt(i);
+				// Store type of sequence
+				doc->writeBlockInt(j);
+				// Store number of items in this sequence
+				doc->writeBlockChar(Count);
+				// Store loop point
+				doc->writeBlockInt(pSeq->GetLoopPoint());
+				// Store items
+				for (int k = 0; k < Count; k++)
+				{
+					doc->writeBlockChar(pSeq->GetItem(k));
+				}
+			}
+		}
+	}
+
+	// v6
+	for (int i = 0; i < MAX_SEQUENCES; i++)
+	{
+		for (int j = 0; j < SEQ_COUNT; j++)
+		{
+			Count = GetSequenceItemCount(i, j);
+			if (Count > 0)
+			{
+				const CSequence *pSeq = GetSequence2A03_readonly(i, j);
+				// Store release point
+				doc->writeBlockInt(pSeq->GetReleasePoint());
+				// Store setting
+				doc->writeBlockInt(pSeq->GetSetting());
+			}
+		}
+	}
+
+	return doc->flushBlock();
+}
+
+bool FtmDocument::write_sequencesVRC6(Document *doc) const
+{
+	/*
+	 * Store VRC6 sequences
+	 */
+
+	// Sequences, version 6
+	doc->createBlock(FILE_BLOCK_SEQUENCES_VRC6, 6);
+
+	int Count = 0;
+
+	// Count number of used sequences
+	for (int i = 0; i < MAX_SEQUENCES; i++)
+	{
+		for (int j = 0; j < SEQ_COUNT; j++)
+		{
+			if (GetSequenceItemCountVRC6(i, j) > 0)
+				Count++;
+		}
+	}
+
+	// Write it
+	doc->writeBlockInt(Count);
+
+	for (int i = 0; i < MAX_SEQUENCES; i++)
+	{
+		for (int j = 0; j < SEQ_COUNT; j++)
+		{
+			Count = GetSequenceItemCountVRC6(i, j);
+			if (Count > 0) {
+				const CSequence *pSeq = GetSequenceVRC6_readonly(i, j);
+				// Store index
+				doc->writeBlockInt(i);
+				// Store type of sequence
+				doc->writeBlockInt(j);
+				// Store number of items in this sequence
+				doc->writeBlockChar(Count);
+				// Store loop point
+				doc->writeBlockInt(pSeq->GetLoopPoint());
+				// Store items
+				for (int k = 0; k < Count; ++k) {
+					doc->writeBlockChar(pSeq->GetItem(k));
+				}
+			}
+		}
+	}
+
+	// v6
+	for (int i = 0; i < MAX_SEQUENCES; i++)
+	{
+		for (int j = 0; j < SEQ_COUNT; j++)
+		{
+			Count = GetSequenceItemCountVRC6(i, j);
+			if (Count > 0) {
+				const CSequence *pSeq = GetSequenceVRC6_readonly(i, j);
+				// Store release point
+				doc->writeBlockInt(pSeq->GetReleasePoint());
+				// Store setting
+				doc->writeBlockInt(pSeq->GetSetting());
+			}
+		}
+	}
+
+	return doc->flushBlock();
+}
+
+bool FtmDocument::write_frames(Document *doc) const
+{
+//	unsigned int i, x, y;
+
+	/* Store frame count
+	 *
+	 * 1. Number of channels (5 for 2A03 only)
+	 * 2.
+	 *
+	 */
+
+	doc->createBlock(FILE_BLOCK_FRAMES, 3);
+
+	for (unsigned i = 0; i <= m_iTracks; i++)
+	{
+		CPatternData *pTune = m_pTunes[i];
+
+		doc->writeBlockInt(pTune->GetFrameCount());
+		doc->writeBlockInt(pTune->GetSongSpeed());
+		doc->writeBlockInt(pTune->GetSongTempo());
+		doc->writeBlockInt(pTune->GetPatternLength());
+
+		for (unsigned int j = 0; j < pTune->GetFrameCount(); j++)
+		{
+			for (unsigned k = 0; k < m_iChannelsAvailable; k++)
+			{
+				doc->writeBlockChar((unsigned char)pTune->GetFramePattern(j, k));
+			}
+		}
+	}
+
+	return doc->flushBlock();
+}
+
+bool FtmDocument::write_patterns(Document *doc) const
+{
+	/*
+	 * Version changes:
+	 *
+	 *  2: Support multiple tracks
+	 *  3: Changed portamento effect
+	 *  4: Switched portamento effects for VRC7 (1xx & 2xx), adjusted Pxx for FDS
+	 *  5: Adjusted FDS octave
+	 *
+	 */
+
+#ifdef TRANSPOSE_FDS
+	doc->createBlock(FILE_BLOCK_PATTERNS, 5);
+#else
+	doc->createBlock(FILE_BLOCK_PATTERNS, 4);
+#endif
+
+	for (unsigned t = 0; t <= m_iTracks; t++)
+	{
+		for (unsigned i = 0; i < m_iChannelsAvailable; i++)
+		{
+			for (unsigned x = 0; x < MAX_PATTERN; x++)
+			{
+				unsigned Items = 0;
+
+				// Save all rows
+				unsigned int PatternLen = MAX_PATTERN_LENGTH;
+				//unsigned int PatternLen = m_pTunes[t]->GetPatternLength();
+
+				// Get the number of items in this pattern
+				for (unsigned y = 0; y < PatternLen; y++)
+				{
+					if (!m_pTunes[t]->IsCellFree(i, x, y))
+						Items++;
+				}
+
+				if (Items > 0)
+				{
+					doc->writeBlockInt(t);		// Write track
+					doc->writeBlockInt(i);		// Write channel
+					doc->writeBlockInt(x);		// Write pattern
+					doc->writeBlockInt(Items);	// Number of items
+
+					for (unsigned y = 0; y < PatternLen; y++)
+					{
+						if (!m_pTunes[t]->IsCellFree(i, x, y))
+						{
+							doc->writeBlockInt(y);
+
+							stChanNote note;
+							m_pTunes[t]->GetPatternData(i, x, y, &note);
+
+							doc->writeBlockChar(note.Note);
+							doc->writeBlockChar(note.Octave);
+							doc->writeBlockChar(note.Instrument);
+							doc->writeBlockChar(note.Vol);
+
+							int EffColumns = (m_pTunes[t]->GetEffectColumnCount(i) + 1);
+
+							for (int n = 0; n < EffColumns; n++)
+							{
+								doc->writeBlockChar(note.EffNumber[n]);
+								doc->writeBlockChar(note.EffParam[n]);
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+
+	return doc->flushBlock();
+}
+
+bool FtmDocument::write_dsamples(Document *doc) const
+{
+	int Count = 0;
+
+	doc->createBlock(FILE_BLOCK_DSAMPLES, 1);
+
+	for (int i = 0; i < MAX_DSAMPLES; i++)
+	{
+		if (m_DSamples[i].SampleSize > 0)
+			Count++;
+	}
+
+	// Write sample count
+	doc->writeBlockChar(Count);
+
+	for (int i = 0; i < MAX_DSAMPLES; i++)
+	{
+		if (m_DSamples[i].SampleSize > 0)
+		{
+			// Write sample
+			doc->writeBlockChar(i);
+			doc->writeBlockInt((int)strlen(m_DSamples[i].Name));
+			doc->writeBlock(m_DSamples[i].Name, (int)strlen(m_DSamples[i].Name));
+			doc->writeBlockInt(m_DSamples[i].SampleSize);
+			doc->writeBlock(m_DSamples[i].SampleData, m_DSamples[i].SampleSize);
+		}
+	}
+
+	return doc->flushBlock();
+}
+
 void FtmDocument::SetFrameCount(unsigned int Count)
 {
 	ftm_Assert(Count <= MAX_FRAMES);
@@ -1945,11 +2360,10 @@ void FtmDocument::SaveInstrument(unsigned int Instrument, core::IO *io)
 	io->writeChar(InstType);
 
 	// Write name
-	char Name[256];
-	pInstrument->GetName(Name, sizeof(Name));
-	int NameSize = (int)strlen(Name);
-	io->writeInt(NameSize);
-	io->write_e(Name, NameSize);
+	const char *name = pInstrument->GetName();
+	int nameSize = strlen(name);
+	io->writeInt(nameSize);
+	io->write_e(name, nameSize);
 
 	// Write instrument data
 	pInstrument->SaveFile(io, this);
@@ -2039,7 +2453,7 @@ CSequence *FtmDocument::GetSequence(int Chip, int Index, int Type)
 	switch (Chip)
 	{
 		case SNDCHIP_NONE:
-			return GetSequence(Index, Type);
+			return GetSequence2A03(Index, Type);
 		case SNDCHIP_VRC6:
 			return GetSequenceVRC6(Index, Type);
 		// TODO - dan
@@ -2050,12 +2464,37 @@ CSequence *FtmDocument::GetSequence(int Chip, int Index, int Type)
 	return NULL;
 }
 
-CSequence *FtmDocument::GetSequence(int Index, int Type)
+CSequence * FtmDocument::GetSequence_readonly(int Chip, int Index, int Type) const
+{
+	ftm_Assert(Index >= 0 && Index < MAX_SEQUENCES && Type >= 0 && Type < SEQ_COUNT);
+
+	switch (Chip)
+	{
+		case SNDCHIP_NONE:
+			return GetSequence2A03_readonly(Index, Type);
+		case SNDCHIP_VRC6:
+			return GetSequenceVRC6_readonly(Index, Type);
+		// TODO - dan
+/*		case SNDCHIP_N106:
+			return GetSequenceN106(Index, Type);*/
+	}
+
+	return NULL;
+}
+
+CSequence * FtmDocument::GetSequence2A03(int Index, int Type)
 {
 	ftm_Assert(Index >= 0 && Index < MAX_SEQUENCES && Type >= 0 && Type < SEQ_COUNT);
 
 	if (m_pSequences2A03[Index][Type] == NULL)
 		m_pSequences2A03[Index][Type] = new CSequence();
+
+	return m_pSequences2A03[Index][Type];
+}
+
+CSequence * FtmDocument::GetSequence2A03_readonly(int Index, int Type) const
+{
+	ftm_Assert(Index >= 0 && Index < MAX_SEQUENCES && Type >= 0 && Type < SEQ_COUNT);
 
 	return m_pSequences2A03[Index][Type];
 }
@@ -2114,7 +2553,7 @@ CSequence *FtmDocument::GetSequenceVRC6(int Index, int Type)
 	return m_pSequencesVRC6[Index][Type];
 }
 
-CSequence *FtmDocument::GetSequenceVRC6(int Index, int Type) const
+CSequence *FtmDocument::GetSequenceVRC6_readonly(int Index, int Type) const
 {
 	ftm_Assert(Index >= 0 && Index < MAX_SEQUENCES && Type >= 0 && Type < SEQ_COUNT);
 	return m_pSequencesVRC6[Index][Type];

@@ -144,7 +144,7 @@ void CInstrument2A03::SaveFile(core::IO *file, FtmDocument *pDoc)
 
 		if (GetSeqEnable(i))
 		{
-			CSequence *pSeq = pDoc->GetSequence(Sequence, i);
+			CSequence *pSeq = pDoc->GetSequence2A03(Sequence, i);
 			char Enabled = 1;
 			int ItemCount = pSeq->GetItemCount();
 			int LoopPoint = pSeq->GetLoopPoint();
@@ -257,7 +257,7 @@ bool CInstrument2A03::LoadFile(core::IO *file, int iVersion, FtmDocument *pDoc)
 
 			// Find a free sequence
 			int Index = pDoc->GetFreeSequence(i);
-			CSequence *pSeq = pDoc->GetSequence(Index, i);
+			CSequence *pSeq = pDoc->GetSequence2A03(Index, i);
 
 			if (iVersion < 20)
 			{
