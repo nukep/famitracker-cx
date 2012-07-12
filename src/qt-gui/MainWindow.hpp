@@ -78,6 +78,10 @@ namespace gui
 		void rowsChange(int);
 		void framesChange(int);
 
+		void changeSongTitle();
+		void changeSongAuthor();
+		void changeSongCopyright();
+
 		void play();
 		void stop();
 		void toggleEditMode();

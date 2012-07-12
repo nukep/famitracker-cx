@@ -28,6 +28,8 @@ const unsigned int DEFAULT_TEMPO_PAL    = 125;
 const unsigned int DEFAULT_SPEED	    = 6;
 const unsigned int DEFAULT_MACHINE_TYPE = NTSC;
 
+const unsigned int MAX_SONGINFO_LENGTH = 31;	// not including null char
+
 // Columns
 enum
 {
@@ -270,9 +272,9 @@ private:
 	CSequence		*m_pSequencesN106[MAX_SEQUENCES][SEQ_COUNT];
 
 	// NSF info
-	char			m_strName[32];				// Song name
-	char			m_strArtist[32];			// Song artist
-	char			m_strCopyright[32];			// Song copyright
+	char			m_strName[MAX_SONGINFO_LENGTH+1];				// Song name
+	char			m_strArtist[MAX_SONGINFO_LENGTH+1];			// Song artist
+	char			m_strCopyright[MAX_SONGINFO_LENGTH+1];			// Song copyright
 
 	unsigned int	m_iMachine;					// NTSC / PAL
 	unsigned int	m_iEngineSpeed;				// Refresh rate

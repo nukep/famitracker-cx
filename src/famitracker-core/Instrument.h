@@ -35,6 +35,8 @@ enum {
 	INST_COUNT
 };
 
+const unsigned int MAX_INSTRUMENT_NAME_LENGTH = 127;	// not including null char
+
 // External classes
 //class CCompiler;
 class Document;
@@ -67,7 +69,7 @@ public:
 //	virtual int Compile(CCompiler *pCompiler, int Index) = 0;						// Compiles the instrument for NSF generation
 	virtual bool CanRelease(FtmDocument *doc) const = 0;
 private:
-	char m_cName[128];
+	char m_cName[MAX_INSTRUMENT_NAME_LENGTH+1];
 	int	 m_iType;
 };
 

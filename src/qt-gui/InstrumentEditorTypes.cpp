@@ -172,31 +172,31 @@ namespace gui
 			QTreeWidgetItem *item = new QTreeWidgetItem;
 			item->setCheckState(0, Qt::Unchecked);
 			item->setText(1, "0");
-			item->setText(2, "Volume");
+			item->setText(2, QObject::tr("Volume"));
 			item->setData(0, Qt::UserRole, itemrow++);
 			l->addTopLevelItem(item);
 			items.push_back(item);
 
 			item = new QTreeWidgetItem(*item);
-			item->setText(2, "Arpeggio");
+			item->setText(2, QObject::tr("Arpeggio"));
 			item->setData(0, Qt::UserRole, itemrow++);
 			l->addTopLevelItem(item);
 			items.push_back(item);
 
 			item = new QTreeWidgetItem(*item);
-			item->setText(2, "Pitch");
+			item->setText(2, QObject::tr("Pitch"));
 			item->setData(0, Qt::UserRole, itemrow++);
 			l->addTopLevelItem(item);
 			items.push_back(item);
 
 			item = new QTreeWidgetItem(*item);
-			item->setText(2, "Hi-pitch");
+			item->setText(2, QObject::tr("Hi-pitch"));
 			item->setData(0, Qt::UserRole, itemrow++);
 			l->addTopLevelItem(item);
 			items.push_back(item);
 
 			item = new QTreeWidgetItem(*item);
-			item->setText(2, instrumentType()==INST_2A03?"Duty / Noise":"Pulse Width");
+			item->setText(2, QObject::tr(instrumentType()==INST_2A03?"Duty / Noise":"Pulse Width"));
 			item->setData(0, Qt::UserRole, itemrow++);
 			l->addTopLevelItem(item);
 			items.push_back(item);

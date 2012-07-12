@@ -17,6 +17,11 @@ namespace gui
 		rows->setRange(1, MAX_PATTERN_LENGTH);
 		frames->setRange(1, MAX_FRAMES);
 
+		title->setMaxLength(MAX_SONGINFO_LENGTH);
+		author->setMaxLength(MAX_SONGINFO_LENGTH);
+		copyright->setMaxLength(MAX_SONGINFO_LENGTH);
+		instrumentName->setMaxLength(MAX_INSTRUMENT_NAME_LENGTH);
+
 		QObject::connect(actionNew, SIGNAL(triggered()), this, SLOT(newDoc()));
 		actionNew->setIcon(QIcon::fromTheme("document-new"));
 		QObject::connect(action_Open, SIGNAL(triggered()), this, SLOT(open()));
@@ -44,6 +49,10 @@ namespace gui
 		QObject::connect(tempo, SIGNAL(valueChanged(int)), this, SLOT(speedTempoChange(int)));
 		QObject::connect(rows, SIGNAL(valueChanged(int)), this, SLOT(rowsChange(int)));
 		QObject::connect(frames, SIGNAL(valueChanged(int)), this, SLOT(framesChange(int)));
+
+		QObject::connect(title, SIGNAL(editingFinished()), this, SLOT(changeSongTitle()));
+		QObject::connect(author, SIGNAL(editingFinished()), this, SLOT(changeSongAuthor()));
+		QObject::connect(copyright, SIGNAL(editingFinished()), this, SLOT(changeSongCopyright()));
 
 		QObject::connect(action_Play, SIGNAL(triggered()), this, SLOT(play()));
 		action_Play->setIcon(QIcon::fromTheme("media-playback-start"));
@@ -157,12 +166,20 @@ namespace gui
 	{
 		FtmDocument *d = gui::activeDocument();
 
+		title->blockSignals(true);
+		author->blockSignals(true);
+		copyright->blockSignals(true);
+
 		title->setText(d->GetSongName());
 		title->setCursorPosition(0);
 		author->setText(d->GetSongArtist());
 		author->setCursorPosition(0);
 		copyright->setText(d->GetSongCopyright());
 		copyright->setCursorPosition(0);
+
+		copyright->blockSignals(false);
+		author->blockSignals(false);
+		title->blockSignals(false);
 
 		songs->clear();
 		int c = d->GetTrackCount();
@@ -456,6 +473,23 @@ namespace gui
 
 		gui::updateFrameChannel(true);
 	}
+
+	void MainWindow::changeSongTitle()
+	{
+		FtmDocument *doc = gui::activeDocument();
+		doc->SetSongInfo(title->text().toAscii(), doc->GetSongArtist(), doc->GetSongCopyright());
+	}
+	void MainWindow::changeSongAuthor()
+	{
+		FtmDocument *doc = gui::activeDocument();
+		doc->SetSongInfo(doc->GetSongName(), author->text().toAscii(), doc->GetSongCopyright());
+	}
+	void MainWindow::changeSongCopyright()
+	{
+		FtmDocument *doc = gui::activeDocument();
+		doc->SetSongInfo(doc->GetSongName(), doc->GetSongArtist(), copyright->text().toAscii());
+	}
+
 	void MainWindow::play()
 	{
 		gui::playSong();
