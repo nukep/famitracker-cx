@@ -13,6 +13,7 @@ namespace gui
 #define STOPPEDSONGEVENT (QEvent::Type)((int)QEvent::User+1)
 
 	class MainWindow;
+	class InstrumentEditor;
 
 	typedef void(*stopsong_callback)(MainWindow*, void*);
 
@@ -34,6 +35,7 @@ namespace gui
 		Q_OBJECT
 	public:
 		MainWindow();
+		~MainWindow();
 
 		void updateFrameChannel(bool modified=false);
 
@@ -70,6 +72,7 @@ namespace gui
 		void decrementPattern();
 		void instrumentSelect();
 		void instrumentNameChange(QString);
+		void instrumentDoubleClicked(QModelIndex);
 		void speedTempoChange(int);
 		void rowsChange(int);
 		void framesChange(int);
@@ -80,9 +83,11 @@ namespace gui
 
 		void addInstrument();
 		void removeInstrument();
+		void editInstrument();
 	private:
 		boost::mutex m_mtx_updateEvent;
 		boost::condition m_cond_updateEvent;
+		InstrumentEditor *m_instrumenteditor;
 	};
 }
 

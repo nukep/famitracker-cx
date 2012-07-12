@@ -175,6 +175,7 @@ void FtmDocument::createEmpty()
 {
 	// Allocate first song
 	SwitchToTrack(0);
+	m_iTracks = 1;
 
 	// and select 2A03 only
 	SelectExpansionChip(SNDCHIP_NONE);
@@ -2067,6 +2068,15 @@ int FtmDocument::GetSequenceItemCount(int Index, int Type) const
 		return 0;
 
 	return m_pSequences2A03[Index][Type]->GetItemCount();
+}
+
+int FtmDocument::GetFreeSequence(unsigned char Chip, int Type) const
+{
+	if (Chip == SNDCHIP_NONE)
+		return GetFreeSequence(Type);
+	else if (Chip == SNDCHIP_VRC6)
+		return GetFreeSequenceVRC6(Type);
+	return 0;
 }
 
 int FtmDocument::GetFreeSequence(int Type) const

@@ -182,6 +182,7 @@ public:
 	CSequence		*GetSequence(int Chip, int Index, int Type);
 	CSequence		*GetSequence(int Index, int Type);
 	int				GetSequenceItemCount(int Index, int Type) const;
+	int				GetFreeSequence(unsigned char Chip, int Type) const;
 	int				GetFreeSequence(int Type) const;
 	int				GetSequenceCount(int Type) const;
 

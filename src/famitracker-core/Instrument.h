@@ -30,7 +30,9 @@ enum {
 	INST_VRC7,
 	INST_FDS,
 	INST_N106,
-	INST_S5B
+	INST_S5B,
+
+	INST_COUNT
 };
 
 // External classes

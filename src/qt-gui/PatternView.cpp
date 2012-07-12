@@ -656,6 +656,21 @@ namespace gui
 			}
 		}
 		int k = e->key();
+		if (k == Qt::Key_Backslash)
+		{
+			// release note
+			enterNote(RELEASE, 0);
+
+			return;
+		}
+		if (k == Qt::Key_Apostrophe)
+		{
+			// halt note
+			// The original Windows FamiTracker fucks up the default, so we're using apostrophe for now
+			enterNote(HALT, 0);
+
+			return;
+		}
 		if (k == Qt::Key_Delete)
 		{
 			deleteColumn();
@@ -770,7 +785,10 @@ namespace gui
 		if (octave >= 0)
 			n.Octave = octave;
 
-		n.Instrument = dinfo->currentInstrument();
+		if (note == HALT || note == RELEASE)
+			n.Instrument = MAX_INSTRUMENTS;
+		else
+			n.Instrument = dinfo->currentInstrument();
 
 		dinfo->doc()->SetNoteData(dinfo->currentFrame(), dinfo->currentChannel(), dinfo->currentRow(), &n);
 

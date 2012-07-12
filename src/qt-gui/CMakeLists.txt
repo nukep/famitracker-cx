@@ -12,12 +12,21 @@ set(SRC
 	MainWindow.cpp
 	PatternView.cpp
 	FrameView.cpp
+
+	SequenceEditor.cpp
+
+	InstrumentEditor.cpp
+	InstrumentEditor.hpp
+	InstrumentEditorTypes.cpp
 )
 
 set(MOC_INC
 	MainWindow.hpp
 	PatternView.hpp
 	FrameView.hpp
+
+	SequenceEditor.hpp
+	InstrumentEditorTypes.hpp
 )
 
 set(UI_FILES

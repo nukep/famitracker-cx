@@ -3,6 +3,7 @@
 #include "MainWindow.hpp"
 #include "gui.hpp"
 #include "famitracker-core/FtmDocument.hpp"
+#include "InstrumentEditor.hpp"
 
 namespace gui
 {
@@ -10,6 +11,11 @@ namespace gui
 	{
 		setupUi(this);
 		instruments->setIconSize(QSize(16,16));
+
+		speed->setRange(MIN_SPEED, MAX_SPEED);
+		tempo->setRange(MIN_TEMPO, MAX_TEMPO);
+		rows->setRange(1, MAX_PATTERN_LENGTH);
+		frames->setRange(1, MAX_FRAMES);
 
 		QObject::connect(actionNew, SIGNAL(triggered()), this, SLOT(newDoc()));
 		actionNew->setIcon(QIcon::fromTheme("document-new"));
@@ -32,6 +38,7 @@ namespace gui
 		QObject::connect(decPattern, SIGNAL(clicked()), this, SLOT(decrementPattern()));
 		QObject::connect(instruments, SIGNAL(itemSelectionChanged()), this, SLOT(instrumentSelect()));
 		QObject::connect(instrumentName, SIGNAL(textEdited(QString)), this, SLOT(instrumentNameChange(QString)));
+		QObject::connect(instruments, SIGNAL(doubleClicked(QModelIndex)), this, SLOT(instrumentDoubleClicked(QModelIndex)));
 
 		QObject::connect(speed, SIGNAL(valueChanged(int)), this, SLOT(speedTempoChange(int)));
 		QObject::connect(tempo, SIGNAL(valueChanged(int)), this, SLOT(speedTempoChange(int)));
@@ -49,8 +56,15 @@ namespace gui
 		actionAdd_instrument->setIcon(QIcon::fromTheme("list-add"));
 		QObject::connect(actionRemove_instrument, SIGNAL(triggered()), this, SLOT(removeInstrument()));
 		actionRemove_instrument->setIcon(QIcon::fromTheme("list-remove"));
+		QObject::connect(actionEdit_instrument, SIGNAL(triggered()), this, SLOT(editInstrument()));
 
 		updateDocument();
+
+		m_instrumenteditor = new InstrumentEditor(this);
+	}
+	MainWindow::~MainWindow()
+	{
+		delete m_instrumenteditor;
 	}
 
 	void MainWindow::updateFrameChannel(bool modified)
@@ -160,6 +174,7 @@ namespace gui
 			songs->addItem(s);
 		}
 
+		songs->setCurrentIndex(0);
 		setSong(-1);
 		frameView->update();
 
@@ -223,12 +238,14 @@ namespace gui
 
 	void MainWindow::newDoc_cb(MainWindow *mw, void*)
 	{
+		mw->m_instrumenteditor->removedInstrument();
 		gui::newDocument(true);
 		mw->updateDocument();
 	}
 
 	void MainWindow::open_cb(MainWindow *mw, void *data)
 	{
+		mw->m_instrumenteditor->removedInstrument();
 		core::IO *io = (core::IO*)data;
 		gui::openDocument(io, true);
 		mw->updateDocument();
@@ -382,6 +399,8 @@ namespace gui
 		instrumentName->setText(inst->GetName());
 
 		gui::activeDocInfo()->setCurrentInstrument(i);
+
+		m_instrumenteditor->setInstrument(inst);
 	}
 	void MainWindow::instrumentNameChange(QString s)
 	{
@@ -394,6 +413,11 @@ namespace gui
 		inst->SetName(s.toAscii());
 		setInstrumentName(instruments->currentItem(), idx.row(), s.toAscii());
 	}
+	void MainWindow::instrumentDoubleClicked(QModelIndex)
+	{
+		m_instrumenteditor->show();
+	}
+
 	void MainWindow::speedTempoChange(int i)
 	{
 		FtmDocument *d = gui::activeDocument();
@@ -455,6 +479,8 @@ namespace gui
 
 		int inst = gui::activeDocInfo()->currentInstrument();
 
+		m_instrumenteditor->removedInstrument();
+
 		d->RemoveInstrument(inst);
 
 		int ni = -1;
@@ -487,5 +513,9 @@ namespace gui
 
 		refreshInstruments();
 		patternView->update();
+	}
+	void MainWindow::editInstrument()
+	{
+		m_instrumenteditor->show();
 	}
 }

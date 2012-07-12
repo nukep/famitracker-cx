@@ -39,7 +39,7 @@
      <x>0</x>
      <y>0</y>
      <width>800</width>
-     <height>25</height>
+     <height>24</height>
     </rect>
    </property>
    <widget class="QMenu" name="menu_File">
@@ -179,14 +179,7 @@
            </widget>
           </item>
           <item row="0" column="1">
-           <widget class="QSpinBox" name="speed">
-            <property name="minimum">
-             <number>1</number>
-            </property>
-            <property name="maximum">
-             <number>31</number>
-            </property>
-           </widget>
+           <widget class="QSpinBox" name="speed"/>
           </item>
           <item row="1" column="0">
            <widget class="QLabel" name="label_2">
@@ -210,34 +203,13 @@
            </widget>
           </item>
           <item row="1" column="1">
-           <widget class="QSpinBox" name="tempo">
-            <property name="minimum">
-             <number>32</number>
-            </property>
-            <property name="maximum">
-             <number>255</number>
-            </property>
-           </widget>
+           <widget class="QSpinBox" name="tempo"/>
           </item>
           <item row="2" column="1">
-           <widget class="QSpinBox" name="rows">
-            <property name="minimum">
-             <number>1</number>
-            </property>
-            <property name="maximum">
-             <number>256</number>
-            </property>
-           </widget>
+           <widget class="QSpinBox" name="rows"/>
           </item>
           <item row="3" column="1">
-           <widget class="QSpinBox" name="frames">
-            <property name="minimum">
-             <number>1</number>
-            </property>
-            <property name="maximum">
-             <number>128</number>
-            </property>
-           </widget>
+           <widget class="QSpinBox" name="frames"/>
           </item>
          </layout>
         </widget>
@@ -374,6 +346,7 @@
           </property>
           <addaction name="actionAdd_instrument"/>
           <addaction name="actionRemove_instrument"/>
+          <addaction name="actionEdit_instrument"/>
           <addaction name="separator"/>
          </widget>
         </item>
@@ -526,6 +499,11 @@
    </property>
    <property name="text">
     <string>Toggle edit mode</string>
+   </property>
+  </action>
+  <action name="actionEdit_instrument">
+   <property name="text">
+    <string>Edit instrument</string>
    </property>
   </action>
  </widget>
