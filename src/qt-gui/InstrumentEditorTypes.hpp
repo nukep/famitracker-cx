@@ -7,6 +7,9 @@
 
 class CInstrument;
 class QSpinBox;
+class QLabel;
+class QComboBox;
+class QCheckBox;
 
 namespace gui
 {
@@ -14,6 +17,7 @@ namespace gui
 	{
 	public:
 		InstrumentSettings(int type, int sndchip) : m_inst_type(type), m_sndchip(sndchip){}
+		virtual ~InstrumentSettings(){}
 
 		virtual void setInstrument(CInstrument *inst)
 		{
@@ -68,6 +72,42 @@ namespace gui
 		void selectNextEmptySlot();
 	};
 
+	class Settings_2A03;
+
+	class DPCMWidget : public QWidget
+	{
+		Q_OBJECT
+	public:
+		DPCMWidget(Settings_2A03 *s);
+		void updateSamples(bool update_loaded=false);
+	private slots:
+		void load();
+		void unload();
+		void save();
+		void import();
+		void edit();
+		void preview();
+
+		void load_select(QString filename);
+
+		void assign();
+		void unassign();
+		void changeOctave();
+		void changePitchLoop();
+		void changeSample();
+		void selectAssigned();
+	private:
+		void setSample(int octave, int note, int idx);
+		QTreeWidget * m_treewidget_assigned;
+		QComboBox * m_combobox_octave;
+		QComboBox * m_combobox_pitch;
+		QCheckBox * m_checkbox_loop;
+		QComboBox * m_combobox_sample;
+		QTreeWidget * m_treewidget_loaded;
+		QLabel * m_label_space;
+		Settings_2A03 * m_2a03;
+	};
+
 	class Settings_2A03 : public Settings_CommonSequence
 	{
 	public:
@@ -75,6 +115,8 @@ namespace gui
 
 		void setInstrument(CInstrument *inst);
 		void makeTabs(QList<InstrumentSettings_Tab> &list);
+	private:
+		DPCMWidget * m_dpcm;
 	};
 
 	class Settings_VRC6 : public Settings_CommonSequence

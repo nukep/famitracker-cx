@@ -1,7 +1,14 @@
 #include <QPainter>
 #include <QLineEdit>
+#include <QGridLayout>
+#include <QLabel>
+#include <QSpinBox>
+#include <QScrollBar>
+#include <QMouseEvent>
 #include <QDebug>
 #include "SequenceEditor.hpp"
+#include "gui.hpp"
+#include "famitracker-core/FtmDocument.hpp"
 #include "famitracker-core/Sequence.h"
 #include "famitracker-core/Instrument.h"
 
@@ -32,45 +39,95 @@ namespace gui
 	static const char releasetoken[] = "/";
 
 	static const int bottom_margin = 20;
+
+	class SequenceEditorGraphic : public QWidget
+	{
+		friend class SequenceEditor;
+	public:
+		SequenceEditor * parent() const{ return (SequenceEditor*)parentWidget(); }
+
+		void paintEvent(QPaintEvent *)
+		{
+			SequenceEditor *se = parent();
+			QPainter p;
+			p.begin(this);
+
+			if (se->m_seq != NULL)
+			{
+				switch (se->m_seqtype)
+				{
+				case SEQ_VOLUME:
+				case SEQ_DUTYCYCLE:
+					se->drawBarGraph(p, se->minValVisible(), se->maxValVisible());
+					break;
+				case SEQ_ARPEGGIO:
+					se->drawArpGraph(p, se->minValVisible(), se->maxValVisible());
+					break;
+				case SEQ_PITCH:
+				case SEQ_HIPITCH:
+					se->drawPitchGraph(p, se->minValVisible(), se->maxValVisible());
+					break;
+				default:
+					break;
+				}
+			}
+			else
+			{
+
+			}
+
+			p.end();
+		}
+		void mousePressEvent(QMouseEvent *e)
+		{
+			m_cursor_origin = e->pos();
+			parent()->dragMouse(m_cursor_origin, e->pos(), (e->button() & Qt::RightButton) != 0);
+		}
+
+		void mouseMoveEvent(QMouseEvent *e)
+		{
+			parent()->dragMouse(m_cursor_origin, e->pos(), (e->button() & Qt::RightButton) != 0);
+		}
+
+		QPoint m_cursor_origin;
+	};
+
 	SequenceEditor::SequenceEditor(int inst_type)
 		: m_seq(NULL), m_lineedit(NULL), m_inst_type(inst_type)
 	{
+		m_graphic = new SequenceEditorGraphic;
+		m_font.setPixelSize(12);
+		QGridLayout *g = new QGridLayout;
+
+		int columns = 4;
+
+		g->addWidget(m_graphic, 0, 0, 1, columns-1);
+
+		m_scrollbar_arpwindow = new QScrollBar(Qt::Vertical);
+
+		g->addWidget(m_scrollbar_arpwindow, 0, columns-1);
+
+		g->addWidget(new QLabel(tr("Size:")));
+
+		m_spinbox_size = new QSpinBox;
+		m_spinbox_size->setRange(0, MAX_SEQUENCE_ITEMS);
+		g->addWidget(m_spinbox_size, 1, 1);
+
+		m_label_duration = new QLabel;
+		g->addWidget(m_label_duration, 1, 2);
+
+		g->setRowStretch(0, 0);
+		g->setRowStretch(1, 0);
+
+		g->setColumnStretch(3, 0);
+		setLayout(g);
+
+		QObject::connect(m_scrollbar_arpwindow, SIGNAL(valueChanged(int)), this, SLOT(scrollArpWindow()));
+		QObject::connect(m_spinbox_size, SIGNAL(valueChanged(int)), this, SLOT(changeSeqSize()));
 	}
 	SequenceEditor::~SequenceEditor()
 	{
 
-	}
-
-	void SequenceEditor::paintEvent(QPaintEvent *)
-	{
-		QPainter p;
-		p.begin(this);
-
-		if (m_seq != NULL)
-		{
-			switch (m_seqtype)
-			{
-			case SEQ_VOLUME:
-			case SEQ_DUTYCYCLE:
-				drawBarGraph(p, minValVisible(), maxValVisible());
-				break;
-			case SEQ_ARPEGGIO:
-				drawArpGraph(p, minValVisible(), maxValVisible());
-				break;
-			case SEQ_PITCH:
-			case SEQ_HIPITCH:
-				drawPitchGraph(p, minValVisible(), maxValVisible());
-				break;
-			default:
-				break;
-			}
-		}
-		else
-		{
-
-		}
-
-		p.end();
 	}
 
 	static inline bool isWhitespace(char c)
@@ -156,7 +213,8 @@ namespace gui
 			}
 		}
 		m_seq->SetItemCount(idx);
-		repaint();
+
+		updateSequence(true);
 	}
 
 	void SequenceEditor::sequenceToLineEdit()
@@ -192,7 +250,7 @@ namespace gui
 		m_lineedit->blockSignals(false);
 	}
 
-	int SequenceEditor::minVal()
+	int SequenceEditor::minVal() const
 	{
 		switch (m_seqtype)
 		{
@@ -216,7 +274,7 @@ namespace gui
 			return 0;
 		}
 	}
-	int SequenceEditor::maxVal()
+	int SequenceEditor::maxVal() const
 	{
 		switch (m_seqtype)
 		{
@@ -240,21 +298,24 @@ namespace gui
 			return 0;
 		}
 	}
-	int SequenceEditor::minValVisible()
+	int SequenceEditor::minValVisible() const
 	{
 		return minVal();
 	}
-	int SequenceEditor::maxValVisible()
+	int SequenceEditor::maxValVisible() const
 	{
 		return maxVal();
 	}
 
-	void SequenceEditor::solveMetric(metric_t &m, int ymin, int ymax, int items, bool pitch)
+	void SequenceEditor::solveMetric(metric_t &m, int items)
 	{
+		int ymin = minValVisible();
+		int ymax = maxValVisible();
+		bool pitch = m_seqtype == SEQ_PITCH || m_seqtype == SEQ_HIPITCH;
 		m.x = 30;
 		m.y = 10;
-		m.w = width() - m.x;
-		m.h = height() - m.y - bottom_margin;
+		m.w = m_graphic->width() - m.x;
+		m.h = m_graphic->height() - m.y - bottom_margin;
 
 		if (pitch)
 		{
@@ -279,6 +340,77 @@ namespace gui
 		{
 			m.step_width = m.w / items;
 		}
+	}
+
+	void SequenceEditor::posToSeqTuple(const metric_t &m, const QPoint &p, int &x, int &y) const
+	{
+		x = (p.x() - m.x) / m.step_width;
+		if (p.x() < m.x)
+			x--;
+
+		if (m.step_height > 0)
+		{
+			y = (m.h - (p.y() - m.y) + m.step_height/2) / m.step_height + minValVisible();
+		}
+		else
+		{
+			y = (m.h - (p.y() - m.y)) * (maxValVisible() - minValVisible()) / m.h  + minValVisible();
+		}
+	}
+	static inline int posToXPoint(const SequenceEditor::metric_t &m, const QPoint &p, int &x)
+	{
+		x = (p.x() - m.x + m.step_width/2) / m.step_width;
+		if (p.x()+m.step_width/2 < m.x)
+			x--;
+	}
+
+	void SequenceEditor::dragMouse(QPoint origin, QPoint pos, bool right)
+	{
+		metric_t m;
+		solveMetric(m, m_seq->GetItemCount());
+
+		if (origin.y() > m.y + m.h)
+		{
+			// loop/release points
+			int x;
+			posToXPoint(m, pos, x);
+			// we just need x
+
+			bool discard = (x < 0 || x >= m_seq->GetItemCount());
+			if (discard)
+				x = -1;
+
+			bool release = right;
+			if (release)
+			{
+				m_seq->SetReleasePoint(x);
+			}
+			else
+			{
+				m_seq->SetLoopPoint(x);
+			}
+		}
+		else
+		{
+			if (right)
+			{
+				// TODO
+			}
+			else
+			{
+				int x, y;
+				posToSeqTuple(m, pos, x, y);
+				if (x < 0 || x >= m_seq->GetItemCount())
+					return;
+				if (y < minVal())
+					y = minVal();
+				if (y > maxVal())
+					y = maxVal();
+
+				m_seq->SetItem(x, y);
+			}
+		}
+		updateSequence();
 	}
 
 	void SequenceEditor::drawBar(QPainter &p, int x, int y, int w, int h)
@@ -313,7 +445,6 @@ namespace gui
 		if (loop)
 		{
 			p.setBrush(QColor(12,133,133));
-
 		}
 		else
 		{
@@ -323,7 +454,12 @@ namespace gui
 
 		int x = o.x + point * o.step_width;
 		int y = o.y + o.h;
-		p.drawRect(x, y, (o.w+o.x) - x, bottom_margin);
+		QRect r(x, y+1, (o.w+o.x) - x, bottom_margin-1);
+		p.drawRect(r);
+
+		p.setPen(Qt::white);
+		p.drawLine(r.x(), r.y(), r.x(), r.bottom());
+		p.drawText(r.adjusted(m_font.pixelSize()/2, 0, 0, 0), tr(loop ? "Loop" : "Release"), QTextOption(Qt::AlignVCenter | Qt::AlignLeft));
 	}
 
 	void SequenceEditor::drawScale(QPainter &p, int ymin, int ymax, int items, int loop, int release, const metric_t &m)
@@ -365,6 +501,17 @@ namespace gui
 
 		p.drawLine(m.x, m.y, m.x, m.y+m.h);
 
+		p.setPen(Qt::white);
+
+		// top label
+		p.drawText(QRect(0, m.y, m.x, m_font.pixelSize()), QString("%1").arg(ymax), QTextOption(Qt::AlignVCenter | Qt::AlignHCenter));
+		// bottom label
+		p.drawText(QRect(0, m.y+m.h-m_font.pixelSize(), m.x, m_font.pixelSize()), QString("%1").arg(ymin), QTextOption(Qt::AlignVCenter | Qt::AlignHCenter));
+
+		p.setPen(Qt::NoPen);
+		p.setBrush(QColor(48,48,48));
+		p.drawRect(m.x, m.y+m.h+1, m.w, m_graphic->height()-(m.y+m.h));
+
 		drawLoopReleasePoint(p, true, loop, m);
 		drawLoopReleasePoint(p, false, release, m);
 	}
@@ -375,7 +522,7 @@ namespace gui
 
 		int count = m_seq->GetItemCount();
 
-		solveMetric(m, ymin, ymax, count);
+		solveMetric(m, count);
 
 		drawScale(p, ymin, ymax, count, m_seq->GetLoopPoint(), m_seq->GetReleasePoint(), m);
 
@@ -398,7 +545,7 @@ namespace gui
 
 		int count = m_seq->GetItemCount();
 
-		solveMetric(m, ymin, ymax, count);
+		solveMetric(m, count);
 
 		drawScale(p, ymin, ymax, count, m_seq->GetLoopPoint(), m_seq->GetReleasePoint(), m);
 
@@ -421,7 +568,7 @@ namespace gui
 
 		int count = m_seq->GetItemCount();
 
-		solveMetric(m, ymin, ymax, count, true);
+		solveMetric(m, count);
 
 		drawScale(p, ymin, ymax, count, m_seq->GetLoopPoint(), m_seq->GetReleasePoint(), m);
 
@@ -445,9 +592,26 @@ namespace gui
 	{
 		m_seq = seq;
 		m_seqtype = type;
-		repaint();
-		sequenceToLineEdit();
+		m_scrollbar_arpwindow->setVisible(m_seqtype == SEQ_ARPEGGIO);
+		updateSequence();
 	}
+	void SequenceEditor::updateSequence(bool fromlineedit)
+	{
+		FtmDocument *doc = gui::activeDocument();
+
+		int dur = m_seq->GetItemCount() * 1000 / doc->GetFrameRate();
+		QString str = QString(tr("%1 ms").arg(dur));
+		m_label_duration->setText(str);
+		m_graphic->repaint();
+		m_spinbox_size->blockSignals(true);
+		m_spinbox_size->setValue(m_seq->GetItemCount());
+		m_spinbox_size->blockSignals(false);
+		if (!fromlineedit)
+		{
+			sequenceToLineEdit();
+		}
+	}
+
 	void SequenceEditor::setLineEdit(QLineEdit *w)
 	{
 		QObject::disconnect(this, 0);
@@ -458,5 +622,17 @@ namespace gui
 	void SequenceEditor::lineEditEnter()
 	{
 		parseText(m_lineedit->text().toUtf8());
+	}
+	void SequenceEditor::changeSeqSize()
+	{
+		if (m_spinbox_size->value() == m_seq->GetItemCount())
+			return;
+
+		m_seq->SetItemCount(m_spinbox_size->value());
+		updateSequence();
+	}
+	void SequenceEditor::scrollArpWindow()
+	{
+		m_graphic->repaint();
 	}
 }

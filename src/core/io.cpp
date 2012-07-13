@@ -33,6 +33,21 @@ namespace core
 			return 0;
 		return fwrite(buf, 1, sz, f);
 	}
+
+	Quantity FileIO::size()
+	{
+		FILE *f = (FILE*)m_handle;
+		if (f == NULL)
+			return 0;
+
+		long lastpos = ftell(f);
+		fseek(f, 0, SEEK_END);
+		long sz = ftell(f);
+		fseek(f, lastpos, SEEK_SET);
+
+		return sz;
+	}
+
 	bool FileIO::seek(int offset, SeekOrigin origin)
 	{
 		FILE *f = (FILE*)m_handle;

@@ -24,6 +24,7 @@ namespace core
 	public:
 		virtual Quantity read(void *buf, Quantity sz) = 0;
 		virtual Quantity write(const void *buf, Quantity sz) = 0;
+		virtual Quantity size() = 0;
 		virtual bool seek(int offset, SeekOrigin o) = 0;
 		virtual bool isReadable() = 0;
 		virtual bool isWritable() = 0;
@@ -82,6 +83,7 @@ namespace core
 		FileIO(const char *filename, int flags);
 		Quantity read(void *buf, Quantity sz);
 		Quantity write(const void *buf, Quantity sz);
+		Quantity size();
 		bool seek(int offset, SeekOrigin o);
 		bool isReadable();
 		bool isWritable();

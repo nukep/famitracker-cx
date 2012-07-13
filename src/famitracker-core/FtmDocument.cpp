@@ -2672,6 +2672,27 @@ int FtmDocument::GetTotalSampleSize() const
 	return Size;
 }
 
+int FtmDocument::LoadSample(core::IO *io, const char *name)
+{
+	int idx = GetFreeDSample();
+	if (idx == -1)
+		return -1;
+
+	CDSample *samp = GetDSample(idx);
+	Quantity sz = io->size();
+	safe_strcpy(samp->Name, name, sizeof(samp->Name));
+	samp->Allocate(sz);
+	io->read(samp->SampleData, sz);
+
+	return idx;
+}
+
+void FtmDocument::SaveSample(core::IO *io, unsigned int Index) const
+{
+	const CDSample *samp = &m_DSamples[Index];
+	io->write(samp->SampleData, samp->SampleSize);
+}
+
 void FtmDocument::ConvertSequence(stSequence *OldSequence, CSequence *NewSequence, int Type)
 {
 	// This function is used to convert old version sequences (used by older file versions)

@@ -204,6 +204,8 @@ public:
 	int				GetSampleSize(unsigned int Sample);
 	char			GetSampleData(unsigned int Sample, unsigned int Offset);
 	int				GetTotalSampleSize() const;
+	int				LoadSample(core::IO *io, const char *name);
+	void			SaveSample(core::IO *io, unsigned int Index) const;
 
 	// For file version compability
 	void			ConvertSequence(stSequence *OldSequence, CSequence *NewSequence, int Type);
