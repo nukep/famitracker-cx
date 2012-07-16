@@ -52,6 +52,8 @@ namespace gui
 			QPainter p;
 			p.begin(this);
 
+			p.setFont(se->m_font);
+
 			if (se->m_seq != NULL)
 			{
 				switch (se->m_seqtype)
@@ -99,7 +101,7 @@ namespace gui
 		m_font.setPixelSize(12);
 		QGridLayout *g = new QGridLayout;
 
-		int columns = 4;
+		int columns = 5;
 
 		g->addWidget(m_graphic, 0, 0, 1, columns-1);
 
@@ -119,7 +121,9 @@ namespace gui
 		g->setRowStretch(0, 0);
 		g->setRowStretch(1, 0);
 
-		g->setColumnStretch(3, 0);
+		g->setColumnStretch(3, 10);
+		g->setMargin(0);
+		g->setSpacing(0);
 		setLayout(g);
 
 		QObject::connect(m_scrollbar_arpwindow, SIGNAL(valueChanged(int)), this, SLOT(scrollArpWindow()));

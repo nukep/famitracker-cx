@@ -67,6 +67,11 @@ namespace gui
 		actionRemove_instrument->setIcon(QIcon::fromTheme("list-remove"));
 		QObject::connect(actionEdit_instrument, SIGNAL(triggered()), this, SLOT(editInstrument()));
 
+		QMenu *m = new QMenu;
+		m->addAction(tr("New 2A03 instrument"));
+
+		actionAdd_instrument->setMenu(m);
+
 		m_instrumenteditor = new InstrumentEditor(this);
 	}
 	MainWindow::~MainWindow()
@@ -90,6 +95,7 @@ namespace gui
 		UpdateEvent *event = new UpdateEvent;
 		QApplication::postEvent(this, event);
 
+		// wait until the gui is finished updating before resuming
 		m_cond_updateEvent.wait(lock);
 	}
 	void MainWindow::sendStoppedSongEvent(stopsong_callback mainthread_callback, void *data)

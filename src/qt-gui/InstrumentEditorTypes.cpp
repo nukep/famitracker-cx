@@ -488,8 +488,8 @@ namespace gui
 			int total_address_space = MAX_SAMPLE_SPACE;
 
 			int used = size / 0x400;
-			int left = (total_address_space - size) / 0x400;
 			int avail = total_address_space / 0x400;
+			int left = avail - used;
 
 			m_label_space->setText(QString(tr("Space used %1 kB, left %2 kB (%3 kB available)")).arg(used).arg(left).arg(avail));
 		}
@@ -574,8 +574,14 @@ namespace gui
 	}
 	void DPCMWidget::preview()
 	{
+		FtmDocument *doc = gui::activeDocument();
+
 		QTreeWidgetItem *item = m_treewidget_loaded->currentItem();
-		qDebug() << item->data(0, Qt::UserRole).toInt() << item->text(1);
+		int idx = item->data(0, Qt::UserRole).toInt();
+
+		const CDSample *sample = doc->GetDSample(idx);
+
+		gui::auditionDPCM(sample);
 	}
 	void DPCMWidget::assign()
 	{

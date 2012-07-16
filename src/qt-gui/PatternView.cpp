@@ -9,52 +9,11 @@
 #include "PatternView.hpp"
 #include "gui.hpp"
 #include "famitracker-core/FtmDocument.hpp"
+#include "famitracker-core/App.hpp"
 
 namespace gui
 {
 	const int header_height = 40;
-
-	class PatternView_Header : public QWidget
-	{
-	public:
-		PatternView_Header()
-		{
-			setFixedHeight(header_height);
-
-			m_gradientPixmap = new QPixmap(1, header_height);
-
-			QPainter p;
-			p.begin(m_gradientPixmap);
-			{
-				QLinearGradient lg(0, 0, 0, 1);
-				lg.setColorAt(0, QColor(204,204,204));
-				lg.setColorAt(0.25, QColor(255,255,255));
-				lg.setColorAt(1, QColor(128,128,128));
-				lg.setCoordinateMode(QGradient::ObjectBoundingMode);
-
-				p.setPen(Qt::NoPen);
-				p.setBrush(lg);
-				p.drawRect(0, 0, 1, header_height);
-			}
-			p.end();
-		}
-		~PatternView_Header()
-		{
-			delete m_gradientPixmap;
-		}
-
-		void paintEvent(QPaintEvent *)
-		{
-			QPainter p;
-			p.begin(this);
-
-			p.drawPixmap(0,0,width(), height(), *m_gradientPixmap);
-
-			p.end();
-		}
-
-		QPixmap *m_gradientPixmap;
-	};
 
 	static const float vertical_factor = 1.25f;
 	static const float horizontal_factor = 2.00f;
@@ -605,6 +564,132 @@ namespace gui
 		bool m_modified;
 	};
 
+	class PatternView_Header : public QWidget
+	{
+	public:
+		PatternView_Header(PatternView_Body *body)
+			: m_body(body)
+		{
+			m_font.setPixelSize(12);
+			setFixedHeight(header_height);
+
+			m_gradientPixmap = new QPixmap(1, header_height);
+
+			QPainter p;
+			p.begin(m_gradientPixmap);
+			{
+				QLinearGradient lg(0, 0, 0, 1);
+				lg.setColorAt(0, QColor(204,204,204));
+				lg.setColorAt(0.25, QColor(255,255,255));
+				lg.setColorAt(1, QColor(128,128,128));
+				lg.setCoordinateMode(QGradient::ObjectBoundingMode);
+
+				p.setPen(Qt::NoPen);
+				p.setBrush(lg);
+				p.drawRect(0, 0, 1, header_height);
+			}
+			p.end();
+		}
+		~PatternView_Header()
+		{
+			delete m_gradientPixmap;
+		}
+
+		void drawLine(QPainter &p, int x, int y, int h)
+		{
+			p.setPen(QColor(128,128,128));
+			p.drawLine(x, y, x, y+h);
+			x++;
+			p.setPen(QColor(255,255,255));
+			p.drawLine(x, y, x, y+h);
+		}
+		void drawHLine(QPainter &p, int x, int y, int w)
+		{
+			p.setPen(QColor(128,128,128));
+			p.drawLine(x, y, x+w, y);
+			y++;
+			p.setPen(QColor(255,255,255));
+			p.drawLine(x, y, x+w, y);
+		}
+
+		// vol is 0..15
+		void drawVolume(QPainter &p, int x, int y, int vol)
+		{
+			int squaresize = 5;
+			int stride = squaresize + 2;
+			int nx, ny;
+
+			p.setPen(Qt::NoPen);
+
+
+			p.setBrush(Qt::darkGray);
+			nx = x+1;
+			ny = y+1;
+
+			for (int i = 0; i < 15; i++)
+			{
+				p.drawRect(nx, ny, squaresize, squaresize);
+
+				nx += stride;
+			}
+
+			p.setBrush(Qt::green);
+			nx = x;
+			ny = y;
+			for (int i = 0; i < 15; i++)
+			{
+				if (i == vol)
+				{
+					p.setBrush(Qt::gray);
+
+				}
+				p.drawRect(nx, ny, squaresize, squaresize);
+
+				nx += stride;
+			}
+		}
+
+		void paintEvent(QPaintEvent *)
+		{
+			FtmDocument *d = gui::activeDocument();
+
+			QPainter p;
+			p.begin(this);
+
+			p.drawPixmap(0,0,width(), height(), *m_gradientPixmap);
+
+			drawHLine(p, 0,0,width());
+			drawLine(p, 0,1, height()-1);
+
+			int x = m_body->px_unit*3 - m_body->colspace/2;
+			drawLine(p, x, 1, height()-1);
+
+			p.setFont(m_font);
+
+			for (int i = 0; i < d->GetAvailableChannels(); i++)
+			{
+				bool enabled = true;
+				int eff = d->GetEffColumns(i);
+				int w = m_body->columnWidth(eff) + m_body->colspace;
+				p.setPen(enabled ? Qt::black : Qt::red);
+				QRect r = QRect(x, 0, w, height()/2).adjusted(m_font.pixelSize(), 0,0,0);
+				QTextOption opt(Qt::AlignBottom | Qt::AlignLeft);
+				const char *name = app::channelMap()->GetChannelName(d->getChannelsFromChip()[i]);
+
+				p.drawText(r, name, opt);
+				drawVolume(p, x + 5, height()/2 + 5, 6);
+				x += w;
+				drawLine(p, x, 1, height()-1);
+			}
+
+			p.end();
+		}
+
+		QPixmap *m_gradientPixmap;
+		QFont m_font;
+		PatternView_Body *m_body;
+	};
+
 	PatternView::PatternView(QWidget *parent)
 		: QAbstractScrollArea(parent),
 		  m_currentFrame(0), m_currentRow(0), m_currentChannel(0)
@@ -612,8 +697,8 @@ namespace gui
 		setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOn);
 		setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOn);
 
-		m_header = new PatternView_Header;
 		m_body = new PatternView_Body;
+		m_header = new PatternView_Header(m_body);
 		m_body->m_pvParent = this;
 
 		QVBoxLayout *l = new QVBoxLayout;
@@ -651,6 +736,12 @@ namespace gui
 			int note=-1, octave=-1;
 			if (scancodeToNote(scan, octave_base, note, octave))
 			{
+				// ignore auto repeating notes
+				if (e->isAutoRepeat())
+					return;
+
+				gui::auditionNote(dinfo->currentChannel(), octave, note);
+
 				enterNote(note, octave);
 				return;
 			}
@@ -726,6 +817,11 @@ namespace gui
 		}
 
 		enterKeyAtColumn(k);
+	}
+
+	void PatternView::keyReleaseEvent(QKeyEvent *)
+	{
+		gui::auditionNoteHalt();
 	}
 
 	void PatternView::wheelEvent(QWheelEvent *e)
@@ -841,6 +937,7 @@ namespace gui
 
 		dinfo->doc()->unlock();
 
+		m_header->repaint();
 		m_body->repaint();
 	}
 }

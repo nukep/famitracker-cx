@@ -1,6 +1,8 @@
 #ifndef _TRACKERCONTROLLER_HPP_
 #define _TRACKERCONTROLLER_HPP_
 
+#include "FamiTrackerTypes.h"
+
 class FtmDocument;
 class CTrackerChannel;
 struct stChanNote;
@@ -24,6 +26,9 @@ public:
 	unsigned int row() const{ return m_row; }
 	bool isHalted() const{ return m_halted; }
 	FtmDocument * document() const{ return m_document; }
+
+	void setMuted(int channel_offset, bool mute);
+	bool muted(int channel_offset){ return m_muted[channel_offset]; }
 private:
 	void evaluateGlobalEffects(const stChanNote *noteData, int effColumns);
 
@@ -41,6 +46,8 @@ private:
 	int m_tempoAccum, m_tempoDecrement;
 
 	unsigned int m_elapsedFrames;
+
+	bool m_muted[MAX_CHANNELS];
 };
 
 #endif

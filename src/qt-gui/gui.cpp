@@ -375,4 +375,17 @@ namespace gui
 		edit_mode = !edit_mode;
 		mw->updateEditMode();
 	}
+
+	void auditionNote(int channel, int octave, int note)
+	{
+		qDebug() << channel << octave << note;
+	}
+	void auditionNoteHalt()
+	{
+
+	}
+	void auditionDPCM(const CDSample *sample)
+	{
+
+	}
 }

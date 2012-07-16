@@ -27,10 +27,7 @@
  *
  */
 
-CTrackerChannel::CTrackerChannel(const char *pName, const int iChip, const int iID) :
-	m_pChannelName(pName),
-	m_iChip(iChip),
-	m_iChannelID(iID),
+CTrackerChannel::CTrackerChannel() :
 	m_iColumnCount(0),
 	m_bNewNote(false),
 	m_iPitch(0)
@@ -39,21 +36,6 @@ CTrackerChannel::CTrackerChannel(const char *pName, const int iChip, const int i
 
 CTrackerChannel::~CTrackerChannel(void)
 {
-}
-
-const char * CTrackerChannel::GetChannelName() const
-{
-	return m_pChannelName;
-}
-
-const char CTrackerChannel::GetChip() const
-{
-	return m_iChip;
-}
-
-const int CTrackerChannel::GetID() const
-{
-	return m_iChannelID;
 }
 
 const int CTrackerChannel::GetColumnCount() const

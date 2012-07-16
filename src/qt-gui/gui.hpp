@@ -49,6 +49,10 @@ namespace gui
 	}
 	void toggleEditMode();
 
+	void auditionNote(int channel, int octave, int note);
+	void auditionNoteHalt();
+	void auditionDPCM(const CDSample *sample);
+
 	class DocInfo
 	{
 		friend void gui::closeActiveDocument();

@@ -184,8 +184,6 @@ void FtmDocument::createEmpty()
 	// Auto-select new style vibrato for new modules
 	m_iVibratoStyle = VIBRATO_NEW;
 
-	m_iChannelsAvailable = 5;
-
 	m_highlight = 4;
 	m_secondHighlight = 16;
 
@@ -335,7 +333,7 @@ bool FtmDocument::readNew_params(Document *doc)
 	}
 	else
 	{
-		m_iExpansionChip = doc->getBlockChar();
+		SelectExpansionChip(doc->getBlockChar());
 	}
 
 	m_iChannelsAvailable = doc->getBlockInt();
@@ -1094,8 +1092,7 @@ bool FtmDocument::write_header(Document *doc) const
 	for (unsigned int i = 0; i < m_iChannelsAvailable; i++)
 	{
 		// Channel type
-		// TODO - dan. not fixing this may cause regressions!
-		int chantype = 0; /* m_iChannelsTypes[i]; */
+		int chantype = m_channelsFromChip[i];
 		doc->writeBlockChar(chantype);
 		for (unsigned int j = 0; j <= m_iTracks; j++)
 		{
@@ -2042,11 +2039,8 @@ void FtmDocument::SelectExpansionChip(unsigned char Chip)
 	// Store the chip
 	m_iExpansionChip = Chip;
 
-	// Register the channels
-	// TODO - dan
-//	theApp.GetSoundGenerator()->RegisterChannels(Chip);
-
-//	m_iChannelsAvailable = GetChannelCount();
+	m_channelsFromChip = app::channelMap()->GetChannelsFromChip(Chip);
+	m_iChannelsAvailable = m_channelsFromChip.size();
 
 	SetModifiedFlag();
 	UpdateViews();

@@ -13,6 +13,8 @@
 #include "ChannelsMMC5.h"
 #include "ChannelsVRC6.h"
 
+#include "App.hpp"
+
 // The depth of each vibrato level
 static const double NEW_VIBRATO_DEPTH[] = {
 	1.0, 1.5, 2.5, 4.0, 5.0, 7.0, 10.0, 12.0, 14.0, 17.0, 22.0, 30.0, 44.0, 64.0, 96.0, 128.0
@@ -88,14 +90,11 @@ void SoundGen::setDocument(FtmDocument *doc)
 	m_lastRow = ~0;
 	m_lastFrame = ~0;
 
-	m_iChannels = 0;
-	for (int i = 0; i < CHANNELS; i++)
+	const std::vector<int> & chans = doc->getChannelsFromChip();
+	m_iChannels = chans.size();
+	for (int i = 0; i < m_iChannels; i++)
 	{
-		if (m_pTrackerChannels[i] && ((i < 5) || (m_pTrackerChannels[i]->GetChip() & chip)))
-		{
-			m_pActiveTrackerChannels[m_iChannels] = m_pTrackerChannels[i];
-			m_iChannels++;
-		}
+		m_pActiveTrackerChannels[i] = m_pTrackerChannels[chans[i]];
 	}
 
 	m_trackerctlr->initialize(doc, m_pActiveTrackerChannels);
@@ -278,23 +277,23 @@ void SoundGen::createChannels()
 	}
 
 	// 2A03/2A07
-	assignChannel(new CTrackerChannel("Square 1", SNDCHIP_NONE, CHANID_SQUARE1), new CSquare1Chan(this));
-	assignChannel(new CTrackerChannel("Square 2", SNDCHIP_NONE, CHANID_SQUARE2), new CSquare2Chan(this));
-	assignChannel(new CTrackerChannel("Triangle", SNDCHIP_NONE, CHANID_TRIANGLE), new CTriangleChan(this));
-	assignChannel(new CTrackerChannel("Noise", SNDCHIP_NONE, CHANID_NOISE), new CNoiseChan(this));
-	assignChannel(new CTrackerChannel("DPCM", SNDCHIP_NONE, CHANID_DPCM), new CDPCMChan(this, &m_samplemem));
+	assignChannel(CHANID_SQUARE1, new CSquare1Chan(this));
+	assignChannel(CHANID_SQUARE2, new CSquare2Chan(this));
+	assignChannel(CHANID_TRIANGLE, new CTriangleChan(this));
+	assignChannel(CHANID_NOISE, new CNoiseChan(this));
+	assignChannel(CHANID_DPCM, new CDPCMChan(this, &m_samplemem));
 
 	// Konami VRC6
-	assignChannel(new CTrackerChannel("Square 1", SNDCHIP_VRC6, CHANID_VRC6_PULSE1), new CVRC6Square1(this));
-	assignChannel(new CTrackerChannel("Square 2", SNDCHIP_VRC6, CHANID_VRC6_PULSE2), new CVRC6Square2(this));
-	assignChannel(new CTrackerChannel("Sawtooth", SNDCHIP_VRC6, CHANID_VRC6_SAWTOOTH), new CVRC6Sawtooth(this));
+	assignChannel(CHANID_VRC6_PULSE1, new CVRC6Square1(this));
+	assignChannel(CHANID_VRC6_PULSE2, new CVRC6Square2(this));
+	assignChannel(CHANID_VRC6_SAWTOOTH, new CVRC6Sawtooth(this));
 
 	// Nintendo MMC5
-	assignChannel(new CTrackerChannel("Square 1", SNDCHIP_MMC5, CHANID_MMC5_SQUARE1), new CMMC5Square1Chan(this));
-	assignChannel(new CTrackerChannel("Square 2", SNDCHIP_MMC5, CHANID_MMC5_SQUARE2), new CMMC5Square2Chan(this));
+	assignChannel(CHANID_MMC5_SQUARE1, new CMMC5Square1Chan(this));
+	assignChannel(CHANID_MMC5_SQUARE2, new CMMC5Square2Chan(this));
 
 	// Nintendo FDS
-	assignChannel(new CTrackerChannel("FDS", SNDCHIP_FDS, CHANID_FDS), new CChannelHandlerFDS(this));
+	assignChannel(CHANID_FDS, new CChannelHandlerFDS(this));
 
 	// TODO - dan
 /*
@@ -336,9 +335,9 @@ void SoundGen::setupChannels()
 	}
 }
 
-void SoundGen::assignChannel(CTrackerChannel *trackerChannel, CChannelHandler *renderer)
+void SoundGen::assignChannel(int id, CChannelHandler *renderer)
 {
-	int id = trackerChannel->GetID();
+	CTrackerChannel *trackerChannel = new CTrackerChannel;
 
 	renderer->SetChannelID(id);
 

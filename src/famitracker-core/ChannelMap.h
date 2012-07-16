@@ -18,6 +18,8 @@
 ** must bear this legend.
 */
 
+#include <vector>
+
 class CInstrument;
 
 class CChannelMap
@@ -32,6 +34,10 @@ public:
 	int			GetChipIdent(int Index) const;
 	int			GetChipIndex(int Ident) const;
 	CInstrument	*GetChipInstrument(int Chip) const;
+
+	const char * GetChannelName(int channel) const;
+	int			GetChipFromChannel(int channel) const;
+	std::vector<int> GetChannelsFromChip(int chip) const;
 public:
 	static const int CHIP_COUNT = 8;	// Number of allowed expansion chips
 

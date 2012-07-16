@@ -8,6 +8,7 @@
 #include "Instrument.h"
 
 #include <string>
+#include <vector>
 
 class CPatternData;
 class Document;
@@ -222,6 +223,7 @@ public:
 	int				GetHighlight() const{ return m_highlight; }
 	int				GetSecondHighlight() const{ return m_secondHighlight; }
 
+	const std::vector<int> & getChannelsFromChip() const{ return m_channelsFromChip; }
 private:
 	bool bForceBackup;
 	bool readOld(Document *doc);
@@ -290,6 +292,8 @@ private:
 
 	bool m_bModified;
 	int m_highlight, m_secondHighlight;
+
+	std::vector<int> m_channelsFromChip;
 
 	boost::mutex *	m_modifyLock;
 };

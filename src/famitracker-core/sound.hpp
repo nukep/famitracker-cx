@@ -4,6 +4,7 @@
 #include "APU/APU.h"
 #include "core/soundsink.hpp"
 #include "core/ringbuffer.hpp"
+#include "FamiTrackerTypes.h"
 
 class CDSample;
 struct stChanNote;
@@ -73,7 +74,7 @@ private:
 	// Internal initialization
 	void createChannels();
 	void setupChannels();
-	void assignChannel(CTrackerChannel *trackerChannel, CChannelHandler *renderer);
+	void assignChannel(int id, CChannelHandler *renderer);
 	void resetAPU();
 
 	// Player

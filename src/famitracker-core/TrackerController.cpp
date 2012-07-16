@@ -7,7 +7,6 @@ TrackerController::TrackerController()
 	: m_frame(0), m_row(0), m_elapsedFrames(0), m_halted(false),
 	  m_jumpFrame(0), m_jumpRow(0)
 {
-
 }
 TrackerController::~TrackerController()
 {
@@ -60,7 +59,10 @@ void TrackerController::playRow()
 		unsigned int pattern = m_document->GetPatternAtFrame(m_frame, i);
 		m_document->GetDataAtPattern(track, pattern, i, m_row, &note);
 		evaluateGlobalEffects(&note, m_document->GetEffColumns(i) + 1);
-		m_trackerChannels[i]->SetNote(note);
+		if (!muted(i))
+		{
+			m_trackerChannels[i]->SetNote(note);
+		}
 	}
 
 	if (m_jumped)
@@ -178,4 +180,20 @@ void TrackerController::initialize(FtmDocument *doc, CTrackerChannel * const * t
 
 	m_lastDocTempo = m_document->GetSongTempo();
 	m_lastDocSpeed = m_document->GetSongSpeed();
+
+	for (int i = 0; i < MAX_CHANNELS; i++)
+	{
+		m_muted[i] = false;
+	}
+}
+
+void TrackerController::setMuted(int channel_offset, bool mute)
+{
+	if (mute && !m_muted[channel_offset])
+	{
+		stChanNote halt;
+		halt.Note = HALT;
+		m_trackerChannels[channel_offset]->SetNote(halt);
+	}
+	m_muted[channel_offset] = mute;
 }

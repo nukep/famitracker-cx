@@ -22,6 +22,7 @@ namespace gui
 	protected:
 		bool event(QEvent *);
 		void keyPressEvent(QKeyEvent *);
+		void keyReleaseEvent(QKeyEvent *);
 		void wheelEvent(QWheelEvent *);
 		void focusInEvent(QFocusEvent *);
 		void focusOutEvent(QFocusEvent *);
