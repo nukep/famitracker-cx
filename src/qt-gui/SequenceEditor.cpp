@@ -95,7 +95,7 @@ namespace gui
 	};
 
 	SequenceEditor::SequenceEditor(int inst_type)
-		: m_seq(NULL), m_lineedit(NULL), m_inst_type(inst_type)
+		: m_seq(NULL), m_doc(NULL), m_lineedit(NULL), m_inst_type(inst_type)
 	{
 		m_graphic = new SequenceEditorGraphic;
 		m_font.setPixelSize(12);
@@ -183,6 +183,8 @@ namespace gui
 		const int BUFN = 16;
 		char buf[BUFN];
 
+		m_doc->lock();
+
 		m_seq->Clear();
 
 		int idx = 0;
@@ -218,11 +220,15 @@ namespace gui
 		}
 		m_seq->SetItemCount(idx);
 
+		m_doc->unlock();
+
 		updateSequence(true);
 	}
 
 	void SequenceEditor::sequenceToLineEdit()
 	{
+		// caller locks m_doc
+
 		QString s;
 		int sz = m_seq->GetItemCount();
 
@@ -370,50 +376,58 @@ namespace gui
 
 	void SequenceEditor::dragMouse(QPoint origin, QPoint pos, bool right)
 	{
-		metric_t m;
-		solveMetric(m, m_seq->GetItemCount());
-
-		if (origin.y() > m.y + m.h)
 		{
-			// loop/release points
-			int x;
-			posToXPoint(m, pos, x);
-			// we just need x
+			FtmDocument_lock_guard lock(m_doc);
 
-			bool discard = (x < 0 || x >= m_seq->GetItemCount());
-			if (discard)
-				x = -1;
+			metric_t m;
+			solveMetric(m, m_seq->GetItemCount());
 
-			bool release = right;
-			if (release)
+			if (origin.y() > m.y + m.h)
 			{
-				m_seq->SetReleasePoint(x);
+				// loop/release points
+				int x;
+				posToXPoint(m, pos, x);
+				// we just need x
+
+				bool discard = (x < 0 || x >= m_seq->GetItemCount());
+				if (discard)
+					x = -1;
+
+				bool release = right;
+				if (release)
+				{
+					m_seq->SetReleasePoint(x);
+				}
+				else
+				{
+					m_seq->SetLoopPoint(x);
+				}
 			}
 			else
 			{
-				m_seq->SetLoopPoint(x);
-			}
-		}
-		else
-		{
-			if (right)
-			{
-				// TODO
-			}
-			else
-			{
-				int x, y;
-				posToSeqTuple(m, pos, x, y);
-				if (x < 0 || x >= m_seq->GetItemCount())
-					return;
-				if (y < minVal())
-					y = minVal();
-				if (y > maxVal())
-					y = maxVal();
+				if (right)
+				{
+					// TODO
+				}
+				else
+				{
+					int x, y;
+					posToSeqTuple(m, pos, x, y);
+					if (x < 0 || x >= m_seq->GetItemCount())
+					{
+						m_doc->unlock();
+						return;
+					}
+					if (y < minVal())
+						y = minVal();
+					if (y > maxVal())
+						y = maxVal();
 
-				m_seq->SetItem(x, y);
+					m_seq->SetItem(x, y);
+				}
 			}
 		}
+
 		updateSequence();
 	}
 
@@ -592,8 +606,9 @@ namespace gui
 	}
 
 
-	void SequenceEditor::setSequence(CSequence *seq, int type)
+	void SequenceEditor::setSequence(FtmDocument *doc, CSequence *seq, int type)
 	{
+		m_doc = doc;
 		m_seq = seq;
 		m_seqtype = type;
 		m_scrollbar_arpwindow->setVisible(m_seqtype == SEQ_ARPEGGIO);
@@ -601,9 +616,9 @@ namespace gui
 	}
 	void SequenceEditor::updateSequence(bool fromlineedit)
 	{
-		FtmDocument *doc = gui::activeDocument();
+		FtmDocument_lock_guard lock(m_doc);
 
-		int dur = m_seq->GetItemCount() * 1000 / doc->GetFrameRate();
+		int dur = m_seq->GetItemCount() * 1000 / m_doc->GetFrameRate();
 		QString str = QString(tr("%1 ms").arg(dur));
 		m_label_duration->setText(str);
 		m_graphic->repaint();

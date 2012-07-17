@@ -56,8 +56,8 @@ public:
 	~FtmDocument();
 
 	// use lock/unlock while accessing the document
-	void lock();
-	void unlock();
+	void lock() const;
+	void unlock() const;
 
 	void createEmpty();
 
@@ -296,6 +296,23 @@ private:
 	std::vector<int> m_channelsFromChip;
 
 	boost::mutex *	m_modifyLock;
+};
+
+class FtmDocument_lock_guard
+{
+public:
+	FtmDocument_lock_guard(const FtmDocument *doc)
+		: m_doc(doc)
+	{
+		m_doc->lock();
+	}
+	~FtmDocument_lock_guard()
+	{
+		m_doc->unlock();
+	}
+
+private:
+	const FtmDocument *m_doc;
 };
 
 #endif

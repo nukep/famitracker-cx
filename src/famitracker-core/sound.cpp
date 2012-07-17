@@ -392,6 +392,8 @@ void SoundGen::playSample(CDSample *sample, int offset, int pitch)
 // return true if row changed
 bool SoundGen::requestFrame()
 {
+	FtmDocument_lock_guard lock(m_pDocument);
+
 	runFrame();
 
 	m_bPlayerHalted = m_trackerctlr->isHalted() || m_bRequestStop;

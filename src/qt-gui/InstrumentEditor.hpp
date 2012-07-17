@@ -22,7 +22,7 @@ namespace gui
 		InstrumentEditor(QWidget *parent);
 		~InstrumentEditor();
 
-		void setInstrument(CInstrument *inst);
+		void setInstrument(FtmDocument *doc, CInstrument *inst);
 		void removedInstrument();
 	private:
 		QTabWidget * m_tabwidget;

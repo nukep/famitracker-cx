@@ -53,6 +53,15 @@ namespace gui
 	void auditionNoteHalt();
 	void auditionDPCM(const CDSample *sample);
 
+	void setMuted(int channel, bool muted);
+	bool isMuted(int channel);
+	static inline void toggleMuted(int channel)
+	{
+		setMuted(channel, !isMuted(channel));
+	}
+	void unmuteAll();
+	void toggleSolo(int channel);
+
 	class DocInfo
 	{
 		friend void gui::closeActiveDocument();
@@ -75,11 +84,19 @@ namespace gui
 		unsigned int currentRow() const{ return m_currentRow; }
 		unsigned int currentInstrument() const{ return m_currentInstrument; }
 		unsigned int patternColumns(unsigned int chan) const;
+
+		void setEditStep(unsigned int step){ m_step = step; }
+		void setKeyRepetition(bool repeat){ m_keyrepetition = repeat; }
+		unsigned int editStep() const{ return m_step; }
+		bool keyRepetition() const{ return m_keyrepetition; }
 	protected:
 		FtmDocument * m_doc;
 		unsigned int m_currentFrame, m_currentChannel, m_currentRow;
 		unsigned int m_currentChannelColumn;
 		unsigned int m_currentInstrument;
+
+		unsigned int m_step;
+		bool m_keyrepetition;
 
 		void destroy();
 	};

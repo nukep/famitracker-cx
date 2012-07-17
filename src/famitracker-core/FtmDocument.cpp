@@ -161,12 +161,12 @@ FtmDocument::~FtmDocument()
 	delete m_modifyLock;
 }
 
-void FtmDocument::lock()
+void FtmDocument::lock() const
 {
 	m_modifyLock->lock();
 }
 
-void FtmDocument::unlock()
+void FtmDocument::unlock() const
 {
 	m_modifyLock->unlock();
 }
@@ -192,6 +192,8 @@ void FtmDocument::createEmpty()
 
 void FtmDocument::read(core::IO *io)
 {
+	FtmDocument_lock_guard lock(this);
+
 	Document doc;
 	doc.setIO(io);
 	bForceBackup = false;
@@ -330,6 +332,7 @@ bool FtmDocument::readNew_params(Document *doc)
 	if (block_ver == 1)
 	{
 		ver1_song_speed = doc->getBlockInt();
+		SelectExpansionChip(SNDCHIP_NONE);
 	}
 	else
 	{
@@ -373,7 +376,7 @@ bool FtmDocument::readNew_params(Document *doc)
 	// remark: porting bug fix over
 	// This is strange. Sometimes expansion chip is set to 0xFF in files
 	if (m_iChannelsAvailable == 5)
-		m_iExpansionChip = 0;
+		SelectExpansionChip(SNDCHIP_NONE);
 
 	if (doc->getFileVersion() == 0x0200)
 	{
@@ -997,6 +1000,8 @@ bool FtmDocument::readNew_sequences_vrc6(Document *doc)
 
 void FtmDocument::write(core::IO *io) const
 {
+	FtmDocument_lock_guard lock(this);
+
 	Document doc;
 	doc.setIO(io);
 

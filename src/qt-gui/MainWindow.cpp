@@ -67,6 +67,9 @@ namespace gui
 		actionRemove_instrument->setIcon(QIcon::fromTheme("list-remove"));
 		QObject::connect(actionEdit_instrument, SIGNAL(triggered()), this, SLOT(editInstrument()));
 
+		QObject::connect(step, SIGNAL(valueChanged(int)), this, SLOT(changeEditSettings()));
+		QObject::connect(keyRepetition, SIGNAL(stateChanged(int)), this, SLOT(changeEditSettings()));
+
 		QMenu *m = new QMenu;
 		m->addAction(tr("New 2A03 instrument"));
 
@@ -170,6 +173,7 @@ namespace gui
 
 	void MainWindow::updateDocument()
 	{
+		DocInfo *dinfo = gui::activeDocInfo();
 		FtmDocument *d = gui::activeDocument();
 
 		title->blockSignals(true);
@@ -200,6 +204,14 @@ namespace gui
 		frameView->update();
 
 		refreshInstruments();
+
+		step->blockSignals(true);
+		step->setValue(dinfo->editStep());
+		step->blockSignals(false);
+
+		keyRepetition->blockSignals(true);
+		keyRepetition->setChecked(dinfo->keyRepetition());
+		keyRepetition->blockSignals(false);
 	}
 
 	void MainWindow::refreshInstruments()
@@ -329,6 +341,8 @@ namespace gui
 		FtmDocument *d = dinfo->doc();
 		int i = songs->currentIndex();
 
+		d->lock();
+
 		d->SelectTrack(i);
 
 		speed->blockSignals(true);
@@ -340,14 +354,17 @@ namespace gui
 		tempo->setValue(d->GetSongTempo());
 		rows->setValue(d->GetPatternLength());
 		frames->setValue(d->GetFrameCount());
-		dinfo->setCurrentChannel(0);
-		dinfo->setCurrentFrame(0);
-		dinfo->setCurrentRow(0);
 
 		frames->blockSignals(false);
 		rows->blockSignals(false);
 		tempo->blockSignals(false);
 		speed->blockSignals(false);
+
+		d->unlock();
+
+		dinfo->setCurrentChannel(0);
+		dinfo->setCurrentFrame(0);
+		dinfo->setCurrentRow(0);
 
 		updateFrameChannel(true);
 	}
@@ -422,14 +439,22 @@ namespace gui
 	{
 		QModelIndex idx = instruments->currentIndex();
 		int i = idx.data(Qt::UserRole).value<int>();
-		CInstrument *inst = gui::activeDocument()->GetInstrument(i);
-		if (inst == NULL)
-			return;
-		instrumentName->setText(inst->GetName());
+
+		CInstrument *inst;
+
+		FtmDocument *doc = gui::activeDocument();
+		{
+			FtmDocument_lock_guard lock(doc);
+
+			inst = doc->GetInstrument(i);
+			if (inst == NULL)
+				return;
+			instrumentName->setText(inst->GetName());
+		}
 
 		gui::activeDocInfo()->setCurrentInstrument(i);
 
-		m_instrumenteditor->setInstrument(inst);
+		m_instrumenteditor->setInstrument(doc, inst);
 	}
 	void MainWindow::instrumentNameChange(QString s)
 	{
@@ -438,8 +463,15 @@ namespace gui
 			return;
 
 		int i = idx.data(Qt::UserRole).value<int>();
-		CInstrument *inst = gui::activeDocument()->GetInstrument(i);
+
+		FtmDocument *doc = gui::activeDocument();
+		doc->lock();
+
+		CInstrument *inst = doc->GetInstrument(i);
 		inst->SetName(s.toAscii());
+
+		doc->unlock();
+
 		setInstrumentName(instruments->currentItem(), idx.row(), s.toAscii());
 	}
 	void MainWindow::instrumentDoubleClicked(QModelIndex)
@@ -483,16 +515,19 @@ namespace gui
 	void MainWindow::changeSongTitle()
 	{
 		FtmDocument *doc = gui::activeDocument();
+		FtmDocument_lock_guard lock(doc);
 		doc->SetSongInfo(title->text().toAscii(), doc->GetSongArtist(), doc->GetSongCopyright());
 	}
 	void MainWindow::changeSongAuthor()
 	{
 		FtmDocument *doc = gui::activeDocument();
+		FtmDocument_lock_guard lock(doc);
 		doc->SetSongInfo(doc->GetSongName(), author->text().toAscii(), doc->GetSongCopyright());
 	}
 	void MainWindow::changeSongCopyright()
 	{
 		FtmDocument *doc = gui::activeDocument();
+		FtmDocument_lock_guard lock(doc);
 		doc->SetSongInfo(doc->GetSongName(), doc->GetSongArtist(), copyright->text().toAscii());
 	}
 
@@ -512,7 +547,9 @@ namespace gui
 	void MainWindow::addInstrument()
 	{
 		FtmDocument *d = gui::activeDocument();
+		d->lock();
 		int inst = d->AddInstrument("New instrument", SNDCHIP_NONE);
+		d->unlock();
 
 		gui::activeDocInfo()->setCurrentInstrument(inst);
 
@@ -526,6 +563,8 @@ namespace gui
 		int inst = gui::activeDocInfo()->currentInstrument();
 
 		m_instrumenteditor->removedInstrument();
+
+		d->lock();
 
 		d->RemoveInstrument(inst);
 
@@ -555,6 +594,8 @@ namespace gui
 			ni = 0;
 		}
 
+		d->unlock();
+
 		gui::activeDocInfo()->setCurrentInstrument(ni);
 
 		refreshInstruments();
@@ -563,5 +604,11 @@ namespace gui
 	void MainWindow::editInstrument()
 	{
 		m_instrumenteditor->show();
+	}
+	void MainWindow::changeEditSettings()
+	{
+		DocInfo *dinfo = gui::activeDocInfo();
+		dinfo->setEditStep(step->value());
+		dinfo->setKeyRepetition(keyRepetition->checkState() == Qt::Checked);
 	}
 }

@@ -89,6 +89,8 @@ namespace gui
 		void addInstrument();
 		void removeInstrument();
 		void editInstrument();
+
+		void changeEditSettings();
 	private:
 		boost::mutex m_mtx_updateEvent;
 		boost::condition m_cond_updateEvent;

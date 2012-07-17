@@ -3,6 +3,7 @@
 
 #include <QWidget>
 
+class FtmDocument;
 class CSequence;
 class QLineEdit;
 class QSpinBox;
@@ -21,7 +22,7 @@ namespace gui
 		SequenceEditor(int inst_type);
 		~SequenceEditor();
 
-		void setSequence(CSequence *seq, int type);
+		void setSequence(FtmDocument *doc, CSequence *seq, int type);
 		void updateSequence(bool fromlineedit = false);
 		void setLineEdit(QLineEdit *w);
 
@@ -58,6 +59,7 @@ namespace gui
 		QLabel * m_label_duration;
 		QScrollBar * m_scrollbar_arpwindow;
 
+		FtmDocument *m_doc;
 		CSequence *m_seq;
 		QLineEdit *m_lineedit;
 		int m_seqtype;

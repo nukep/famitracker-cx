@@ -15,7 +15,8 @@ namespace gui
 {
 	DocInfo::DocInfo(FtmDocument *d)
 		: m_doc(d), m_currentChannel(0), m_currentFrame(0), m_currentRow(0),
-		  m_currentChannelColumn(0), m_currentInstrument(0)
+		  m_currentChannelColumn(0), m_currentInstrument(0),
+		  m_step(1), m_keyrepetition(false)
 	{
 	}
 	void DocInfo::destroy()
@@ -24,15 +25,21 @@ namespace gui
 	}
 	void DocInfo::setCurrentFrame(unsigned int frame)
 	{
+		doc()->lock();
 		if (frame >= doc()->GetFrameCount())
 			frame = doc()->GetFrameCount()-1;
+		doc()->unlock();
 
 		m_currentFrame = frame;
 		setCurrentRow(m_currentRow);
 	}
 	void DocInfo::setCurrentChannel(unsigned int chan)
 	{
-		if (chan >= doc()->GetAvailableChannels())
+		doc()->lock();
+		unsigned int availchan = doc()->GetAvailableChannels();
+		doc()->unlock();
+
+		if (chan >= availchan)
 			return;
 		m_currentChannel = chan;
 
@@ -48,8 +55,12 @@ namespace gui
 	}
 	void DocInfo::setCurrentChannelColumn_pos(unsigned int col)
 	{
+		doc()->lock();
+		unsigned int availchan = doc()->GetAvailableChannels();
+		doc()->unlock();
+
 		int c = col;
-		for (unsigned int i = 0; i < doc()->GetAvailableChannels(); i++)
+		for (unsigned int i = 0; i < availchan; i++)
 		{
 			int patcols = patternColumns(i);
 			if (c - patcols < 0)
@@ -66,6 +77,8 @@ namespace gui
 
 	void DocInfo::setCurrentRow(unsigned int row)
 	{
+		FtmDocument_lock_guard lock(doc());
+
 		if (row >= doc()->getFramePlayLength(m_currentFrame))
 			row = doc()->getFramePlayLength(m_currentFrame)-1;
 		m_currentRow = row;
@@ -75,6 +88,8 @@ namespace gui
 		int f = currentFrame();
 		int r = currentRow();
 		r += delta;
+
+		doc()->lock();
 
 		if (r < 0)
 		{
@@ -100,12 +115,17 @@ namespace gui
 			}
 		}
 
+		doc()->unlock();
+
 		setCurrentFrame(f);
 		setCurrentRow(r);
 	}
 	void DocInfo::scrollChannelBy(int delta)
 	{
 		int ch = m_currentChannel + delta;
+
+		FtmDocument_lock_guard lock(doc());
+
 		while (ch < 0)
 		{
 			ch += doc()->GetAvailableChannels();
@@ -124,7 +144,12 @@ namespace gui
 			return;
 		int col = currentChannelColumn_pos() + delta;
 		int total_patcol = 0;
-		for (unsigned int i = 0; i < doc()->GetAvailableChannels(); i++)
+
+		doc()->lock();
+		unsigned int availchan = doc()->GetAvailableChannels();
+		doc()->unlock();
+
+		for (unsigned int i = 0; i < availchan; i++)
 		{
 			total_patcol += patternColumns(i);
 		}
@@ -152,6 +177,7 @@ namespace gui
 
 	unsigned int DocInfo::patternColumns(unsigned int chan) const
 	{
+		FtmDocument_lock_guard lock(doc());
 		int effcol = doc()->GetEffColumns(chan);
 		return C_EFF_NUM + C_EFF_COL_COUNT*(effcol+1);
 	}
@@ -216,6 +242,11 @@ namespace gui
 
 	void updateFrameChannel(bool modified)
 	{
+		DocInfo *dinfo = activeDocInfo();
+		dinfo->setCurrentChannelColumn_pos(dinfo->currentChannelColumn_pos());
+		dinfo->setCurrentChannel(dinfo->currentChannel());
+		dinfo->setCurrentFrame(dinfo->currentFrame());
+		dinfo->setCurrentRow(dinfo->currentRow());
 		mw->updateFrameChannel(modified);
 	}
 
@@ -271,6 +302,8 @@ namespace gui
 
 		loaded_documents.push_back(a);
 		setActiveDocument(loaded_documents.size()-1);
+
+		unmuteAll();
 	}
 	void newDocument(bool close_active)
 	{
@@ -284,6 +317,8 @@ namespace gui
 
 		loaded_documents.push_back(a);
 		setActiveDocument(loaded_documents.size()-1);
+
+		unmuteAll();
 	}
 
 	bool isPlaying()
@@ -387,5 +422,69 @@ namespace gui
 	void auditionDPCM(const CDSample *sample)
 	{
 
+	}
+	void setMuted(int channel, bool muted)
+	{
+		FtmDocument_lock_guard lock(activeDocument());
+
+		sgen->trackerController()->setMuted(channel, muted);
+	}
+	bool isMuted(int channel)
+	{
+		FtmDocument_lock_guard lock(activeDocument());
+
+		bool muted = sgen->trackerController()->muted(channel);
+
+		return muted;
+	}
+	void unmuteAll()
+	{
+		FtmDocument *doc = gui::activeDocument();
+		FtmDocument_lock_guard lock(doc);
+
+		int chans = doc->GetAvailableChannels();
+
+		for (int i = 0; i < chans; i++)
+		{
+			sgen->trackerController()->setMuted(i, false);
+		}
+	}
+
+	void toggleSolo(int channel)
+	{
+		// if all channels but "channel" are muted, unmute all channels
+		// else, mute all channels but "channel"
+
+		FtmDocument *doc = gui::activeDocument();
+		FtmDocument_lock_guard lock(doc);
+
+		int chans = doc->GetAvailableChannels();
+
+		bool hasunmuted = false;
+
+		for (int i = 0; i < chans; i++)
+		{
+			if (i == channel)
+				continue;
+
+			hasunmuted |= !sgen->trackerController()->muted(i);
+		}
+
+		if (hasunmuted)
+		{
+			// mute all except channel
+			for (int i = 0; i < chans; i++)
+			{
+				sgen->trackerController()->setMuted(i, i != channel);
+			}
+		}
+		else
+		{
+			// unmute all
+			for (int i = 0; i < chans; i++)
+			{
+				sgen->trackerController()->setMuted(i, false);
+			}
+		}
 	}
 }

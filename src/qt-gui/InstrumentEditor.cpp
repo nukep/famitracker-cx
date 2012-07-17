@@ -25,7 +25,7 @@ namespace gui
 	InstrumentEditor::InstrumentEditor(QWidget *parent)
 		: QDialog(parent), m_inst(NULL)
 	{
-		setInstrument(NULL);
+		setInstrument(NULL, NULL);
 		m_tabwidget = new QTabWidget;
 
 		for (int i = 0; i < INST_COUNT; i++)
@@ -52,7 +52,7 @@ namespace gui
 		}
 	}
 
-	void InstrumentEditor::setInstrument(CInstrument *inst)
+	void InstrumentEditor::setInstrument(FtmDocument *doc, CInstrument *inst)
 	{
 		int oldtype = -1;
 		if (m_inst != NULL)
@@ -68,7 +68,7 @@ namespace gui
 			InstrumentSettings *s = m_inst_settings[type];
 			if (s != NULL)
 			{
-				s->setInstrument(inst);
+				s->setInstrument(doc, inst);
 				if (oldtype != type)
 				{
 					const tab_range &t = m_tabs_typeoffset[type];
@@ -85,7 +85,7 @@ namespace gui
 	}
 	void InstrumentEditor::removedInstrument()
 	{
-		setInstrument(NULL);
+		setInstrument(NULL, NULL);
 		hide();
 	}
 }

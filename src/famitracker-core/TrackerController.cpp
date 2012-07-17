@@ -18,8 +18,6 @@ void TrackerController::tick()
 	if (m_halted)
 		return;
 
-	m_document->lock();
-
 	if (m_lastDocTempo != m_document->GetSongTempo() || m_lastDocSpeed != m_document->GetSongSpeed())
 	{
 		setTempo(m_document->GetSongTempo(), m_document->GetSongSpeed());
@@ -35,8 +33,6 @@ void TrackerController::tick()
 
 		playRow();
 	}
-
-	m_document->unlock();
 
 	m_tempoAccum -= m_tempoDecrement;
 }

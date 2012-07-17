@@ -19,16 +19,19 @@ namespace gui
 		InstrumentSettings(int type, int sndchip) : m_inst_type(type), m_sndchip(sndchip){}
 		virtual ~InstrumentSettings(){}
 
-		virtual void setInstrument(CInstrument *inst)
+		virtual void setInstrument(FtmDocument *doc, CInstrument *inst)
 		{
+			m_doc = doc;
 			m_inst = inst;
 		}
 		virtual void makeTabs(QList<InstrumentSettings_Tab> &list) = 0;
 		CInstrument * instrument() const{ return m_inst; }
+		FtmDocument * document() const{ return m_doc; }
 
 		int instrumentType() const{ return m_inst_type; }
 		int soundChip() const{ return m_sndchip; }
 	private:
+		FtmDocument *m_doc;
 		CInstrument *m_inst;
 		int m_inst_type;		// the allowed instrument type
 		int m_sndchip;
@@ -42,7 +45,7 @@ namespace gui
 		friend class Settings_SequencesWidget;
 	public:
 		Settings_CommonSequence(int inst_type, int sndchip);
-		void setInstrument(CInstrument *inst);
+		void setInstrument(FtmDocument *doc, CInstrument *inst);
 		void selectSequence();
 	protected:
 		QWidget * makeWidget();
@@ -113,7 +116,7 @@ namespace gui
 	public:
 		Settings_2A03();
 
-		void setInstrument(CInstrument *inst);
+		void setInstrument(FtmDocument *doc, CInstrument *inst);
 		void makeTabs(QList<InstrumentSettings_Tab> &list);
 	private:
 		DPCMWidget * m_dpcm;
@@ -124,7 +127,7 @@ namespace gui
 	public:
 		Settings_VRC6();
 
-		void setInstrument(CInstrument *inst);
+		void setInstrument(FtmDocument *doc, CInstrument *inst);
 		void makeTabs(QList<InstrumentSettings_Tab> &list);
 	};
 }

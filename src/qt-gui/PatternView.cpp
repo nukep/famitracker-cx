@@ -554,6 +554,33 @@ namespace gui
 			m_modified = true;
 		}
 
+		// return -1 if none
+		int channelAtX(int x)
+		{
+			x -= px_unit*3 - colspace/2;
+			if (x < 0)
+				return -1;
+
+			FtmDocument *d = gui::activeDocument();
+
+			unsigned int channels = d->GetAvailableChannels();
+
+			for (int i = 0; i < channels; i++)
+			{
+				int eff = d->GetEffColumns(i);
+				int w = columnWidth(eff) + colspace;
+				x -= w;
+				if (x < 0)
+					return i;
+			}
+
+			return -1;
+		}
+		int xAtChannel(int channel)
+		{
+
+		}
+
 		QFont font;
 		int m_currentFrameRows;
 		QPixmap *m_currentRowHighlightPixmap;
@@ -668,7 +695,7 @@ namespace gui
 
 			for (int i = 0; i < d->GetAvailableChannels(); i++)
 			{
-				bool enabled = true;
+				bool enabled = !gui::isMuted(i);
 				int eff = d->GetEffColumns(i);
 				int w = m_body->columnWidth(eff) + m_body->colspace;
 				p.setPen(enabled ? Qt::black : Qt::red);
@@ -683,6 +710,24 @@ namespace gui
 			}
 
 			p.end();
+		}
+		void mousePressEvent(QMouseEvent *e)
+		{
+			int chan = m_body->channelAtX(e->x());
+			if (chan < 0)
+				return;
+
+			gui::toggleMuted(chan);
+			repaint();
+		}
+		void mouseDoubleClickEvent(QMouseEvent *e)
+		{
+			int chan = m_body->channelAtX(e->x());
+			if (chan < 0)
+				return;
+
+			gui::toggleSolo(chan);
+			repaint();
 		}
 
 		QPixmap *m_gradientPixmap;
@@ -805,13 +850,13 @@ namespace gui
 			return;
 		if (k == Qt::Key_Up)
 		{
-			dinfo->scrollFrameBy(-1);
+			dinfo->scrollFrameBy(-dinfo->editStep());
 			gui::updateFrameChannel();
 			return;
 		}
 		if (k == Qt::Key_Down)
 		{
-			dinfo->scrollFrameBy(1);
+			dinfo->scrollFrameBy(dinfo->editStep());
 			gui::updateFrameChannel();
 			return;
 		}
@@ -859,10 +904,13 @@ namespace gui
 		if (!gui::canEdit())
 			return;
 		DocInfo *dinfo = gui::activeDocInfo();
+		FtmDocument *doc = dinfo->doc();
 
-		dinfo->doc()->DeleteNote(dinfo->currentFrame(), dinfo->currentChannel(), dinfo->currentRow(), dinfo->currentChannelColumn());
+		doc->lock();
+		doc->DeleteNote(dinfo->currentFrame(), dinfo->currentChannel(), dinfo->currentRow(), dinfo->currentChannelColumn());
+		doc->unlock();
 
-		dinfo->scrollFrameBy(1);
+		dinfo->scrollFrameBy(dinfo->editStep());
 
 		gui::updateFrameChannel(true);
 	}
@@ -872,9 +920,12 @@ namespace gui
 		if (!gui::canEdit())
 			return;
 		DocInfo *dinfo = gui::activeDocInfo();
+		FtmDocument *doc = dinfo->doc();
+
+		doc->lock();
 
 		stChanNote n;
-		dinfo->doc()->GetNoteData(dinfo->currentFrame(), dinfo->currentChannel(), dinfo->currentRow(), &n);
+		doc->GetNoteData(dinfo->currentFrame(), dinfo->currentChannel(), dinfo->currentRow(), &n);
 
 		if (note >= 0)
 			n.Note = note;
@@ -886,9 +937,11 @@ namespace gui
 		else
 			n.Instrument = dinfo->currentInstrument();
 
-		dinfo->doc()->SetNoteData(dinfo->currentFrame(), dinfo->currentChannel(), dinfo->currentRow(), &n);
+		doc->SetNoteData(dinfo->currentFrame(), dinfo->currentChannel(), dinfo->currentRow(), &n);
 
-		dinfo->scrollFrameBy(1);
+		doc->unlock();
+
+		dinfo->scrollFrameBy(dinfo->editStep());
 		gui::updateFrameChannel(true);
 	}
 
@@ -897,29 +950,36 @@ namespace gui
 		if (!gui::canEdit())
 			return;
 		DocInfo *dinfo = gui::activeDocInfo();
+		FtmDocument *doc = dinfo->doc();
 
-		unsigned int playlen = dinfo->doc()->getFramePlayLength(dinfo->currentFrame());
+		doc->lock();
 
-		if (!dinfo->doc()->setColumnKey(key, dinfo->currentFrame(),
-										dinfo->currentChannel(),
-										dinfo->currentRow(),
-										dinfo->currentChannelColumn()))
+		unsigned int playlen = doc->getFramePlayLength(dinfo->currentFrame());
+
+		if (!doc->setColumnKey(key, dinfo->currentFrame(),
+									dinfo->currentChannel(),
+									dinfo->currentRow(),
+									dinfo->currentChannelColumn()))
 		{
 			return;
 		}
 
-		if (dinfo->doc()->getFramePlayLength(dinfo->currentFrame()) == playlen)
+		if (doc->getFramePlayLength(dinfo->currentFrame()) == playlen)
 		{
 			dinfo->scrollFrameBy(1);
 		}
+
+		doc->unlock();
+
 		gui::updateFrameChannel(true);
 	}
 
 	void PatternView::update(bool modified)
 	{
 		DocInfo *dinfo = gui::activeDocInfo();
+		FtmDocument *doc = dinfo->doc();
 
-		dinfo->doc()->lock();
+		doc->lock();
 
 		if (modified || m_currentFrame != dinfo->currentFrame())
 		{
@@ -931,11 +991,11 @@ namespace gui
 		m_currentChannel = dinfo->currentChannel();
 
 		verticalScrollBar()->blockSignals(true);
-		verticalScrollBar()->setRange(0, dinfo->doc()->getFramePlayLength(m_currentFrame)-1);
+		verticalScrollBar()->setRange(0, doc->getFramePlayLength(m_currentFrame)-1);
 		verticalScrollBar()->setValue(m_currentRow);
 		verticalScrollBar()->blockSignals(false);
 
-		dinfo->doc()->unlock();
+		doc->unlock();
 
 		m_header->repaint();
 		m_body->repaint();
