@@ -693,6 +693,8 @@ namespace gui
 
 			p.setFont(m_font);
 
+			const core::u8 *vols = gui::activeDocInfo()->volumes();
+
 			for (int i = 0; i < d->GetAvailableChannels(); i++)
 			{
 				bool enabled = !gui::isMuted(i);
@@ -704,7 +706,7 @@ namespace gui
 				const char *name = app::channelMap()->GetChannelName(d->getChannelsFromChip()[i]);
 
 				p.drawText(r, name, opt);
-				drawVolume(p, x + 5, height()/2 + 5, 6);
+				drawVolume(p, x + 5, height()/2 + 5, vols[i]);
 				x += w;
 				drawLine(p, x, 1, height()-1);
 			}
@@ -961,15 +963,18 @@ namespace gui
 									dinfo->currentRow(),
 									dinfo->currentChannelColumn()))
 		{
+			doc->unlock();
 			return;
 		}
 
-		if (doc->getFramePlayLength(dinfo->currentFrame()) == playlen)
-		{
-			dinfo->scrollFrameBy(1);
-		}
+		unsigned int doc_playlen = doc->getFramePlayLength(dinfo->currentFrame());
 
 		doc->unlock();
+
+		if (doc_playlen == playlen)
+		{
+			dinfo->scrollFrameBy(dinfo->editStep());
+		}
 
 		gui::updateFrameChannel(true);
 	}
@@ -986,6 +991,9 @@ namespace gui
 			m_body->setModified();
 		}
 
+		unsigned int oldframe = m_currentFrame;
+		unsigned int oldrow = m_currentRow;
+
 		m_currentFrame = dinfo->currentFrame();
 		m_currentRow = dinfo->currentRow();
 		m_currentChannel = dinfo->currentChannel();
@@ -998,6 +1006,10 @@ namespace gui
 		doc->unlock();
 
 		m_header->repaint();
-		m_body->repaint();
+		if (modified || (!gui::isPlaying())
+				|| (!(m_currentFrame == oldframe && m_currentRow == oldrow)))
+		{
+			m_body->repaint();
+		}
 	}
 }

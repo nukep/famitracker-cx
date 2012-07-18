@@ -26,6 +26,8 @@ public:
 	struct rowframe_t
 	{
 		unsigned int row, frame;
+		bool rowframe_changed;
+		const core::u8 * volumes;
 	};
 	typedef void (*trackerupdate_f)(rowframe_t rf, FtmDocument *doc);
 	SoundGen();
@@ -71,6 +73,13 @@ private:
 
 	core::RingBuffer m_queued_rowframes;
 	core::RingBuffer m_queued_sound;
+	core::u8 * m_volumes_ring;
+	unsigned int m_volumes_read_offset, m_volumes_write_offset;
+	unsigned int m_volumes_size;
+
+	const core::u8 * readVolume();
+	const core::u8 * writeVolume(const core::u8 *arr);
+
 	// Internal initialization
 	void createChannels();
 	void setupChannels();
@@ -106,6 +115,8 @@ private:
 	unsigned int		m_lastRow, m_lastFrame;
 	unsigned int		m_iPlayTime;
 	int					m_iFrameCounter;
+
+	unsigned int		m_channels;
 
 	int					m_iUpdateCycles;					// Number of cycles/APU update
 

@@ -18,6 +18,7 @@ namespace gui
 		  m_currentChannelColumn(0), m_currentInstrument(0),
 		  m_step(1), m_keyrepetition(false)
 	{
+		memset(m_vols, 0, sizeof(m_vols));
 	}
 	void DocInfo::destroy()
 	{
@@ -83,6 +84,13 @@ namespace gui
 			row = doc()->getFramePlayLength(m_currentFrame)-1;
 		m_currentRow = row;
 	}
+	void DocInfo::setVolumes(const core::u8 *vols)
+	{
+		FtmDocument_lock_guard lock(doc());
+
+		memcpy(m_vols, vols, sizeof(core::u8)*doc()->GetAvailableChannels());
+	}
+
 	void DocInfo::scrollFrameBy(int delta)
 	{
 		int f = currentFrame();
@@ -197,8 +205,11 @@ namespace gui
 	{
 		// happens on non-gui thread
 
-		activeDocInfo()->setCurrentFrame(rf.frame);
-		activeDocInfo()->setCurrentRow(rf.row);
+		DocInfo *dinfo = activeDocInfo();
+
+		dinfo->setCurrentFrame(rf.frame);
+		dinfo->setCurrentRow(rf.row);
+		dinfo->setVolumes(rf.volumes);
 
 		mw->sendUpdateEvent();
 	}
@@ -243,8 +254,8 @@ namespace gui
 	void updateFrameChannel(bool modified)
 	{
 		DocInfo *dinfo = activeDocInfo();
-		dinfo->setCurrentChannelColumn_pos(dinfo->currentChannelColumn_pos());
 		dinfo->setCurrentChannel(dinfo->currentChannel());
+		dinfo->setCurrentChannelColumn(dinfo->currentChannelColumn());
 		dinfo->setCurrentFrame(dinfo->currentFrame());
 		dinfo->setCurrentRow(dinfo->currentRow());
 		mw->updateFrameChannel(modified);

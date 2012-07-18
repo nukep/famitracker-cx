@@ -73,6 +73,7 @@ namespace gui
 		void setCurrentChannelColumn(unsigned int col);
 		void setCurrentChannelColumn_pos(unsigned int col);
 		void setCurrentRow(unsigned int row);
+		void setVolumes(const core::u8 *vols);
 		void setCurrentInstrument(unsigned int inst){ m_currentInstrument = inst; }
 		void scrollFrameBy(int delta);
 		void scrollChannelBy(int delta);
@@ -82,6 +83,7 @@ namespace gui
 		unsigned int currentChannelColumn() const{ return m_currentChannelColumn; }
 		unsigned int currentChannelColumn_pos() const;
 		unsigned int currentRow() const{ return m_currentRow; }
+		const core::u8 * volumes() const{ return m_vols; }
 		unsigned int currentInstrument() const{ return m_currentInstrument; }
 		unsigned int patternColumns(unsigned int chan) const;
 
@@ -97,6 +99,8 @@ namespace gui
 
 		unsigned int m_step;
 		bool m_keyrepetition;
+
+		core::u8 m_vols[MAX_CHANNELS];
 
 		void destroy();
 	};

@@ -119,6 +119,9 @@ namespace gui
 	{
 		rows->setEnabled(!playing);
 		frames->setEnabled(!playing);
+		action_Play->setEnabled(!playing);
+		actionPlay_and_loop->setEnabled(!playing);
+		action_Stop->setEnabled(playing);
 	}
 
 	static void doclose_cb(MainWindow *mw, void *)

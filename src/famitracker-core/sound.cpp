@@ -24,24 +24,30 @@ static const double OLD_VIBRATO_DEPTH[] = {
 	1.0, 1.0, 2.0, 3.0, 4.0, 7.0, 8.0, 15.0, 16.0, 31.0, 32.0, 63.0, 64.0, 127.0, 128.0, 255.0
 };
 
+static const int rowframes_size = 60*8;
+
 SoundGen::SoundGen()
 	: m_apu(&m_samplemem), m_iConsumedCycles(0), m_pDocument(NULL),
 	  m_trackerUpdateCallback(NULL), m_sink(NULL),
 	  m_queued_rowframes(sizeof(rowframe_t)),
-	  m_queued_sound(sizeof(core::s16))
+	  m_queued_sound(sizeof(core::s16)),
+	  m_volumes_ring(NULL)
 {
 	// Create all kinds of channels
 	createChannels();
 
 	m_trackerctlr = new TrackerController;
 
-	m_queued_rowframes.resize(64);
+	m_queued_rowframes.resize(rowframes_size);
 	m_queued_sound.resize(16384);
 	m_apu.SetCallback(apuCallback, this);
 }
 
 SoundGen::~SoundGen()
 {
+	if (m_volumes_ring != NULL)
+		delete[] m_volumes_ring;
+
 	delete m_trackerctlr;
 
 	// Remove channels
@@ -392,8 +398,6 @@ void SoundGen::playSample(CDSample *sample, int offset, int pitch)
 // return true if row changed
 bool SoundGen::requestFrame()
 {
-	FtmDocument_lock_guard lock(m_pDocument);
-
 	runFrame();
 
 	m_bPlayerHalted = m_trackerctlr->isHalted() || m_bRequestStop;
@@ -490,6 +494,8 @@ core::u32 SoundGen::requestSound(core::s16 *buf, core::u32 sz, core::u32 *idx)
 		sz -= read;
 		off += read;
 	}
+
+	m_pDocument->lock();
 	while (sz != 0)
 	{
 		if (!m_bRunning)
@@ -499,12 +505,22 @@ core::u32 SoundGen::requestSound(core::s16 *buf, core::u32 sz, core::u32 *idx)
 			break;
 		}
 		bool rowchange = requestFrame();
-		if (rowchange)
 		{
 			idx[c++] = off;
 			rowframe_t rf;
 			rf.row = trackerController()->row();
 			rf.frame = trackerController()->frame();
+			rf.rowframe_changed = rowchange;
+
+			core::u8 vols[MAX_CHANNELS];
+
+			for (unsigned int i = 0; i < m_channels; i++)
+			{
+				int v = m_pActiveTrackerChannels[i]->GetVolumeMeter();
+				vols[i] = v;
+			}
+			rf.volumes = writeVolume(vols);
+
 			m_queued_rowframes.write(&rf, 1);
 		}
 
@@ -513,11 +529,33 @@ core::u32 SoundGen::requestSound(core::s16 *buf, core::u32 sz, core::u32 *idx)
 		sz -= read;
 		off += read;
 	}
+	m_pDocument->unlock();
 	if (!m_bRunning)
 	{
 		m_sink->setPlaying(false);
 	}
 	return c;
+}
+
+const core::u8 *SoundGen::readVolume()
+{
+	const core::u8 *ptr = m_volumes_ring + m_volumes_read_offset * m_channels;
+
+	m_volumes_read_offset++;
+	m_volumes_read_offset %= m_volumes_size;
+
+	return ptr;
+}
+const core::u8 * SoundGen::writeVolume(const core::u8 *arr)
+{
+	unsigned int sz = sizeof(core::u8)*m_channels;
+	core::u8 *ptr = m_volumes_ring + m_volumes_write_offset * m_channels;
+	memcpy(ptr, arr, sz);
+
+	m_volumes_write_offset++;
+	m_volumes_write_offset %= m_volumes_size;
+
+	return ptr;
 }
 
 void SoundGen::timeCallback(core::u32 skip, void *data)
@@ -549,8 +587,21 @@ void SoundGen::start()
 	m_iDelayedStart = 0;
 	m_iFrameCounter = 0;
 
+	m_pDocument->lock();
+
+	m_channels = m_pDocument->GetAvailableChannels();
+
+	m_volumes_size = rowframes_size;
+	m_volumes_read_offset = 0;
+	m_volumes_write_offset = 0;
+	if (m_volumes_ring != NULL)
+		delete[] m_volumes_ring;
+	m_volumes_ring = new core::u8[m_volumes_size * m_channels];
+
 	setupChannels();
 	resetTempo();
+
+	m_pDocument->unlock();
 
 	m_queued_sound.clear();
 	m_queued_rowframes.clear();
