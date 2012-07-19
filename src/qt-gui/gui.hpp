@@ -17,6 +17,7 @@ namespace gui
 	void spin();
 
 	void updateFrameChannel(bool modified=false);
+	void updateOctave();
 
 	class DocInfo;
 	class MainWindow;
@@ -75,9 +76,11 @@ namespace gui
 		void setCurrentRow(unsigned int row);
 		void setVolumes(const core::u8 *vols);
 		void setCurrentInstrument(unsigned int inst){ m_currentInstrument = inst; }
+		void setCurrentOctave(unsigned int octave){ m_currentOctave = octave; }
 		void scrollFrameBy(int delta);
 		void scrollChannelBy(int delta);
 		void scrollChannelColumnBy(int delta);
+		void scrollOctaveBy(int delta);
 		unsigned int currentFrame() const{ return m_currentFrame; }
 		unsigned int currentChannel() const{ return m_currentChannel; }
 		unsigned int currentChannelColumn() const{ return m_currentChannelColumn; }
@@ -85,6 +88,7 @@ namespace gui
 		unsigned int currentRow() const{ return m_currentRow; }
 		const core::u8 * volumes() const{ return m_vols; }
 		unsigned int currentInstrument() const{ return m_currentInstrument; }
+		unsigned int currentOctave() const{ return m_currentOctave; }
 		unsigned int patternColumns(unsigned int chan) const;
 
 		void setEditStep(unsigned int step){ m_step = step; }
@@ -96,6 +100,7 @@ namespace gui
 		unsigned int m_currentFrame, m_currentChannel, m_currentRow;
 		unsigned int m_currentChannelColumn;
 		unsigned int m_currentInstrument;
+		unsigned int m_currentOctave;
 
 		unsigned int m_step;
 		bool m_keyrepetition;

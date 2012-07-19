@@ -38,6 +38,7 @@ namespace gui
 		~MainWindow();
 
 		void updateFrameChannel(bool modified=false);
+		void updateOctave();
 
 		void sendUpdateEvent();
 		void sendStoppedSongEvent(stopsong_callback, void *data);
@@ -78,6 +79,8 @@ namespace gui
 		void rowsChange(int);
 		void framesChange(int);
 
+		void octaveChange();
+
 		void changeSongTitle();
 		void changeSongAuthor();
 		void changeSongCopyright();
@@ -95,6 +98,7 @@ namespace gui
 		boost::mutex m_mtx_updateEvent;
 		boost::condition m_cond_updateEvent;
 		InstrumentEditor *m_instrumenteditor;
+		QComboBox *octave;
 	};
 }
 

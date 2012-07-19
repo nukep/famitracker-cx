@@ -1890,6 +1890,9 @@ bool FtmDocument::RemoveNote(unsigned int Frame, unsigned int Channel, unsigned 
 	ftm_Assert(Channel < MAX_CHANNELS);
 	ftm_Assert(Row < MAX_PATTERN_LENGTH);
 
+	if (Row == 0)
+		return false;
+
 	stChanNote Note;
 
 	for (int n = 0; n < MAX_EFFECT_COLUMNS; n++)

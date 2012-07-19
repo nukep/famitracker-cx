@@ -812,18 +812,21 @@ namespace gui
 	{
 		DocInfo *dinfo = gui::activeDocInfo();
 
+		bool allownote = dinfo->keyRepetition() || !e->isAutoRepeat();
+
 		if (dinfo->currentChannelColumn() == C_NOTE)
 		{
 			int scan = e->nativeScanCode();
-			int octave_base = 3;
+			int octave_base = dinfo->currentOctave();
 			int note=-1, octave=-1;
 			if (scancodeToNote(scan, octave_base, note, octave))
 			{
 				// ignore auto repeating notes
-				if (e->isAutoRepeat())
+				if (!allownote)
 					return;
 
-				gui::auditionNote(dinfo->currentChannel(), octave, note);
+				if (!e->isAutoRepeat())
+					gui::auditionNote(dinfo->currentChannel(), octave, note);
 
 				enterNote(note, octave);
 				return;
@@ -832,6 +835,8 @@ namespace gui
 		int k = e->key();
 		if (k == Qt::Key_Backslash)
 		{
+			if (!allownote)
+				return;
 			// release note
 			enterNote(RELEASE, 0);
 
@@ -839,6 +844,8 @@ namespace gui
 		}
 		if (k == Qt::Key_Apostrophe)
 		{
+			if (!allownote)
+				return;
 			// halt note
 			// The original Windows FamiTracker fucks up the default, so we're using apostrophe for now
 			enterNote(HALT, 0);
@@ -847,7 +854,25 @@ namespace gui
 		}
 		if (k == Qt::Key_Delete)
 		{
+			if (!allownote)
+				return;
 			deleteColumn();
+			return;
+		}
+		if (k == Qt::Key_Insert)
+		{
+			// insert blank row
+			if (!allownote)
+				return;
+			insertKey();
+			return;
+		}
+		if (k == Qt::Key_Backspace)
+		{
+			// remove row
+			if (!allownote)
+				return;
+			backKey();
 			return;
 		}
 		if (k == Qt::Key_Tab)
@@ -884,6 +909,18 @@ namespace gui
 			gui::toggleEditMode();
 			return;
 		}
+		if (k == Qt::Key_Slash)
+		{
+			dinfo->scrollOctaveBy(-1);
+			gui::updateOctave();
+			return;
+		}
+		if (k == Qt::Key_Asterisk)
+		{
+			dinfo->scrollOctaveBy(1);
+			gui::updateOctave();
+			return;
+		}
 		if (gui::isPlaying())
 			return;
 		if (k == Qt::Key_Up)
@@ -895,6 +932,31 @@ namespace gui
 		if (k == Qt::Key_Down)
 		{
 			dinfo->scrollFrameBy(dinfo->editStep());
+			gui::updateFrameChannel();
+			return;
+		}
+		if (k == Qt::Key_Home)
+		{
+			// beginning of channel / first channel / beginning of frame
+			if (dinfo->currentChannelColumn() > 0)
+			{
+				dinfo->setCurrentChannelColumn(0);
+			}
+			else if (dinfo->currentChannel() > 0)
+			{
+				dinfo->setCurrentChannel(0);
+			}
+			else
+			{
+				dinfo->setCurrentRow(0);
+			}
+			gui::updateFrameChannel();
+			return;
+		}
+		if (k == Qt::Key_End)
+		{
+			// end of frame
+			dinfo->setCurrentRow(dinfo->doc()->getFramePlayLength(dinfo->currentFrame()));
 			gui::updateFrameChannel();
 			return;
 		}
@@ -980,6 +1042,37 @@ namespace gui
 		doc->unlock();
 
 		dinfo->scrollFrameBy(dinfo->editStep());
+		gui::updateFrameChannel(true);
+	}
+
+	void PatternView::insertKey()
+	{
+		if (!gui::canEdit())
+			return;
+		DocInfo *dinfo = gui::activeDocInfo();
+		FtmDocument *doc = dinfo->doc();
+
+		doc->lock();
+		doc->InsertNote(dinfo->currentFrame(), dinfo->currentChannel(), dinfo->currentRow());
+		doc->unlock();
+
+		gui::updateFrameChannel(true);
+	}
+
+	void PatternView::backKey()
+	{
+		if (!gui::canEdit())
+			return;
+		DocInfo *dinfo = gui::activeDocInfo();
+		FtmDocument *doc = dinfo->doc();
+
+		doc->lock();
+		bool removed = doc->RemoveNote(dinfo->currentFrame(), dinfo->currentChannel(), dinfo->currentRow());
+		doc->unlock();
+
+		if (removed)
+			dinfo->scrollFrameBy(-1);
+
 		gui::updateFrameChannel(true);
 	}
 

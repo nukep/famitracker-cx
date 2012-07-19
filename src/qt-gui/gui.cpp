@@ -15,7 +15,7 @@ namespace gui
 {
 	DocInfo::DocInfo(FtmDocument *d)
 		: m_doc(d), m_currentChannel(0), m_currentFrame(0), m_currentRow(0),
-		  m_currentChannelColumn(0), m_currentInstrument(0),
+		  m_currentChannelColumn(0), m_currentInstrument(0), m_currentOctave(3),
 		  m_step(1), m_keyrepetition(false)
 	{
 		memset(m_vols, 0, sizeof(m_vols));
@@ -172,6 +172,20 @@ namespace gui
 
 		setCurrentChannelColumn_pos(col);
 	}
+	void DocInfo::scrollOctaveBy(int delta)
+	{
+		if (delta < 0 && (-delta > m_currentOctave))
+		{
+			// will go below 0
+			m_currentOctave = 0;
+		}
+		else
+		{
+			m_currentOctave += delta;
+			if (m_currentOctave > 7)
+				m_currentOctave = 7;
+		}
+	}
 
 	unsigned int DocInfo::currentChannelColumn_pos() const
 	{
@@ -259,6 +273,10 @@ namespace gui
 		dinfo->setCurrentFrame(dinfo->currentFrame());
 		dinfo->setCurrentRow(dinfo->currentRow());
 		mw->updateFrameChannel(modified);
+	}
+	void updateOctave()
+	{
+		mw->updateOctave();
 	}
 
 	static void setActiveDocument(int idx)

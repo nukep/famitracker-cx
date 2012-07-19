@@ -18,6 +18,8 @@ namespace gui
 
 		void deleteColumn();
 		void enterNote(int note, int octave);
+		void insertKey();
+		void backKey();
 		void enterKeyAtColumn(int key);
 	protected:
 		bool event(QEvent *);

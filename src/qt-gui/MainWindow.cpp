@@ -70,6 +70,19 @@ namespace gui
 		QObject::connect(step, SIGNAL(valueChanged(int)), this, SLOT(changeEditSettings()));
 		QObject::connect(keyRepetition, SIGNAL(stateChanged(int)), this, SLOT(changeEditSettings()));
 
+		// the designer doesn't allow adding widgets
+
+		{
+			octave = new QComboBox;
+			for (int i = 0; i < 8; i++)
+			{
+				octave->addItem(QString("%1").arg(i));
+			}
+			connect(octave, SIGNAL(currentIndexChanged(int)), this, SLOT(octaveChange()));
+			toolBar->addWidget(new QLabel(tr("Octave")));
+			toolBar->addWidget(octave);
+		}
+
 		QMenu *m = new QMenu;
 		m->addAction(tr("New 2A03 instrument"));
 
@@ -86,6 +99,12 @@ namespace gui
 	{
 		frameView->update(modified);
 		patternView->update(modified);
+	}
+	void MainWindow::updateOctave()
+	{
+		octave->blockSignals(true);
+		octave->setCurrentIndex(gui::activeDocInfo()->currentOctave());
+		octave->blockSignals(false);
 	}
 
 	void MainWindow::sendUpdateEvent()
@@ -207,6 +226,8 @@ namespace gui
 		frameView->update();
 
 		refreshInstruments();
+
+		updateOctave();
 
 		step->blockSignals(true);
 		step->setValue(dinfo->editStep());
@@ -513,6 +534,11 @@ namespace gui
 		d->unlock();
 
 		gui::updateFrameChannel(true);
+	}
+
+	void MainWindow::octaveChange()
+	{
+		gui::activeDocInfo()->setCurrentOctave(octave->currentIndex());
 	}
 
 	void MainWindow::changeSongTitle()
