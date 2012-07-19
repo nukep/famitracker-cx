@@ -511,41 +511,51 @@ namespace gui
 		}
 		void mouseReleaseEvent(QMouseEvent *e)
 		{
-			if (gui::isPlaying())
-				return;
-
-			int y = (e->y() - yOffset())/px_vspace;
-			if (e->y() - yOffset() < 0)
-				y--;
-
 			DocInfo *dinfo = gui::activeDocInfo();
 			FtmDocument *d = dinfo->doc();
 
-			y += dinfo->currentRow();
-
-			unsigned int frame = dinfo->currentFrame();
-
-			if (y < 0)
+			int newchan, newcol;
+			channelColAtX(e->x(), newchan, newcol);
+			if (newchan >= 0)
 			{
-				if (frame == 0)
-					return;
-				frame--;
-				y += d->getFramePlayLength(frame);
+				dinfo->setCurrentChannel(newchan);
+				dinfo->setCurrentChannelColumn(newcol);
+			}
+
+			if (!gui::isPlaying())
+			{
+				int y = (e->y() - yOffset())/px_vspace;
+				if (e->y() - yOffset() < 0)
+					y--;
+
+				y += dinfo->currentRow();
+
+				unsigned int frame = dinfo->currentFrame();
+
 				if (y < 0)
-					return;
-			}
-			else if (y >= d->getFramePlayLength(frame))
-			{
-				frame++;
-				if (frame == dinfo->doc()->GetFrameCount())
-					return;
-				y -= d->getFramePlayLength(frame-1);
-				if (y >= d->getFramePlayLength(frame))
-					return;
+				{
+					if (frame == 0)
+						goto norowframe;
+					frame--;
+					y += d->getFramePlayLength(frame);
+					if (y < 0)
+						goto norowframe;
+				}
+				else if (y >= d->getFramePlayLength(frame))
+				{
+					frame++;
+					if (frame == dinfo->doc()->GetFrameCount())
+						goto norowframe;
+					y -= d->getFramePlayLength(frame-1);
+					if (y >= d->getFramePlayLength(frame))
+						goto norowframe;
+				}
+
+				dinfo->setCurrentRow(y);
+				dinfo->setCurrentFrame(frame);
 			}
 
-			dinfo->setCurrentRow(y);
-			dinfo->setCurrentFrame(frame);
+		norowframe:
 			gui::updateFrameChannel();
 		}
 
@@ -557,7 +567,7 @@ namespace gui
 		// return -1 if none
 		int channelAtX(int x)
 		{
-			x -= px_unit*3 - colspace/2;
+			x = x - px_unit*3;
 			if (x < 0)
 				return -1;
 
@@ -578,7 +588,34 @@ namespace gui
 		}
 		int xAtChannel(int channel)
 		{
+			FtmDocument *d = gui::activeDocument();
 
+			int x = px_unit*3 - colspace/2;
+			for (int i = 0; i < channel; i++)
+			{
+				x += columnWidth(d->GetEffColumns(i)) + colspace;
+			}
+			return x;
+		}
+		int colAtRelX(int x)
+		{
+			int col = 0;
+			while (true)
+			{
+				int off = patterncol_offset(col+1);
+
+				if (x < off)
+					return col;
+				col++;
+			}
+		}
+		void channelColAtX(int x, int &channel, int &col)
+		{
+			channel = channelAtX(x);
+			if (channel < 0)
+				return;
+			int cx = xAtChannel(channel);
+			col = colAtRelX(x - cx);
 		}
 
 		QFont font;
@@ -688,7 +725,7 @@ namespace gui
 			drawHLine(p, 0,0,width());
 			drawLine(p, 0,1, height()-1);
 
-			int x = m_body->px_unit*3 - m_body->colspace/2;
+			int x = m_body->xAtChannel(0);
 			drawLine(p, x, 1, height()-1);
 
 			p.setFont(m_font);
@@ -698,8 +735,7 @@ namespace gui
 			for (int i = 0; i < d->GetAvailableChannels(); i++)
 			{
 				bool enabled = !gui::isMuted(i);
-				int eff = d->GetEffColumns(i);
-				int w = m_body->columnWidth(eff) + m_body->colspace;
+				int w = m_body->xAtChannel(i+1) - x;
 				p.setPen(enabled ? Qt::black : Qt::red);
 				QRect r = QRect(x, 0, w, height()/2).adjusted(m_font.pixelSize(), 0,0,0);
 				QTextOption opt(Qt::AlignBottom | Qt::AlignLeft);
