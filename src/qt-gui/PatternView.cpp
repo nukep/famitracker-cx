@@ -527,9 +527,6 @@ namespace gui
 
 			QPainter p;
 			p.begin(this);
-			p.setPen(Qt::NoPen);
-			p.setBrush(stylecolor(styles::PATTERN_BG));
-			p.drawRect(rect());
 
 			if (m_usesystemfont)
 			{
@@ -543,13 +540,26 @@ namespace gui
 			{
 				rowWidth += columnWidth(d->GetEffColumns(i)) + colspace;
 			}
-
 			const int row_x = px_unit*3 - colspace/2;
 
 			const int y_offset = yOffset();
 			const int frame_y_offset = y_offset - row*px_vspace;
 
+			const QColor patbg = stylecolor(styles::PATTERN_BG);
+			const QColor patbg_d = patbg.darker(150);
+
+			p.setPen(Qt::NoPen);
+			p.setBrush(patbg_d);
+			p.drawRect(rect());
+
 			p.translate(0, frame_y_offset);
+
+			if (patbg != patbg_d)
+			{
+				int frameheight = d->getFramePlayLength(frame) * px_vspace;
+				p.setBrush(patbg);
+				p.drawRect(QRect(0, 0, rowWidth+row_x, frameheight));
+			}
 
 			// current row highlight
 			QPixmap *highlight;
