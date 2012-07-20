@@ -3,6 +3,7 @@
 #include <QScrollBar>
 #include <QPainter>
 #include <QWheelEvent>
+#include <QBitmap>
 #include <QDebug>
 #include <stdio.h>
 #include <string.h>
@@ -11,6 +12,9 @@
 #include "styles.hpp"
 #include "famitracker-core/FtmDocument.hpp"
 #include "famitracker-core/App.hpp"
+
+
+#include "pixelfonts/vincent/vincent.h"
 
 namespace gui
 {
@@ -104,23 +108,23 @@ namespace gui
 	{
 	public:
 		int px_unit, px_hspace, px_vspace;
+		int px_pixfont_w, px_pixfont_h;
 		int colspace;
 		QTextOption opt;
+		QBitmap *m_pixelfont_bitmap;
+		bool m_usesystemfont;
 		PatternView_Body()
-			: //font("monospace"),
-			  m_currentRowHighlightPixmap(NULL),
+			: m_currentRowHighlightPixmap(NULL),
 			  m_currentRowNoFocusHighlightPixmap(NULL),
 			  m_currentRowRecordHighlightPixmap(NULL),
 			  m_primaryHighlightPixmap(NULL),
 			  m_secondaryHighlightPixmap(NULL),
-			  m_modified(true)
+			  m_modified(true),
+			  m_pixelfont_bitmap(NULL)
 		{
+			QFont font;
 			font.setPixelSize(11);
-		//	font.setBold(true);
-			px_unit = font.pixelSize();
-			px_hspace = px_unit * horizontal_factor;
-			px_vspace = px_unit * vertical_factor;
-			colspace = px_unit/2;
+			setSystemFont(font);
 			opt.setAlignment(Qt::AlignHCenter | Qt::AlignVCenter);
 
 			redrawHighlightPixmaps();
@@ -137,11 +141,64 @@ namespace gui
 				delete m_primaryHighlightPixmap;
 			if (m_secondaryHighlightPixmap != NULL)
 				delete m_secondaryHighlightPixmap;
+
+			if (m_pixelfont_bitmap != NULL)
+				delete m_pixelfont_bitmap;
 		}
 		void updateStyles()
 		{
 			redrawHighlightPixmaps();
 			repaint();
+		}
+		void setPixelFont()
+		{
+			if (m_pixelfont_bitmap != NULL)
+				delete m_pixelfont_bitmap;
+
+			int scale = 1;
+
+			px_pixfont_w = 8;
+			px_pixfont_h = 8;
+
+			m_pixelfont_bitmap = new QBitmap;
+
+			QImage img(px_pixfont_w, px_pixfont_h*128, QImage::Format_ARGB32_Premultiplied);
+			img.fill(Qt::white);
+
+			const QRgb solid = qRgba(0,0,0,0);
+			for (int i = 0; i < 128; i++)
+			{
+				int cx = 0;
+				int cy = i * px_pixfont_h;
+				for (int y = 0; y < px_pixfont_h; y++)
+				{
+					int mask = vincent_data[i][y];
+					for (int x = 0; x < px_pixfont_w; x++)
+					{
+						bool f = (mask & (1<<(px_pixfont_w-x))) != 0;
+						if (f)
+						{
+							img.setPixel(cx+x, cy+y, solid);
+						}
+					}
+				}
+			}
+			*m_pixelfont_bitmap = QPixmap::fromImage(img);
+			px_unit = px_pixfont_w;
+			px_vspace = px_pixfont_h;
+			colspace = px_unit/2;
+
+			m_usesystemfont = false;
+		}
+		void setSystemFont(const QFont &font)
+		{
+			m_systemfont = font;
+			px_unit = m_systemfont.pixelSize();
+			px_hspace = px_unit * horizontal_factor;
+			px_vspace = px_unit * vertical_factor;
+			colspace = px_unit/2;
+
+			m_usesystemfont = true;
 		}
 
 		static int color_lerp(int a, int b, double p)
@@ -239,7 +296,18 @@ namespace gui
 			{
 				p.setPen(col);
 			}
-			p.drawText(QRect(x, y, px_unit, px_vspace), QString(c), opt);
+			if (m_usesystemfont)
+			{
+				p.drawText(QRect(x, y, px_unit, px_vspace), QString(c), opt);
+
+			}
+			else
+			{
+				QPixmap *pixmap = m_pixelfont_bitmap;
+				int cx = 0;
+				int cy = int(c) * px_pixfont_h;
+				p.drawPixmap(x, y, *pixmap, cx, cy, px_pixfont_w, px_pixfont_h);
+			}
 		}
 
 		int columnWidth(int effColumns)
@@ -387,7 +455,10 @@ namespace gui
 				p.setPen(rownumcol);
 				sprintf(buf, "%02X", i);
 
-				p.drawText(QRect(0,y,px_unit*3-colspace/2,px_vspace), buf, opt);
+				if (m_usesystemfont)
+				{
+					p.drawText(QRect(0,y,px_unit*3-colspace/2,px_vspace), buf, opt);
+				}
 
 				int x = px_unit*3;
 
@@ -460,7 +531,10 @@ namespace gui
 			p.setBrush(stylecolor(styles::PATTERN_BG));
 			p.drawRect(rect());
 
-			p.setFont(font);
+			if (m_usesystemfont)
+			{
+				p.setFont(m_systemfont);
+			}
 
 			unsigned int row = dinfo->currentRow();
 
@@ -684,7 +758,7 @@ namespace gui
 			col = colAtRelX(x - cx);
 		}
 
-		QFont font;
+		QFont m_systemfont;
 		int m_currentFrameRows;
 		QPixmap *m_currentRowHighlightPixmap;
 		QPixmap *m_currentRowNoFocusHighlightPixmap;
