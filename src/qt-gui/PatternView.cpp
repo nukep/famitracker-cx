@@ -8,6 +8,7 @@
 #include <string.h>
 #include "PatternView.hpp"
 #include "gui.hpp"
+#include "styles.hpp"
 #include "famitracker-core/FtmDocument.hpp"
 #include "famitracker-core/App.hpp"
 
@@ -86,6 +87,19 @@ namespace gui
 		return true;
 	}
 
+	static QColor stylecolor(styles::Colors c, bool selected=true)
+	{
+		styles::color_t v = styles::color(c);
+		if (!selected)
+		{
+			styles::color_t bg = styles::color(styles::PATTERN_BG);
+			v.r = (v.r + bg.r)/2;
+			v.g = (v.g + bg.g)/2;
+			v.b = (v.b + bg.b)/2;
+		}
+		return QColor(v.r, v.g, v.b);
+	}
+
 	class PatternView_Body : public QWidget
 	{
 	public:
@@ -93,7 +107,7 @@ namespace gui
 		int colspace;
 		QTextOption opt;
 		PatternView_Body()
-			: font("monospace"),
+			: //font("monospace"),
 			  m_currentRowHighlightPixmap(NULL),
 			  m_currentRowNoFocusHighlightPixmap(NULL),
 			  m_currentRowRecordHighlightPixmap(NULL),
@@ -102,7 +116,7 @@ namespace gui
 			  m_modified(true)
 		{
 			font.setPixelSize(11);
-			font.setBold(true);
+		//	font.setBold(true);
 			px_unit = font.pixelSize();
 			px_hspace = px_unit * horizontal_factor;
 			px_vspace = px_unit * vertical_factor;
@@ -124,40 +138,89 @@ namespace gui
 			if (m_secondaryHighlightPixmap != NULL)
 				delete m_secondaryHighlightPixmap;
 		}
+		void updateStyles()
+		{
+			redrawHighlightPixmaps();
+			repaint();
+		}
 
-		void createHighlightPixmap(QPixmap **pix, double r, double g, double b)
+		static int color_lerp(int a, int b, double p)
+		{
+			int r = (b-a)*p + a;
+			if (r > 255)
+				r = 255;
+			return r;
+		}
+
+		static QColor color_interpolate(QColor a, QColor b, double p)
+		{
+			return QColor(color_lerp(a.red(),b.red(),p),
+						  color_lerp(a.green(),b.green(),p),
+						  color_lerp(a.blue(),b.blue(),p),
+						  color_lerp(a.alpha(),b.alpha(),p));
+		}
+		static QColor color_fg(int row, bool selected)
+		{
+			FtmDocument *d = gui::activeDocument();
+			int h1 = d->GetHighlight();
+			int h2 = d->GetSecondHighlight();
+			styles::Colors c;
+			if (row % h2 == 0)
+			{
+				c = styles::PATTERN_HIGHLIGHT2_FG;
+			}
+			else if (row % h1 == 0)
+			{
+				c = styles::PATTERN_HIGHLIGHT1_FG;
+
+			}
+			else
+			{
+				c = styles::PATTERN_FG;
+			}
+			return stylecolor(c, selected);
+		}
+
+		void createHighlightPixmap(QPixmap **pix, int r, int g, int b)
 		{
 			if (*pix != NULL)
 				delete *pix;
 
 			*pix = new QPixmap(1, px_vspace);
 
+			QColor bg = stylecolor(styles::PATTERN_BG);
+			QColor fg = QColor(r,g,b);
+
 			QPainter p;
 			p.begin(*pix);
 			{
-				const double x = 192;
-				const double y = 128;
-				const double z = 64;
+				const double x = 1.25;
+				const double y = 1.00;
+				const double z = 0.65;
 				QLinearGradient lg(0, 0, 0, 1);
-				lg.setColorAt(0, QColor(r*x, g*x, b*x));
-				lg.setColorAt(0.25, QColor(r*y, g*y, b*y));
-				lg.setColorAt(1, QColor(r*z, g*z, b*z));
+				lg.setColorAt(0, color_interpolate(bg, fg, y));
+				lg.setColorAt(1, color_interpolate(bg, fg, z));
 				lg.setCoordinateMode(QGradient::ObjectBoundingMode);
 
 				p.setPen(Qt::NoPen);
 				p.setBrush(lg);
 				p.drawRect(0, 0, 1, px_vspace);
+				p.setPen(fg.lighter(x*100));
+				p.drawPoint(0,0);
 			}
 			p.end();
 		}
 
 		void redrawHighlightPixmaps()
 		{
-			createHighlightPixmap(&m_currentRowHighlightPixmap, 0,0,1);
-			createHighlightPixmap(&m_currentRowNoFocusHighlightPixmap, 0.375,0.375,0.3);
-			createHighlightPixmap(&m_currentRowRecordHighlightPixmap, 0.5625,0.18,0.25);
-			createHighlightPixmap(&m_primaryHighlightPixmap, 0,0.25,0);
-			createHighlightPixmap(&m_secondaryHighlightPixmap, 0,0.125,0);
+			createHighlightPixmap(&m_currentRowHighlightPixmap, 0,0,160);
+			createHighlightPixmap(&m_currentRowNoFocusHighlightPixmap, 64,64,50);
+			createHighlightPixmap(&m_currentRowRecordHighlightPixmap, 144,46,64);
+
+			styles::color_t h1 = styles::color(styles::PATTERN_HIGHLIGHT1_BG);
+			styles::color_t h2 = styles::color(styles::PATTERN_HIGHLIGHT2_BG);
+			createHighlightPixmap(&m_primaryHighlightPixmap, h2.r,h2.g,h2.b);
+			createHighlightPixmap(&m_secondaryHighlightPixmap, h1.r,h1.g,h1.b);
 		}
 
 		PatternView * pvParent() const{ return m_pvParent; }
@@ -165,12 +228,12 @@ namespace gui
 		PatternView * m_pvParent;
 
 		// c=' ': -
-		void drawChar(QPainter &p, int x, int y, char c, const QColor &col, bool selected)
+		void drawChar(QPainter &p, int x, int y, char c, const QColor &col, const QColor &primary)
 		{
 			if (c == ' ')
 			{
 				c = '-';
-				p.setPen(selected?QColor(32, 64, 32):QColor(16, 32, 16));
+				p.setPen(primary);
 			}
 			else
 			{
@@ -185,21 +248,22 @@ namespace gui
 		}
 
 		// returns true if note terminates frame
-		bool drawNote(QPainter &p, int x, int y, const stChanNote &n, int effColumns, bool selected)
+		bool drawNote(QPainter &p, int x, int y, const stChanNote &n, int effColumns, const QColor &primary, bool selected)
 		{
-			const QColor primary = selected ? Qt::green : Qt::darkGreen;
-			const QColor volcol = selected ? QColor(128, 128, 255) : QColor(64, 64, 128);
-			const QColor effcol = selected ? QColor(255, 128, 128) : QColor(128, 64, 64);
-			const QColor instcol = primary;
+			const QColor volcol = stylecolor(styles::PATTERN_VOL, selected);
+			const QColor effcol = stylecolor(styles::PATTERN_EFFNUM, selected);
+			const QColor instcol = stylecolor(styles::PATTERN_INST, selected);
 			const QColor noinstcol = selected ? Qt::red : Qt::darkRed;
 			bool terminate = false;
 
 			char buf[6];
 
+			const QColor blankcol = color_interpolate(stylecolor(styles::PATTERN_BG), primary, 0.4);
+
 			if (n.Note == NONE)
 			{
 				for (int i=0;i<3;i++)
-					drawChar(p, x + px_unit*i, y, ' ', Qt::black, selected);
+					drawChar(p, x + px_unit*i, y, ' ', Qt::black, blankcol);
 				x += px_unit*3 + colspace;
 			}
 			else if (n.Note == RELEASE)
@@ -229,16 +293,16 @@ namespace gui
 			{
 				int ni = n.Note - C;
 				sprintf(buf, "%c", noteletters[ni]);
-				drawChar(p, x, y, buf[0], primary, selected);
+				drawChar(p, x, y, buf[0], primary, blankcol);
 				x += px_unit;
 
 				buf[0] = notesharps[ni];
 				if (buf[0] == ' ') buf[0] = '-';
-				drawChar(p, x, y, buf[0], primary, selected);
+				drawChar(p, x, y, buf[0], primary, blankcol);
 				x += px_unit;
 
 				sprintf(buf, "%d", n.Octave);
-				drawChar(p, x, y, buf[0], primary, selected);
+				drawChar(p, x, y, buf[0], primary, blankcol);
 				x += px_unit + colspace;
 			}
 
@@ -256,16 +320,16 @@ namespace gui
 				}
 				sprintf(buf, "%02X", n.Instrument);
 			}
-			drawChar(p, x, y, buf[0], *use_instcol, selected);
+			drawChar(p, x, y, buf[0], *use_instcol, blankcol);
 			x += px_unit;
-			drawChar(p, x, y, buf[1], *use_instcol, selected);
+			drawChar(p, x, y, buf[1], *use_instcol, blankcol);
 			x += px_unit + colspace;
 
 			if (n.Vol > 0xF)
 				buf[0] = ' ';
 			else
 				sprintf(buf, "%X", n.Vol);
-			drawChar(p, x, y, buf[0], volcol, selected);
+			drawChar(p, x, y, buf[0], volcol, blankcol);
 			x += px_unit + colspace;
 
 			for (unsigned int i = 0; i <= effColumns; i++)
@@ -279,7 +343,7 @@ namespace gui
 					buf[0] = ' ';
 				else
 					buf[0] = EFF_CHAR[eff-1];
-				drawChar(p, x, y, buf[0], effcol, selected);
+				drawChar(p, x, y, buf[0], effcol, blankcol);
 				x += px_unit;
 
 				if (eff == 0)
@@ -291,9 +355,9 @@ namespace gui
 					unsigned char effp = n.EffParam[i];
 					sprintf(buf, "%02X", effp);
 				}
-				drawChar(p, x, y, buf[0], primary, selected);
+				drawChar(p, x, y, buf[0], primary, blankcol);
 				x += px_unit;
-				drawChar(p, x, y, buf[1], primary, selected);
+				drawChar(p, x, y, buf[1], primary, blankcol);
 				x += px_unit + colspace;
 			}
 
@@ -317,8 +381,10 @@ namespace gui
 			{
 				int y = px_vspace*i;
 
+				const QColor rownumcol = color_fg(i, selected);
+
 				char buf[6];
-				p.setPen(selected?Qt::green:Qt::darkGreen);
+				p.setPen(rownumcol);
 				sprintf(buf, "%02X", i);
 
 				p.drawText(QRect(0,y,px_unit*3-colspace/2,px_vspace), buf, opt);
@@ -335,7 +401,7 @@ namespace gui
 
 					unsigned int effcolumns = d->GetEffColumns(j);
 
-					terminateFrame |= drawNote(p, x, y, note, effcolumns, selected);
+					terminateFrame |= drawNote(p, x, y, note, effcolumns, rownumcol, selected);
 
 					x += columnWidth(effcolumns) + colspace;
 				}
@@ -391,7 +457,7 @@ namespace gui
 			QPainter p;
 			p.begin(this);
 			p.setPen(Qt::NoPen);
-			p.setBrush(Qt::black);
+			p.setBrush(stylecolor(styles::PATTERN_BG));
 			p.drawRect(rect());
 
 			p.setFont(font);
@@ -1140,5 +1206,9 @@ namespace gui
 		{
 			m_body->repaint();
 		}
+	}
+	void PatternView::updateStyles()
+	{
+		m_body->updateStyles();
 	}
 }

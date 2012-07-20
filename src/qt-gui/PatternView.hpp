@@ -15,6 +15,7 @@ namespace gui
 		PatternView(QWidget *parent);
 
 		void update(bool modified=false);
+		void updateStyles();
 
 		void deleteColumn();
 		void enterNote(int note, int octave);

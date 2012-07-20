@@ -9,6 +9,9 @@ set(SRC
 	gui.cpp
 	gui.hpp
 
+	styles.cpp
+	styles.hpp
+
 	MainWindow.cpp
 	PatternView.cpp
 	FrameView.cpp

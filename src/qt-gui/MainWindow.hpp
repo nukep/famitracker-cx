@@ -40,6 +40,8 @@ namespace gui
 		void updateFrameChannel(bool modified=false);
 		void updateOctave();
 
+		void updateStyles();
+
 		void sendUpdateEvent();
 		void sendStoppedSongEvent(stopsong_callback, void *data);
 		void updateEditMode();
@@ -94,6 +96,10 @@ namespace gui
 		void editInstrument();
 
 		void changeEditSettings();
+
+		// temporary style stuff
+		void selectDefaultStyle();
+		void selectMonochromeStyle();
 	private:
 		boost::mutex m_mtx_updateEvent;
 		boost::condition m_cond_updateEvent;

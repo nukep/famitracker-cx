@@ -2,6 +2,7 @@
 #include <QDebug>
 #include "MainWindow.hpp"
 #include "gui.hpp"
+#include "styles.hpp"
 #include "famitracker-core/FtmDocument.hpp"
 #include "InstrumentEditor.hpp"
 
@@ -83,6 +84,18 @@ namespace gui
 			toolBar->addWidget(octave);
 		}
 
+		// temporary style changing (for demonstration)
+		{
+			menu_View->addSeparator();
+			QMenu *styles = new QMenu(tr("Styles"));
+			QAction *style_default = styles->addAction(tr("Default"));
+			QAction *style_monochrome = styles->addAction(tr("Monochrome"));
+			menu_View->addMenu(styles);
+
+			connect(style_default, SIGNAL(triggered()), this, SLOT(selectDefaultStyle()));
+			connect(style_monochrome, SIGNAL(triggered()), this, SLOT(selectMonochromeStyle()));
+		}
+
 		QMenu *m = new QMenu;
 		m->addAction(tr("New 2A03 instrument"));
 
@@ -93,6 +106,16 @@ namespace gui
 	MainWindow::~MainWindow()
 	{
 		delete m_instrumenteditor;
+	}
+	void MainWindow::selectDefaultStyle()
+	{
+		styles::selectStyle("Default");
+		updateStyles();
+	}
+	void MainWindow::selectMonochromeStyle()
+	{
+		styles::selectStyle("Monochrome");
+		updateStyles();
 	}
 
 	void MainWindow::updateFrameChannel(bool modified)
@@ -105,6 +128,10 @@ namespace gui
 		octave->blockSignals(true);
 		octave->setCurrentIndex(gui::activeDocInfo()->currentOctave());
 		octave->blockSignals(false);
+	}
+	void MainWindow::updateStyles()
+	{
+		patternView->updateStyles();
 	}
 
 	void MainWindow::sendUpdateEvent()
