@@ -192,6 +192,7 @@ namespace gui
 	{
 		if (event->type() == UPDATEEVENT)
 		{
+			boost::unique_lock<boost::mutex> lock(m_mtx_updateEvent);
 			updateFrameChannel();
 
 			m_cond_updateEvent.notify_one();
