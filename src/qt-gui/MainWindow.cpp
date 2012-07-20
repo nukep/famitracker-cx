@@ -362,6 +362,13 @@ namespace gui
 		if (path.isEmpty())
 			return;
 
+		// lame fix for no default suffixes in Linux
+		QFileInfo file(path);
+		if (file.suffix().isEmpty())
+		{
+			path += ".ftm";
+		}
+
 		core::FileIO *io = new core::FileIO(path.toLocal8Bit(), core::IO_WRITE);
 
 		gui::activeDocument()->write(io);
