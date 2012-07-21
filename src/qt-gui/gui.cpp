@@ -16,7 +16,8 @@ namespace gui
 	DocInfo::DocInfo(FtmDocument *d)
 		: m_doc(d), m_currentChannel(0), m_currentFrame(0), m_currentRow(0),
 		  m_currentChannelColumn(0), m_currentInstrument(0), m_currentOctave(3),
-		  m_step(1), m_keyrepetition(false)
+		  m_step(1), m_keyrepetition(false),
+		  m_notesharps(true)
 	{
 		memset(m_vols, 0, sizeof(m_vols));
 	}
@@ -202,6 +203,33 @@ namespace gui
 		FtmDocument_lock_guard lock(doc());
 		int effcol = doc()->GetEffColumns(chan);
 		return C_EFF_NUM + C_EFF_COL_COUNT*(effcol+1);
+	}
+
+	void DocInfo::noteNotation(unsigned int note, char *out)
+	{
+		static const char notesharp_letters[] = "CCDDEFFGGAAB";
+		static const char notesharp_sharps[] =  " # #  # # # ";
+		static const char noteflat_letters[] =  "CDDEEFGGAABB";
+		static const char noteflat_flats[] =    " b b  b b b ";
+
+		if (note >= 12)
+		{
+			// noticeably errors
+			out[0] = '!';
+			out[1] = '!';
+			return;
+		}
+
+		if (m_notesharps)
+		{
+			out[0] = notesharp_letters[note];
+			out[1] = notesharp_sharps[note];
+		}
+		else
+		{
+			out[0] = noteflat_letters[note];
+			out[1] = noteflat_flats[note];
+		}
 	}
 
 	typedef std::vector<DocInfo> DocsList;

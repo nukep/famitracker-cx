@@ -269,8 +269,6 @@ namespace gui
 		list.push_back(tab);
 	}
 
-	static const char noteletters[] = "CCDDEFFGGAAB";
-	static const char notesharps[] =  " # #  # # # ";
 	static const int notecount = 12;
 
 	DPCMWidget::DPCMWidget(Settings_2A03 *settings)
@@ -296,8 +294,7 @@ namespace gui
 				{
 					QTreeWidgetItem *item = new QTreeWidgetItem;
 					char buf[3];
-					buf[0] = noteletters[i];
-					buf[1] = notesharps[i];
+					gui::activeDocInfo()->noteNotation(i, buf);
 					buf[2] = 0;
 					item->setText(0, buf);
 					item->setData(0, Qt::UserRole, QVariant(i));

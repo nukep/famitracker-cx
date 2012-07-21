@@ -23,11 +23,6 @@ namespace gui
 	static const float vertical_factor = 1.25f;
 	static const float horizontal_factor = 2.00f;
 
-//	C, Cs, D, Ds, E, F, Fs, G, Gs, A, As, B
-
-	static const char noteletters[] = "CCDDEFFGGAAB";
-	static const char notesharps[] =  " # #  # # # ";
-
 	static bool scancodeToNote(int scancode, int octave_base, int &note, int &octave)
 	{
 		// TODO: mac version
@@ -360,13 +355,13 @@ namespace gui
 			else
 			{
 				int ni = n.Note - C;
-				sprintf(buf, "%c", noteletters[ni]);
+				gui::activeDocInfo()->noteNotation(ni, buf);
+
 				drawChar(p, x, y, buf[0], primary, blankcol);
 				x += px_unit;
 
-				buf[0] = notesharps[ni];
-				if (buf[0] == ' ') buf[0] = '-';
-				drawChar(p, x, y, buf[0], primary, blankcol);
+				if (buf[1] == ' ') buf[1] = '-';
+				drawChar(p, x, y, buf[1], primary, blankcol);
 				x += px_unit;
 
 				sprintf(buf, "%d", n.Octave);

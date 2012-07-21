@@ -95,6 +95,10 @@ namespace gui
 		void setKeyRepetition(bool repeat){ m_keyrepetition = repeat; }
 		unsigned int editStep() const{ return m_step; }
 		bool keyRepetition() const{ return m_keyrepetition; }
+
+		// outputs correct notation based on settings
+		// note: 0..11, out: writes 2 characters (eg. Bb or A#)
+		void noteNotation(unsigned int note, char *out);
 	protected:
 		FtmDocument * m_doc;
 		unsigned int m_currentFrame, m_currentChannel, m_currentRow;
@@ -104,6 +108,8 @@ namespace gui
 
 		unsigned int m_step;
 		bool m_keyrepetition;
+
+		bool m_notesharps;
 
 		core::u8 m_vols[MAX_CHANNELS];
 
