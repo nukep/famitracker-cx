@@ -2,6 +2,7 @@
 #include <QScrollBar>
 #include <QMouseEvent>
 #include "gui.hpp"
+#include "styles.hpp"
 #include "FrameView.hpp"
 #include "famitracker-core/FtmDocument.hpp"
 #include <QDebug>
@@ -78,6 +79,19 @@ namespace gui
 		}
 	}
 
+	static QColor stylecolor(styles::Colors c, bool selected=true)
+	{
+		styles::color_t v = styles::color(c);
+		if (!selected)
+		{
+			styles::color_t bg = styles::color(styles::PATTERN_BG);
+			v.r = (v.r + bg.r)/2;
+			v.g = (v.g + bg.g)/2;
+			v.b = (v.b + bg.b)/2;
+		}
+		return QColor(v.r, v.g, v.b);
+	}
+
 	void FrameView::paintEvent(QPaintEvent *)
 	{
 		const int px_unit = font.pixelSize();
@@ -94,10 +108,12 @@ namespace gui
 
 		const int frame_y_offset = y_offset - currentFrame*px_vspace;
 
+		const QColor bg = stylecolor(styles::PATTERN_BG);
+
 		QPainter p;
 		p.begin(viewport());
 		p.setPen(Qt::NoPen);
-		p.setBrush(Qt::black);
+		p.setBrush(bg);
 		p.drawRect(rect());
 
 		{
@@ -115,13 +131,14 @@ namespace gui
 			p.drawRect(px_hspace*(currentChannel+1), y_offset, px_hspace, px_vspace);
 		}
 
-
 		p.setFont(font);
 
 		QTextOption opt;
 		opt.setAlignment(Qt::AlignHCenter | Qt::AlignVCenter);
 
-		p.setPen(Qt::gray);
+		const QColor framenumcol = stylecolor(styles::PATTERN_HIGHLIGHT2_FG, true);
+
+		p.setPen(framenumcol);
 		p.setBrush(Qt::NoBrush);
 
 		FtmDocument *d = activeDocument();
@@ -157,6 +174,9 @@ namespace gui
 			active_patterns[i] = d->GetPatternAtFrame(currentFrame, i);
 		}
 
+		const QColor selectedpat = stylecolor(styles::PATTERN_FG, true);
+		const QColor unselectedpat = stylecolor(styles::PATTERN_FG, false);
+
 
 		for (int i = 0; i < num_frames; i++)
 		{
@@ -172,11 +192,11 @@ namespace gui
 
 				if (pattern == active_patterns[x])
 				{
-					p.setPen(QColor(0, 255, 0));
+					p.setPen(selectedpat);
 				}
 				else
 				{
-					p.setPen(QColor(0, 178, 0));
+					p.setPen(unselectedpat);
 				}
 
 				sprintf(buf, "%02X", pattern);
@@ -220,6 +240,10 @@ namespace gui
 			viewport()->update();
 
 		m_updating = false;
+	}
+	void FrameView::updateStyles()
+	{
+		viewport()->repaint();
 	}
 
 	void FrameView::scrollHorizontal(int i)

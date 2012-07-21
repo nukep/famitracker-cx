@@ -16,6 +16,7 @@ namespace gui
 		void mouseReleaseEvent(QMouseEvent *);
 
 		void update(bool modified=false);
+		void updateStyles();
 	public slots:
 		void scrollHorizontal(int);
 		void scrollVertical(int);

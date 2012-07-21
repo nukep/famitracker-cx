@@ -131,6 +131,7 @@ namespace gui
 	}
 	void MainWindow::updateStyles()
 	{
+		frameView->updateStyles();
 		patternView->updateStyles();
 	}
 
