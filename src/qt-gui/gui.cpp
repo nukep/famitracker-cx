@@ -246,11 +246,13 @@ namespace gui
 	static void trackerUpdate(SoundGen::rowframe_t rf, FtmDocument *doc)
 	{
 		// happens on non-gui thread
-
 		DocInfo *dinfo = activeDocInfo();
 
-		dinfo->setCurrentFrame(rf.frame);
-		dinfo->setCurrentRow(rf.row);
+		if (rf.tracker_running)
+		{
+			dinfo->setCurrentFrame(rf.frame);
+			dinfo->setCurrentRow(rf.row);
+		}
 		dinfo->setVolumes(rf.volumes);
 
 		mw->sendUpdateEvent();
@@ -380,7 +382,8 @@ namespace gui
 
 	bool isPlaying()
 	{
-		return sink->isPlaying();
+		// is the tracker active? does not include auditioning.
+		return sgen->isTrackerActive();
 	}
 	bool isEditing()
 	{
@@ -402,12 +405,12 @@ namespace gui
 
 		sgen->trackerController()->startAt(dinfo->currentFrame(), 0);
 
-		sgen->start();
+		sgen->startTracker();
 	}
 
 	void stopSong_block()
 	{
-		sgen->stop();
+		sgen->stopTracker();
 
 		if (mw != NULL)
 			mw->setPlaying(false);
@@ -415,8 +418,8 @@ namespace gui
 
 	static void stopsong_thread(void (*mainthread_callback)(MainWindow *, void*), void *data)
 	{
-		sgen->stop();
-		sink->blockUntilStopped();
+		sgen->stopTracker();
+	//	sink->blockUntilStopped();
 		if (mw != NULL)
 		{
 			mw->sendStoppedSongEvent(mainthread_callback, data);
@@ -425,8 +428,8 @@ namespace gui
 	}
 	static void stopsong_qevent_thread(QEvent *e)
 	{
-		sgen->stop();
-		sink->blockUntilStopped();
+		sgen->stopTracker();
+	//	sink->blockUntilStopped();
 		QApplication::postEvent(mw, e);
 		stopping_song = false;
 	}
@@ -470,11 +473,12 @@ namespace gui
 
 	void auditionNote(int channel, int octave, int note)
 	{
-		qDebug() << channel << octave << note;
+		int instrument = activeDocInfo()->currentInstrument();
+		sgen->auditionNote(note - C, octave, instrument, channel);
 	}
 	void auditionNoteHalt()
 	{
-
+		sgen->auditionHalt();
 	}
 	void auditionDPCM(const CDSample *sample)
 	{

@@ -53,6 +53,7 @@
 #include <memory>
 #include <string.h>
 #include <stdlib.h>
+#include <cmath>
 #include "Mixer.h"
 #include "APU.h"
 // TODO - dan
@@ -344,4 +345,13 @@ void CMixer::StoreChannelLevel(int Channel, int Value)
 		m_fChannelLevels[Channel] = float(AbsVol);
 		m_iChanLevelFallOff[Channel] = LEVEL_FALL_OFF_DELAY;
 	}
+}
+
+uint32 CMixer::getFramesToFalloff() const
+{
+	// How many frame cycles does it take for max volume to falloff to zero?
+
+	int f = std::ceil(15.0f / LEVEL_FALL_OFF_RATE);
+
+	return LEVEL_FALL_OFF_DELAY + f;
 }

@@ -20,6 +20,11 @@ const int NOTE_COUNT = 96;	// 96 available notes
 
 typedef enum { SONG_TIME_LIMIT, SONG_LOOP_LIMIT } RENDER_END;
 
+namespace boost
+{
+	class mutex;
+}
+
 class SoundGen
 {
 public:
@@ -27,6 +32,7 @@ public:
 	{
 		unsigned int row, frame;
 		bool rowframe_changed;
+		bool tracker_running;
 		const core::u8 * volumes;
 	};
 	typedef void (*trackerupdate_f)(rowframe_t rf, FtmDocument *doc);
@@ -58,16 +64,22 @@ public:
 	// Used by channels
 	void addCycles(int count);
 
-	void start();
-	void stop();
+	void startTracker();
+	void stopTracker();
+	void auditionNote(int note, int octave, int instrument, int channel);
+	void auditionHalt();
 
 	void requestStop();
+
+	bool isTrackerActive();
 
 private:
 	static void apuCallback(const int16 *buf, uint32 sz, void *data);
 	static core::u32 soundCallback(core::s16 *buf, core::u32 sz, void *data, core::u32 *idx);
 	static void timeCallback(core::u32 skip, void *data);
 
+	void startPlayback();
+	void haltSounds();
 	bool requestFrame();
 	core::u32 requestSound(core::s16 *buf, core::u32 sz, core::u32 *idx);
 
@@ -112,6 +124,10 @@ private:
 
 // Tracker playing variables
 private:
+	boost::mutex * m_mtx_running;
+	bool m_trackerActive;
+	int m_sinkStopTick;
+
 	unsigned int		m_lastRow, m_lastFrame;
 	unsigned int		m_iPlayTime;
 	int					m_iFrameCounter;

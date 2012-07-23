@@ -89,6 +89,8 @@ class CMixer
 
 		int32	GetChanOutput(uint8 Chan) const;
 
+		uint32	getFramesToFalloff() const;
+
 	private:
 		inline double CalcPin1(double Val1, double Val2);
 		inline double CalcPin2(double Val1, double Val2, double Val3);

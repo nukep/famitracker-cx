@@ -31,8 +31,10 @@ SoundGen::SoundGen()
 	  m_trackerUpdateCallback(NULL), m_sink(NULL),
 	  m_queued_rowframes(sizeof(rowframe_t)),
 	  m_queued_sound(sizeof(core::s16)),
-	  m_volumes_ring(NULL)
+	  m_volumes_ring(NULL),
+	  m_trackerActive(false)
 {
+	m_mtx_running = new boost::mutex;
 	// Create all kinds of channels
 	createChannels();
 
@@ -59,6 +61,7 @@ SoundGen::~SoundGen()
 		if (m_pTrackerChannels[i] != NULL)
 			delete m_pTrackerChannels[i];
 	}
+	delete m_mtx_running;
 }
 
 void SoundGen::setSoundSink(core::SoundSink *s)
@@ -377,7 +380,10 @@ void SoundGen::playNote(int channel, stChanNote *noteData, int effColumns)
 
 void SoundGen::runFrame()
 {
-	m_trackerctlr->tick();
+	if (m_trackerActive)
+	{
+		m_trackerctlr->tick();
+	}
 }
 
 void SoundGen::playSample(CDSample *sample, int offset, int pitch)
@@ -393,6 +399,17 @@ void SoundGen::playSample(CDSample *sample, int offset, int pitch)
 	m_apu.Write(0x4013, length);			// length
 	m_apu.Write(0x4015, 0x0F);
 	m_apu.Write(0x4015, 0x1F);				// fire sample
+}
+
+void SoundGen::haltSounds()
+{
+	for (int i = 0; i < CHANNELS; i++)
+	{
+		if (m_pChannels[i] != NULL)
+		{
+			m_pChannels[i]->MakeSilent();
+		}
+	}
 }
 
 // return true if row changed
@@ -424,13 +441,6 @@ bool SoundGen::requestFrame()
 
 	if (m_bPlayerHalted)
 	{
-		for (int i = 0; i < CHANNELS; i++)
-		{
-			if (m_pChannels[i] != NULL)
-			{
-				m_pChannels[i]->MakeSilent();
-			}
-		}
 		m_bRunning = false;
 		return true;
 	}
@@ -495,15 +505,15 @@ core::u32 SoundGen::requestSound(core::s16 *buf, core::u32 sz, core::u32 *idx)
 		off += read;
 	}
 
+	m_mtx_running->lock();
 	m_pDocument->lock();
 	while (sz != 0)
 	{
-		if (!m_bRunning)
+	/*	if (!m_bRunning)
 		{
 			// silence the rest of the buffer
 			memset(buf, 0, sz*sizeof(core::s16));
-			break;
-		}
+		}*/
 		bool rowchange = requestFrame();
 		{
 			idx[c++] = off;
@@ -511,6 +521,7 @@ core::u32 SoundGen::requestSound(core::s16 *buf, core::u32 sz, core::u32 *idx)
 			rf.row = trackerController()->row();
 			rf.frame = trackerController()->frame();
 			rf.rowframe_changed = rowchange;
+			rf.tracker_running = m_trackerActive;
 
 			core::u8 vols[MAX_CHANNELS];
 
@@ -530,9 +541,27 @@ core::u32 SoundGen::requestSound(core::s16 *buf, core::u32 sz, core::u32 *idx)
 		off += read;
 	}
 	m_pDocument->unlock();
-	if (!m_bRunning)
+
+	if (m_sinkStopTick > 0)
 	{
-		m_sink->setPlaying(false);
+		// stopping sink
+		m_sinkStopTick--;
+		bool stop_playing = m_sinkStopTick == 0;
+		m_mtx_running->unlock();
+
+		if (stop_playing)
+		{
+			m_sink->setPlaying(false);
+		}
+	}
+	else
+	{
+		m_mtx_running->unlock();
+	}
+
+	if (!m_bRunning && m_sinkStopTick < 0)
+	{
+		stopTracker();
 	}
 	return c;
 }
@@ -576,10 +605,9 @@ void SoundGen::timeCallback(core::u32 skip, void *data)
 		(*sg->m_trackerUpdateCallback)(rf, sg->trackerController()->document());
 }
 
-void SoundGen::start()
+void SoundGen::startPlayback()
 {
-	if (m_sink->isPlaying())
-		return;
+	m_sinkStopTick = -1;
 
 	m_bRunning = true;
 	m_bPlayerHalted = false;
@@ -588,7 +616,6 @@ void SoundGen::start()
 	m_iFrameCounter = 0;
 
 	m_pDocument->lock();
-
 	m_channels = m_pDocument->GetAvailableChannels();
 
 	m_volumes_size = rowframes_size;
@@ -598,19 +625,88 @@ void SoundGen::start()
 		delete[] m_volumes_ring;
 	m_volumes_ring = new core::u8[m_volumes_size * m_channels];
 
+	m_pDocument->unlock();
+
 	setupChannels();
 	resetTempo();
 
-	m_pDocument->unlock();
-
 	m_queued_sound.clear();
 	m_queued_rowframes.clear();
+}
+
+void SoundGen::startTracker()
+{
+	m_mtx_running->lock();
+
+	m_trackerActive = true;
+
+	startPlayback();
+
+	m_mtx_running->unlock();
 
 	m_sink->setPlaying(true);
 }
-void SoundGen::stop()
+void SoundGen::stopTracker()
 {
-	m_sink->setPlaying(false);
+	m_mtx_running->lock();
+
+	if (m_trackerActive)
+	{
+		haltSounds();
+		m_trackerActive = false;
+		m_sinkStopTick = 60;
+	}
+	m_mtx_running->unlock();
+}
+bool SoundGen::isTrackerActive()
+{
+	m_mtx_running->lock();
+	bool active = m_trackerActive;
+	m_mtx_running->unlock();
+
+	return active;
+}
+
+void SoundGen::auditionNote(int note, int octave, int instrument, int channel)
+{
+	// note = 0..11
+
+	bool play = false;
+
+	m_mtx_running->lock();
+
+	if (!m_trackerActive)
+	{
+		stChanNote n;
+		n.Note = note + C;
+		n.Octave = octave;
+		n.Instrument = instrument;
+		n.Vol = 15;
+		for (int i = 0; i < MAX_EFFECT_COLUMNS; i++)
+		{
+			n.EffNumber[i] = EF_NONE;
+		}
+
+		m_pActiveTrackerChannels[channel]->SetNote(n);
+		play = true;
+
+		startPlayback();
+	}
+
+	m_mtx_running->unlock();
+
+	if (play)
+		m_sink->setPlaying(true);
+}
+void SoundGen::auditionHalt()
+{
+	m_mtx_running->lock();
+	if (!m_trackerActive)
+	{
+		haltSounds();
+		m_sinkStopTick = 60;
+	}
+	m_mtx_running->unlock();
 }
 
 void SoundGen::requestStop()

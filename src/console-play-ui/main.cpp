@@ -70,7 +70,7 @@ int main(int argc, char *argv[])
 		sg->setDocument(&doc);
 		sg->setTrackerUpdate(tracker_update);
 
-		sg->start();
+		sg->startTracker();
 		sink->blockUntilStopped();
 
 		delete sg;
