@@ -121,6 +121,8 @@ void SoundGen::setDocument(FtmDocument *doc)
 
 	m_trackerctlr->initialize(doc, m_pActiveTrackerChannels);
 
+	setupChannels();
+
 	m_threading->mtx_running.unlock();
 }
 
@@ -332,6 +334,7 @@ void SoundGen::setupChannels()
 		if (m_pChannels[i] != NULL)
 		{
 			m_pChannels[i]->InitChannel(&m_apu, m_iVibratoTable, m_pDocument);
+			m_pChannels[i]->SetVibratoStyle(m_pDocument->GetVibratoStyle());
 			m_pChannels[i]->MakeSilent();
 		}
 	}
