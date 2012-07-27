@@ -395,14 +395,17 @@ namespace gui
 		return edit_mode;
 	}
 
-	volatile bool stopping_song = false;
+	boost::mutex mtx_stopping_song;
 	boost::thread *stopping_song_thread = NULL;
 
 	void playSong()
 	{
-		boost::lock_guard<boost::mutex> lock(mtx_is_playing);
-		if (stopping_song)
+		if (!mtx_stopping_song.try_lock())
+		{
+			// don't immediately play the song after the song stops
 			return;
+		}
+		boost::lock_guard<boost::mutex> lock(mtx_is_playing);
 
 		if (mw != NULL)
 			mw->setPlaying(true);
@@ -413,6 +416,8 @@ namespace gui
 
 		sgen->startTracker();
 		is_playing = true;
+
+		mtx_stopping_song.unlock();
 	}
 
 	void sink_block()
@@ -433,6 +438,8 @@ namespace gui
 
 	static void stopsong_thread(void (*mainthread_callback)(MainWindow *, void*), void *data)
 	{
+		mtx_stopping_song.lock();
+
 		sgen->stopTracker();
 		sink->blockUntilStopped();
 		if (mw != NULL)
@@ -440,13 +447,16 @@ namespace gui
 			mw->sendStoppedSongEvent(mainthread_callback, data);
 		}
 		mtx_is_playing.lock();
-		stopping_song = false;
 		is_playing = false;
 		mtx_is_playing.unlock();
+
+		mtx_stopping_song.unlock();
 	}
 
 	static void stopsongtracker_thread(void (*mainthread_callback)(MainWindow *, void*), void *data)
 	{
+		mtx_stopping_song.lock();
+
 		sgen->stopTracker();
 		sgen->blockUntilTrackerStopped();
 		if (mw != NULL)
@@ -454,28 +464,29 @@ namespace gui
 			mw->sendStoppedSongEvent(mainthread_callback, data);
 		}
 		mtx_is_playing.lock();
-		stopping_song = false;
 		is_playing = false;
 		mtx_is_playing.unlock();
+
+		mtx_stopping_song.unlock();
 	}
 	static void stopsong_qevent_thread(QEvent *e)
 	{
+		mtx_stopping_song.lock();
+
 		sgen->stopTracker();
 		QApplication::postEvent(mw, e);
 		mtx_is_playing.lock();
-		stopping_song = false;
 		is_playing = false;
 		mtx_is_playing.unlock();
+
+		mtx_stopping_song.unlock();
 	}
 
 	void stopSongConcurrent(QEvent *event)
 	{
-		ftkr_Assert(stopping_song == false);
-
 		if (stopping_song_thread != NULL)
 			delete stopping_song_thread;
 
-		stopping_song = true;
 		stopping_song_thread = new boost::thread(stopsong_qevent_thread, event);
 	}
 	void stopSongConcurrent(void (*mainthread_callback)(MainWindow *, void*), void *data)
@@ -483,19 +494,13 @@ namespace gui
 		// stop the song and the sound sink without deadlocking the main thread
 		// should only be called from the main thread
 
-		ftkr_Assert(stopping_song == false);
-
 		if (stopping_song_thread != NULL)
 			delete stopping_song_thread;
 
-		stopping_song = true;
 		stopping_song_thread = new boost::thread(stopsong_thread, mainthread_callback, data);
 	}
 	void stopSongConcurrent()
 	{
-		if (stopping_song)
-			return;
-
 		stopSongConcurrent(NULL, NULL);
 	}
 
@@ -504,19 +509,13 @@ namespace gui
 		// stop the song tracker without deadlocking the main thread
 		// should only be called from the main thread
 
-		ftkr_Assert(stopping_song == false);
-
 		if (stopping_song_thread != NULL)
 			delete stopping_song_thread;
 
-		stopping_song = true;
 		stopping_song_thread = new boost::thread(stopsongtracker_thread, mainthread_callback, data);
 	}
 	void stopSongTrackerConcurrent()
 	{
-		if (stopping_song)
-			return;
-
 		stopSongTrackerConcurrent(NULL, NULL);
 	}
 
