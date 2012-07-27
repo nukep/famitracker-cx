@@ -42,7 +42,8 @@ SoundGen::SoundGen()
 	  m_queued_rowframes(sizeof(rowframe_t)),
 	  m_queued_sound(sizeof(core::s16)),
 	  m_volumes_ring(NULL),
-	  m_trackerActive(false)
+	  m_trackerActive(false),
+	  m_timer_trackerActive(false)
 {
 	m_threading = new _soundgen_threading_t;
 	// Create all kinds of channels
@@ -602,6 +603,13 @@ void SoundGen::timeCallback(core::u32 skip, void *data)
 
 	if (sg->m_trackerUpdateCallback != NULL)
 		(*sg->m_trackerUpdateCallback)(rf, sg->trackerController()->document());
+
+	boost::unique_lock<boost::mutex> lock(sg->m_threading->mtx_tracker);
+	if (sg->m_timer_trackerActive != rf.tracker_running)
+	{
+		sg->m_timer_trackerActive = rf.tracker_running;
+		sg->m_threading->cond_trackerhalt.notify_all();
+	}
 }
 
 void SoundGen::startPlayback()
@@ -675,8 +683,8 @@ bool SoundGen::isTrackerActive()
 void SoundGen::blockUntilTrackerStopped()
 {
 	{
-		boost::unique_lock<boost::mutex> lock(m_threading->mtx_running);
-		while (m_trackerActive)
+		boost::unique_lock<boost::mutex> lock(m_threading->mtx_tracker);
+		while (m_timer_trackerActive)
 		{
 			// wait until tracker is inactive
 			m_threading->cond_trackerhalt.wait(lock);

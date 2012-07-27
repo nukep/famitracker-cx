@@ -117,6 +117,7 @@ private:
 	_soundgen_threading_t * m_threading;
 	bool m_trackerActive;
 	int m_sinkStopTick;
+	bool m_timer_trackerActive;
 
 	unsigned int		m_lastRow, m_lastFrame;
 	unsigned int		m_iPlayTime;
