@@ -117,6 +117,12 @@ void CPatternData::SetPatternLength(unsigned int Length)
 
 unsigned int CPatternData::getPatternPlayLength(int channel, int pattern)
 {
+	if (m_pPatternData[channel][pattern] == NULL)
+	{
+		// pattern not used, and therefore no length
+		return MAX_PATTERN_LENGTH;
+	}
+
 	int &l = m_patternPlayLengths[channel][pattern];
 	if (l == -1)
 	{
