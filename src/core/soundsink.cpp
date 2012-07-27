@@ -45,7 +45,7 @@ namespace core
 		if (m_threading->running)
 		{
 			m_threading->destructing = true;
-			m_threading->cond_time_ringbuffer.notify_one();
+			m_threading->cond_time_ringbuffer.notify_all();
 			m_threading->t->join();
 		}
 		if (m_threading != NULL)
@@ -58,24 +58,19 @@ namespace core
 	}
 	void SoundSink::setPlaying(bool playing)
 	{
-		bool changed = playing != m_playing;
-		if (!changed)
-			return;
-
 		{
 			boost::lock_guard<boost::mutex>(m_threading->mtx_playing);
+
+			bool changed = playing != m_playing;
+			if (!changed)
+				return;
 
 			m_playing = playing;
 
 			if (!playing)
 			{
 				// wait for the timing thread to finish the ring buffer
-				boost::unique_lock<boost::mutex> lock(m_threading->mtx_time_ringbuffer);
-
-				while (!m_timeidx_ringbuffer.isEmpty())
-				{
-					m_threading->cond_time_ringbuffer.wait(lock);
-				}
+				blockUntilTimerEmpty();
 			}
 		}
 		m_threading->cond_playing.notify_one();
@@ -101,7 +96,7 @@ namespace core
 		{
 			// notify that the ringbuffer is empty
 			// (this shouldn't affect the wait we have shortly after)
-			m_threading->cond_time_ringbuffer.notify_one();
+			m_threading->cond_time_ringbuffer.notify_all();
 
 			// SoundSink could be destructing. let's check
 			if (m_threading->destructing)
@@ -205,7 +200,7 @@ compare_time:
 		}
 		// in case the timer thread is waiting on the ring buffer, signal the thread
 
-		m_threading->cond_time_ringbuffer.notify_one();
+		m_threading->cond_time_ringbuffer.notify_all();
 	}
 /*
 	void SoundSink::performTimeCallback()
@@ -249,6 +244,20 @@ compare_time:
 		while (m_playing)
 		{
 			m_threading->cond_playing.wait(lock);
+		}
+	}
+	void SoundSink::blockUntilTimerEmpty()
+	{
+		// blocks until timer ringbuffer is empty
+		// also guarantees the timer callback isn't running
+		// this should be called when applyTime calls are halted.
+		// (it's possible for this to unblock while the sound sink is active, as
+		// the time loop may temporarily run out of times as it's waiting for them)
+		boost::unique_lock<boost::mutex> lock(m_threading->mtx_time_ringbuffer);
+		while (!m_timeidx_ringbuffer.isEmpty())
+		{
+			// wait until the ring buffer is empty
+			m_threading->cond_time_ringbuffer.wait(lock);
 		}
 	}
 

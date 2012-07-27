@@ -1,6 +1,8 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <cmath>
+#include <boost/thread/mutex.hpp>
+#include <boost/thread/condition.hpp>
 #include "sound.hpp"
 #include "FtmDocument.hpp"
 #include "FamiTrackerTypes.h"
@@ -26,6 +28,14 @@ static const double OLD_VIBRATO_DEPTH[] = {
 
 static const int rowframes_size = 60*8;
 
+struct _soundgen_threading_t
+{
+	boost::mutex mtx_running;
+	boost::mutex mtx_sink;
+	boost::mutex mtx_tracker;
+	boost::condition cond_trackerhalt;
+};
+
 SoundGen::SoundGen()
 	: m_apu(&m_samplemem), m_iConsumedCycles(0), m_pDocument(NULL),
 	  m_trackerUpdateCallback(NULL), m_sink(NULL),
@@ -34,7 +44,7 @@ SoundGen::SoundGen()
 	  m_volumes_ring(NULL),
 	  m_trackerActive(false)
 {
-	m_mtx_running = new boost::mutex;
+	m_threading = new _soundgen_threading_t;
 	// Create all kinds of channels
 	createChannels();
 
@@ -61,7 +71,7 @@ SoundGen::~SoundGen()
 		if (m_pTrackerChannels[i] != NULL)
 			delete m_pTrackerChannels[i];
 	}
-	delete m_mtx_running;
+	delete m_threading;
 }
 
 void SoundGen::setSoundSink(core::SoundSink *s)
@@ -80,6 +90,8 @@ void SoundGen::setSoundSink(core::SoundSink *s)
 
 void SoundGen::setDocument(FtmDocument *doc)
 {
+	m_threading->mtx_running.lock();
+
 	m_pDocument = doc;
 
 	generateVibratoTable(doc->GetVibratoStyle());
@@ -107,6 +119,8 @@ void SoundGen::setDocument(FtmDocument *doc)
 	}
 
 	m_trackerctlr->initialize(doc, m_pActiveTrackerChannels);
+
+	m_threading->mtx_running.unlock();
 }
 
 void SoundGen::loadMachineSettings(int machine, int rate)
@@ -245,28 +259,6 @@ void SoundGen::resetTempo()
 	unsigned int tempo = m_pDocument->GetSongTempo();
 
 	m_trackerctlr->setTempo(tempo, speed);
-}
-
-void SoundGen::checkRenderStop()
-{
-	if (m_bRequestStop)
-		return;
-
-	if (m_iRenderEndWhen == SONG_LOOP_LIMIT)
-	{
-		if (m_iRenderedFrames >= m_iRenderEndParam)
-		{
-			m_bRequestStop = true;
-		}
-	}
-}
-
-void SoundGen::frameIsDone(int skipFrames)
-{
-	if (m_bRequestStop)
-		return;
-
-	m_iRenderedFrames += skipFrames;
 }
 
 void SoundGen::addCycles(int count)
@@ -417,7 +409,10 @@ bool SoundGen::requestFrame()
 {
 	runFrame();
 
-	m_bPlayerHalted = m_trackerctlr->isHalted() || m_bRequestStop;
+	if (m_trackerActive)
+	{
+		m_bPlayerHalted = m_trackerctlr->isHalted();
+	}
 
 	for (int i = 0; i < CHANNELS; i++)
 	{
@@ -441,7 +436,6 @@ bool SoundGen::requestFrame()
 
 	if (m_bPlayerHalted)
 	{
-		m_bRunning = false;
 		return true;
 	}
 
@@ -505,7 +499,8 @@ core::u32 SoundGen::requestSound(core::s16 *buf, core::u32 sz, core::u32 *idx)
 		off += read;
 	}
 
-	m_mtx_running->lock();
+	m_threading->mtx_sink.lock();
+	m_threading->mtx_running.lock();
 	m_pDocument->lock();
 	while (sz != 0)
 	{
@@ -542,12 +537,14 @@ core::u32 SoundGen::requestSound(core::s16 *buf, core::u32 sz, core::u32 *idx)
 	}
 	m_pDocument->unlock();
 
+	bool sinkstopnotticking = m_sinkStopTick < 0;
+
 	if (m_sinkStopTick > 0)
 	{
 		// stopping sink
 		m_sinkStopTick--;
 		bool stop_playing = m_sinkStopTick == 0;
-		m_mtx_running->unlock();
+		m_threading->mtx_running.unlock();
 
 		if (stop_playing)
 		{
@@ -556,13 +553,15 @@ core::u32 SoundGen::requestSound(core::s16 *buf, core::u32 sz, core::u32 *idx)
 	}
 	else
 	{
-		m_mtx_running->unlock();
+		m_threading->mtx_running.unlock();
 	}
 
-	if (!m_bRunning && m_sinkStopTick < 0)
+	if (m_bPlayerHalted && sinkstopnotticking)
 	{
+		// if the tracker halts
 		stopTracker();
 	}
+	m_threading->mtx_sink.unlock();
 	return c;
 }
 
@@ -609,10 +608,7 @@ void SoundGen::startPlayback()
 {
 	m_sinkStopTick = -1;
 
-	m_bRunning = true;
 	m_bPlayerHalted = false;
-	m_bRequestStop = false;
-	m_iDelayedStart = 0;
 	m_iFrameCounter = 0;
 
 	m_pDocument->lock();
@@ -636,35 +632,57 @@ void SoundGen::startPlayback()
 
 void SoundGen::startTracker()
 {
-	m_mtx_running->lock();
+	m_threading->mtx_running.lock();
 
-	m_trackerActive = true;
+	if (!m_trackerActive)
+	{
+		m_trackerActive = true;
 
-	startPlayback();
+		startPlayback();
 
-	m_mtx_running->unlock();
+		m_threading->mtx_running.unlock();
 
-	m_sink->setPlaying(true);
+		m_threading->mtx_sink.lock();
+		m_sink->setPlaying(true);
+		m_threading->mtx_sink.unlock();
+	}
+	else
+	{
+		m_threading->mtx_running.unlock();
+	}
 }
 void SoundGen::stopTracker()
 {
-	m_mtx_running->lock();
+	boost::lock_guard<boost::mutex> lock(m_threading->mtx_running);
 
 	if (m_trackerActive)
 	{
 		haltSounds();
 		m_trackerActive = false;
 		m_sinkStopTick = 60;
+
+		m_threading->cond_trackerhalt.notify_all();
 	}
-	m_mtx_running->unlock();
 }
 bool SoundGen::isTrackerActive()
 {
-	m_mtx_running->lock();
+	m_threading->mtx_running.lock();
 	bool active = m_trackerActive;
-	m_mtx_running->unlock();
+	m_threading->mtx_running.unlock();
 
 	return active;
+}
+void SoundGen::blockUntilTrackerStopped()
+{
+	{
+		boost::unique_lock<boost::mutex> lock(m_threading->mtx_running);
+		while (m_trackerActive)
+		{
+			// wait until tracker is inactive
+			m_threading->cond_trackerhalt.wait(lock);
+		}
+	}
+	m_sink->blockUntilTimerEmpty();
 }
 
 void SoundGen::auditionNote(int note, int octave, int instrument, int channel)
@@ -673,10 +691,12 @@ void SoundGen::auditionNote(int note, int octave, int instrument, int channel)
 
 	bool play = false;
 
-	m_mtx_running->lock();
+	m_threading->mtx_running.lock();
 
 	if (!m_trackerActive)
-	{
+	{		
+		startPlayback();
+
 		stChanNote n;
 		n.Note = note + C;
 		n.Octave = octave;
@@ -689,27 +709,24 @@ void SoundGen::auditionNote(int note, int octave, int instrument, int channel)
 
 		m_pActiveTrackerChannels[channel]->SetNote(n);
 		play = true;
-
-		startPlayback();
 	}
 
-	m_mtx_running->unlock();
+	m_threading->mtx_running.unlock();
 
 	if (play)
+	{
+		m_threading->mtx_sink.lock();
 		m_sink->setPlaying(true);
+		m_threading->mtx_sink.unlock();
+	}
 }
 void SoundGen::auditionHalt()
 {
-	m_mtx_running->lock();
+	m_threading->mtx_running.lock();
 	if (!m_trackerActive)
 	{
 		haltSounds();
 		m_sinkStopTick = 60;
 	}
-	m_mtx_running->unlock();
-}
-
-void SoundGen::requestStop()
-{
-	m_bRequestStop = true;
+	m_threading->mtx_running.unlock();
 }

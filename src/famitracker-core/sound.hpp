@@ -16,14 +16,11 @@ class TrackerController;
 const int VIBRATO_LENGTH = 256;
 const int TREMOLO_LENGTH = 256;
 
-const int NOTE_COUNT = 96;	// 96 available notes
+const int NOTE_COUNT = 12*8;	// 96 available notes
 
 typedef enum { SONG_TIME_LIMIT, SONG_LOOP_LIMIT } RENDER_END;
 
-namespace boost
-{
-	class mutex;
-}
+struct _soundgen_threading_t;
 
 class SoundGen
 {
@@ -41,8 +38,6 @@ public:
 
 	void setSoundSink(core::SoundSink *s);
 
-	bool isRunning() const{ return m_bRunning; }
-
 	void setDocument(FtmDocument *doc);
 	TrackerController * trackerController() const{ return m_trackerctlr; }
 	void setTrackerUpdate(trackerupdate_f f){ m_trackerUpdateCallback = f; }
@@ -57,10 +52,6 @@ public:
 	// Player interface
 	void resetTempo();
 
-	// Rendering
-	void checkRenderStop();
-	void frameIsDone(int skipFrames);
-
 	// Used by channels
 	void addCycles(int count);
 
@@ -69,9 +60,8 @@ public:
 	void auditionNote(int note, int octave, int instrument, int channel);
 	void auditionHalt();
 
-	void requestStop();
-
 	bool isTrackerActive();
+	void blockUntilTrackerStopped();
 
 private:
 	static void apuCallback(const int16 *buf, uint32 sz, void *data);
@@ -124,7 +114,7 @@ private:
 
 // Tracker playing variables
 private:
-	boost::mutex * m_mtx_running;
+	_soundgen_threading_t * m_threading;
 	bool m_trackerActive;
 	int m_sinkStopTick;
 
@@ -148,18 +138,11 @@ private:
 	int					m_iVibratoTable[VIBRATO_LENGTH];
 
 	unsigned int		m_iMachineType;						// NTSC/PAL
-	bool				m_bRunning;							// Main loop is running
 
 	// Rendering
 	RENDER_END			m_iRenderEndWhen;
 	int					m_iRenderEndParam;
-	int					m_iRenderedFrames;
-	int					m_iRenderedSong;
-	int					m_iDelayedStart;
-	int					m_iDelayedEnd;
 
-	bool				m_bRendering;
-	volatile bool		m_bRequestStop;
 	bool				m_bPlayerHalted;
 };
 

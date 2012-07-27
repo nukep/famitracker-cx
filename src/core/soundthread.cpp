@@ -1,4 +1,5 @@
 #include <boost/thread.hpp>
+#include <boost/thread/mutex.hpp>
 #include "soundthread.hpp"
 
 namespace core
@@ -16,10 +17,11 @@ namespace core
 	{
 		if (m_thread != NULL)
 		{
-			if (!m_running)
-				_delthread();
-			else
-				return;
+			if (m_running)
+			{
+				wait();
+			}
+			_delthread();
 		}
 
 		m_running = true;

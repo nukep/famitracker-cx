@@ -956,11 +956,11 @@ namespace gui
 	void PatternView::keyPressEvent(QKeyEvent *e)
 	{
 		DocInfo *dinfo = gui::activeDocInfo();
-		bool playing = gui::isPlaying();
+		bool editing = gui::isEditing();
 
 		bool allownote = dinfo->keyRepetition() || !e->isAutoRepeat();
 
-		if (!playing || dinfo->currentChannelColumn() == C_NOTE)
+		if (!editing || dinfo->currentChannelColumn() == C_NOTE)
 		{
 			int scan = e->nativeScanCode();
 			int octave_base = dinfo->currentOctave();
@@ -970,6 +970,8 @@ namespace gui
 				// ignore auto repeating notes
 				if (!allownote)
 					return;
+
+				bool playing = gui::isPlaying();
 
 				if (!e->isAutoRepeat() && !playing)
 					gui::auditionNote(dinfo->currentChannel(), octave, note);
@@ -1047,7 +1049,7 @@ namespace gui
 		}
 		if (k == Qt::Key_Enter || k == Qt::Key_Return)
 		{
-			gui::toggleSong();
+			gui::toggleSongPlaying();
 			return;
 		}
 		if (k == Qt::Key_Space)

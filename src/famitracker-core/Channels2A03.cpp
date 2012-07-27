@@ -605,7 +605,7 @@ void CDPCMChan::ClearRegisters()
 	m_pAPU->Write(0x4015, 0x0F);
 	m_pAPU->Write(0x4010, 0);
 	
-	if (app::settings()->General.bNoDPCMReset || soundGen()->isRunning())
+	if (app::settings()->General.bNoDPCMReset/* || soundGen()->isRunning()*/)
 	{
 		m_pAPU->Write(0x4011, 0);		// regain full volume for TN
 	}

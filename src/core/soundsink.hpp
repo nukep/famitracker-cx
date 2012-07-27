@@ -32,6 +32,7 @@ namespace core
 		void applyTime(core::s32 delay_us);
 
 		void blockUntilStopped();
+		void blockUntilTimerEmpty();
 	private:
 		bool _timeloop_read(core::timestamp_t &);
 		void _timeloop();

@@ -20,7 +20,6 @@
 
 #pragma once
 
-#include <boost/thread/mutex.hpp>
 #include "PatternData.h"
 
 class CTrackerChannel
@@ -49,6 +48,4 @@ private:
 
 	int m_iVolumeMeter;
 	int m_iPitch;
-
-	boost::mutex m_NoteLock;
 };

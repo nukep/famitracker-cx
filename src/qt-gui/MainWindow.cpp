@@ -442,7 +442,7 @@ namespace gui
 		if (d->GetSelectedTrack() == i)
 			return;
 
-		gui::stopSongConcurrent(setSong_cb);
+		gui::stopSongTrackerConcurrent(setSong_cb, NULL);
 	}
 
 	void MainWindow::incrementPattern()
@@ -602,7 +602,7 @@ namespace gui
 	}
 	void MainWindow::stop()
 	{
-		gui::stopSongConcurrent();
+		gui::stopSong();
 	}
 	void MainWindow::toggleEditMode()
 	{

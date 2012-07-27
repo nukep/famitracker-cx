@@ -4,7 +4,7 @@
 #include "TrackerChannel.h"
 
 TrackerController::TrackerController()
-	: m_frame(0), m_row(0), m_elapsedFrames(0), m_halted(false),
+	: m_frame(0), m_row(0), m_elapsedFrames(0), m_halted(true),
 	  m_jumpFrame(0), m_jumpRow(0)
 {
 }
