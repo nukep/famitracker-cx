@@ -174,6 +174,7 @@ void FtmDocument::unlock() const
 void FtmDocument::createEmpty()
 {
 	m_iMachine = DEFAULT_MACHINE_TYPE;
+	m_iEngineSpeed = 0;
 	// Allocate first song
 	SwitchToTrack(0);
 	m_iTracks = 0;
