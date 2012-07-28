@@ -34,7 +34,7 @@ namespace core
 		void blockUntilStopped();
 		void blockUntilTimerEmpty();
 	private:
-		bool _timeloop_read(core::timestamp_t &);
+		bool _timeloop_read(core::timestamp_t &, u32 &skip);
 		void _timeloop();
 		static void _timeloop_bootstrap(SoundSink *);
 		sound_callback_t m_soundCallback;

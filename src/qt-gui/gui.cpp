@@ -285,11 +285,11 @@ namespace gui
 	}
 	void destroy()
 	{
+		delete sink;
+		delete sgen;
+
 		delete mw;
 		delete app;
-
-		delete sgen;
-		delete sink;
 	}
 	void spin()
 	{
@@ -442,13 +442,16 @@ namespace gui
 
 		sgen->stopTracker();
 		sink->blockUntilStopped();
+		sink->blockUntilTimerEmpty();
+
+		mtx_is_playing.lock();
+		is_playing = false;
+		mtx_is_playing.unlock();
+
 		if (mw != NULL)
 		{
 			mw->sendStoppedSongEvent(mainthread_callback, data);
 		}
-		mtx_is_playing.lock();
-		is_playing = false;
-		mtx_is_playing.unlock();
 
 		mtx_stopping_song.unlock();
 	}
@@ -459,13 +462,15 @@ namespace gui
 
 		sgen->stopTracker();
 		sgen->blockUntilTrackerStopped();
+
+		mtx_is_playing.lock();
+		is_playing = false;
+		mtx_is_playing.unlock();
+
 		if (mw != NULL)
 		{
 			mw->sendStoppedSongEvent(mainthread_callback, data);
 		}
-		mtx_is_playing.lock();
-		is_playing = false;
-		mtx_is_playing.unlock();
 
 		mtx_stopping_song.unlock();
 	}
@@ -474,10 +479,14 @@ namespace gui
 		mtx_stopping_song.lock();
 
 		sgen->stopTracker();
-		QApplication::postEvent(mw, e);
+		sink->blockUntilStopped();
+		sink->blockUntilTimerEmpty();
+
 		mtx_is_playing.lock();
 		is_playing = false;
 		mtx_is_playing.unlock();
+
+		QApplication::postEvent(mw, e);
 
 		mtx_stopping_song.unlock();
 	}

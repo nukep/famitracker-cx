@@ -693,7 +693,6 @@ void SoundGen::blockUntilTrackerStopped()
 			m_threading->cond_trackerhalt.wait(lock);
 		}
 	}
-	m_sink->blockUntilTimerEmpty();
 }
 
 void SoundGen::auditionNote(int note, int octave, int instrument, int channel)

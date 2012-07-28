@@ -45,7 +45,7 @@ namespace gui
 	{
 		if (isPlaying())
 		{
-			stopSong();
+			stopSongTrackerConcurrent();
 		}
 		else
 		{
