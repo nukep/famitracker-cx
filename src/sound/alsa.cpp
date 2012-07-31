@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <boost/thread/mutex.hpp>
 #include "alsa.hpp"
 #include "core/time.hpp"
 
@@ -7,16 +8,23 @@ core_api_SoundSink * sound_create()
 	return new AlsaSound;
 }
 
+struct _alsasound_threading
+{
+	boost::mutex mtx_running;
+};
+
 AlsaSound::AlsaSound()
 	: m_handle(NULL), m_running(false)
 {
-
+	m_threading = new _alsasound_threading;
 }
 AlsaSound::~AlsaSound()
 {
 	m_thread.wait();
 	AlsaSound::close();
 	setPlaying(false);
+
+	delete m_threading;
 }
 
 #define ALSA_TRY(x) if ( (err = (x)) < 0){ fprintf(stderr, "ERROR: %s\n", snd_strerror(err)); }
@@ -34,20 +42,37 @@ void AlsaSound::callback(void *data)
 	core::u64 latency = as->m_buffer_size;
 	latency = latency * 1000000 / sr;
 
-	while (as->m_running)
+	as->m_threading->mtx_running.lock();
+
+	while (true)
 	{
+		bool running = as->m_running;
+		if (!running)
+		{
+			break;
+		}
+
 		snd_pcm_sframes_t delayp;
 
 		core::u32 sz = as->m_period_size;
 
+		as->m_threading->mtx_running.unlock();
+
 		as->performSoundCallback(buf, sz);
+
 		snd_pcm_sframes_t frames = snd_pcm_writei(as->m_handle, buf, sz);
 		snd_pcm_delay(as->m_handle, &delayp);
 
 		core::s64 d = delayp * 1000000 / sr;
 		d -= latency;
 
-		as->applyTime(d);
+		as->m_threading->mtx_running.lock();
+
+		if (as->m_running)
+		{
+			// it's possible for the callback to turn off playback
+			as->applyTime(d);
+		}
 
 		if (frames < 0)
 		{
@@ -66,6 +91,9 @@ void AlsaSound::callback(void *data)
 			continue;
 		}
 	}
+
+	as->m_threading->mtx_running.unlock();
+
 	delete[] buf;
 
 	ALSA_TRY(snd_pcm_drain(as->m_handle));
@@ -79,7 +107,9 @@ void AlsaSound::setPlaying(bool playing)
 	if (!changed)
 		return;
 
+	m_threading->mtx_running.lock();
 	m_running = playing;
+	m_threading->mtx_running.unlock();
 
 	if (playing)
 	{

@@ -148,11 +148,12 @@ namespace gui
 		// wait until the gui is finished updating before resuming
 		m_cond_updateEvent.wait(lock);
 	}
-	void MainWindow::sendStoppedSongEvent(stopsong_callback mainthread_callback, void *data)
+	void MainWindow::sendIsPlayingSongEvent(stopsong_callback mainthread_callback, void *data, bool playing)
 	{
-		StoppedSongEvent *event = new StoppedSongEvent;
+		IsPlayingSongEvent *event = new IsPlayingSongEvent;
 		event->callback = mainthread_callback;
 		event->callback_data = data;
+		event->playing = playing;
 		QApplication::postEvent(this, event);
 	}
 
@@ -199,11 +200,11 @@ namespace gui
 			m_cond_updateEvent.notify_one();
 			return true;
 		}
-		else if (event->type() == STOPPEDSONGEVENT)
+		else if (event->type() == ISPLAYINGSONGEVENT)
 		{
-			StoppedSongEvent *e = (StoppedSongEvent*)event;
+			IsPlayingSongEvent *e = (IsPlayingSongEvent*)event;
 
-			setPlaying(false);
+			setPlaying(e->playing);
 			if (e->callback != NULL)
 			{
 				(*e->callback)(this, e->callback_data);
@@ -598,11 +599,11 @@ namespace gui
 
 	void MainWindow::play()
 	{
-		gui::playSong();
+		gui::playSongConcurrent();
 	}
 	void MainWindow::stop()
 	{
-		gui::stopSong();
+		gui::stopSongTrackerConcurrent();
 	}
 	void MainWindow::toggleEditMode()
 	{

@@ -9,6 +9,8 @@ typedef core::SoundSink core_api_SoundSink;
 
 extern "C" core_api_SoundSink * sound_create();
 
+struct _alsasound_threading;
+
 class AlsaSound : public core::SoundSinkPlayback
 {
 public:
@@ -25,7 +27,8 @@ private:
 	snd_pcm_uframes_t m_buffer_size, m_period_size;
 	int m_sampleRate;
 	core::SoundThread m_thread;
-	volatile bool m_running;
+	_alsasound_threading * m_threading;
+	bool m_running;
 };
 
 #endif

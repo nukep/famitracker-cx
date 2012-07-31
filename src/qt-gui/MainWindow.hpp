@@ -10,7 +10,7 @@
 namespace gui
 {
 #define UPDATEEVENT QEvent::User
-#define STOPPEDSONGEVENT (QEvent::Type)((int)QEvent::User+1)
+#define ISPLAYINGSONGEVENT (QEvent::Type)((int)QEvent::User+1)
 
 	class MainWindow;
 	class InstrumentEditor;
@@ -22,12 +22,13 @@ namespace gui
 	public:
 		UpdateEvent() : QEvent(UPDATEEVENT){}
 	};
-	class StoppedSongEvent : public QEvent
+	class IsPlayingSongEvent : public QEvent
 	{
 	public:
-		StoppedSongEvent() : QEvent(STOPPEDSONGEVENT){}
+		IsPlayingSongEvent() : QEvent(ISPLAYINGSONGEVENT){}
 		stopsong_callback callback;
 		void *callback_data;
+		bool playing;
 	};
 
 	class MainWindow : public QMainWindow, Ui_MainWindow
@@ -43,7 +44,7 @@ namespace gui
 		void updateStyles();
 
 		void sendUpdateEvent();
-		void sendStoppedSongEvent(stopsong_callback, void *data);
+		void sendIsPlayingSongEvent(stopsong_callback, void *data, bool playing);
 		void updateEditMode();
 		void setPlaying(bool playing);
 

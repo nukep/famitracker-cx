@@ -29,17 +29,16 @@ namespace gui
 	void openDocument(core::IO *io, bool close_active);
 	void newDocument(bool close_active);
 
+	typedef void (*mainthread_callback_t)(MainWindow *, void*);
+
 	bool isPlaying();
 	bool isEditing();
 	static bool canEdit(){ return isEditing() && (!isPlaying()); }
-	void playSong();
-	void stopSong();
-	void sink_block();
-	void stopSong();
-	void stopSongConcurrent(QEvent *event);
-	void stopSongConcurrent(void (*mainthread_callback)(MainWindow *, void*), void *data=NULL);
+	void playSongConcurrent(mainthread_callback_t, void *data=NULL);
+	void playSongConcurrent();
+	void stopSongConcurrent(mainthread_callback_t, void *data=NULL);
 	void stopSongConcurrent();
-	void stopSongTrackerConcurrent(void (*mainthread_callback)(MainWindow *, void*), void *data=NULL);
+	void stopSongTrackerConcurrent(mainthread_callback_t, void *data=NULL);
 	void stopSongTrackerConcurrent();
 	static inline void toggleSongPlaying()
 	{
@@ -49,7 +48,7 @@ namespace gui
 		}
 		else
 		{
-			playSong();
+			playSongConcurrent();
 		}
 	}
 	void toggleEditMode();

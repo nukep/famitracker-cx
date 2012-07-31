@@ -44,8 +44,10 @@ namespace core
 	{
 		if (m_threading->running)
 		{
+			m_threading->mtx_time_ringbuffer.lock();
 			m_threading->destructing = true;
 			m_threading->cond_time_ringbuffer.notify_all();
+			m_threading->mtx_time_ringbuffer.unlock();
 			m_threading->t->join();
 		}
 		if (m_threading != NULL)
@@ -98,18 +100,18 @@ namespace core
 			// (this shouldn't affect the wait we have shortly after)
 			m_threading->cond_time_ringbuffer.notify_all();
 
-			// SoundSink could be destructing. let's check
-			if (m_threading->destructing)
-			{
-				// the thread has to finish
-				return true;
-			}
-
 			if (skip > 0)
 			{
 				// perform skip callbacks before waiting
 				(*m_timeCallback)(skip, m_callbackData);
 				skip = 0;
+			}
+
+			// SoundSink could be destructing. let's check
+			if (m_threading->destructing)
+			{
+				// the thread has to finish
+				return true;
 			}
 
 			// wait until the ring buffer is filled

@@ -1,6 +1,7 @@
 #include <QApplication>
 #include <QFile>
 #include <vector>
+#include <queue>
 #include <QDebug>
 #include <QThread>
 #include <boost/thread.hpp>
@@ -245,6 +246,50 @@ namespace gui
 	bool is_playing = false;
 	boost::mutex mtx_is_playing;
 
+	enum
+	{
+		T_PLAYSONG, T_STOPSONG, T_STOPSONGTRACKER,
+		T_AUDITION, T_HALTAUDITION,
+		T_TERMINATE
+	};
+
+	struct threadpool_playing_task
+	{
+		threadpool_playing_task(){}
+		threadpool_playing_task(int task)
+			: m_task(task), m_cb(NULL), m_cb_data(NULL)
+		{
+		}
+		threadpool_playing_task(int task, mainthread_callback_t cb, void *cb_data)
+			: m_task(task), m_cb(cb), m_cb_data(cb_data)
+		{
+		}
+
+		int m_task;
+		mainthread_callback_t m_cb;
+		void * m_cb_data;
+
+		struct audition_t
+		{
+			int octave, note, inst, channel;
+		};
+		audition_t m_audition;
+	};
+
+	boost::thread *thread_threadpool_playing;
+	boost::mutex mtx_threadpool_playing;
+	boost::condition cond_threadpool_playing;
+	std::queue<threadpool_playing_task> threadpool_playing_queue;
+
+	static void threadpool_playing_post(const threadpool_playing_task &t)
+	{
+		mtx_threadpool_playing.lock();
+		threadpool_playing_queue.push(t);
+		cond_threadpool_playing.notify_all();
+		mtx_threadpool_playing.unlock();
+	}
+	static void func_threadpool_playing();
+
 	static void trackerUpdate(SoundGen::rowframe_t rf, FtmDocument *doc)
 	{
 		// happens on non-gui thread
@@ -258,6 +303,19 @@ namespace gui
 		dinfo->setVolumes(rf.volumes);
 
 		mw->sendUpdateEvent();
+/*
+		if (!rf.tracker_running)
+		{
+			mtx_stopping_song.lock();
+			mtx_is_playing.lock();
+			if (is_playing)
+			{
+				is_playing = false;
+				mw->sendStoppedSongEvent(NULL, NULL);
+			}
+			mtx_is_playing.unlock();
+			mtx_stopping_song.unlock();
+		}*/
 	}
 
 	void init(int &argc, char **argv)
@@ -269,6 +327,8 @@ namespace gui
 
 	void init_2(const char *sound_name)
 	{
+		thread_threadpool_playing = new boost::thread(func_threadpool_playing);
+
 		active_doc_index = -1;
 
 		sink = (core::SoundSinkPlayback*)core::loadSoundSink(sound_name);
@@ -285,10 +345,13 @@ namespace gui
 	}
 	void destroy()
 	{
+		threadpool_playing_post(threadpool_playing_task(T_TERMINATE));
+		thread_threadpool_playing->join();
 		delete sink;
 		delete sgen;
 
 		delete mw;
+		delete thread_threadpool_playing;
 		delete app;
 	}
 	void spin()
@@ -395,51 +458,26 @@ namespace gui
 		return edit_mode;
 	}
 
-	boost::mutex mtx_stopping_song;
-	boost::thread *stopping_song_thread = NULL;
-
-	void playSong()
+	static void playsong_thread(mainthread_callback_t cb, void *data)
 	{
-		if (!mtx_stopping_song.try_lock())
-		{
-			// don't immediately play the song after the song stops
-			return;
-		}
-		boost::lock_guard<boost::mutex> lock(mtx_is_playing);
-
-		if (mw != NULL)
-			mw->setPlaying(true);
-
 		const DocInfo *dinfo = activeDocInfo();
 
 		sgen->trackerController()->startAt(dinfo->currentFrame(), 0);
 
 		sgen->startTracker();
+
+		mtx_is_playing.lock();
 		is_playing = true;
-
-		mtx_stopping_song.unlock();
-	}
-
-	void sink_block()
-	{
-		sink->blockUntilStopped();
-	}
-
-	void stopSong()
-	{
-		boost::lock_guard<boost::mutex> lock(mtx_is_playing);
-		sgen->stopTracker();
+		mtx_is_playing.unlock();
 
 		if (mw != NULL)
-			mw->setPlaying(false);
-
-		is_playing = false;
+		{
+			mw->sendIsPlayingSongEvent(cb, data, true);
+		}
 	}
 
-	static void stopsong_thread(void (*mainthread_callback)(MainWindow *, void*), void *data)
+	static void stopsong_thread(mainthread_callback_t cb, void *data)
 	{
-		mtx_stopping_song.lock();
-
 		sgen->stopTracker();
 		sink->blockUntilStopped();
 		sink->blockUntilTimerEmpty();
@@ -450,16 +488,12 @@ namespace gui
 
 		if (mw != NULL)
 		{
-			mw->sendStoppedSongEvent(mainthread_callback, data);
+			mw->sendIsPlayingSongEvent(cb, data, false);
 		}
-
-		mtx_stopping_song.unlock();
 	}
 
-	static void stopsongtracker_thread(void (*mainthread_callback)(MainWindow *, void*), void *data)
+	static void stopsongtracker_thread(mainthread_callback_t cb, void *data)
 	{
-		mtx_stopping_song.lock();
-
 		sgen->stopTracker();
 		sgen->blockUntilTrackerStopped();
 
@@ -469,59 +503,96 @@ namespace gui
 
 		if (mw != NULL)
 		{
-			mw->sendStoppedSongEvent(mainthread_callback, data);
+			mw->sendIsPlayingSongEvent(cb, data, false);
 		}
-
-		mtx_stopping_song.unlock();
-	}
-	static void stopsong_qevent_thread(QEvent *e)
-	{
-		mtx_stopping_song.lock();
-
-		sgen->stopTracker();
-		sink->blockUntilStopped();
-		sink->blockUntilTimerEmpty();
-
-		mtx_is_playing.lock();
-		is_playing = false;
-		mtx_is_playing.unlock();
-
-		QApplication::postEvent(mw, e);
-
-		mtx_stopping_song.unlock();
 	}
 
-	void stopSongConcurrent(QEvent *event)
+	static void auditionnote_thread(const threadpool_playing_task::audition_t &a)
 	{
-		if (stopping_song_thread != NULL)
-			delete stopping_song_thread;
-
-		stopping_song_thread = new boost::thread(stopsong_qevent_thread, event);
+		sgen->auditionNote(a.note, a.octave, a.inst, a.channel);
 	}
-	void stopSongConcurrent(void (*mainthread_callback)(MainWindow *, void*), void *data)
+
+	static void auditionhalt_thread()
 	{
-		// stop the song and the sound sink without deadlocking the main thread
-		// should only be called from the main thread
+		sgen->auditionHalt();
+	}
 
-		if (stopping_song_thread != NULL)
-			delete stopping_song_thread;
+	static void func_threadpool_playing()
+	{
+		while (true)
+		{
+			threadpool_playing_task t;
+			mtx_threadpool_playing.lock();
+		checkempty:
+			bool empty = threadpool_playing_queue.empty();
+			if (!empty)
+			{
+				t = threadpool_playing_queue.front();
+				threadpool_playing_queue.pop();
+			}
+			if (empty)
+			{
+				// wait until queue is filled
+				cond_threadpool_playing.wait(mtx_threadpool_playing);
+				goto checkempty;
+			}
+			mtx_threadpool_playing.unlock();
 
-		stopping_song_thread = new boost::thread(stopsong_thread, mainthread_callback, data);
+			// do what's on the queue
+
+			switch (t.m_task)
+			{
+			case T_PLAYSONG:
+				playsong_thread(t.m_cb, t.m_cb_data);
+				break;
+			case T_STOPSONG:
+				stopsong_thread(t.m_cb, t.m_cb_data);
+				break;
+			case T_STOPSONGTRACKER:
+				stopsongtracker_thread(t.m_cb, t.m_cb_data);
+				break;
+			case T_AUDITION:
+				auditionnote_thread(t.m_audition);
+				break;
+			case T_HALTAUDITION:
+				auditionhalt_thread();
+				break;
+
+			// gracefully end the thread pool
+			case T_TERMINATE:
+				return;
+
+			default:	// ignore
+				break;
+			}
+		}
+	}
+
+	void playSongConcurrent(mainthread_callback_t cb, void *data)
+	{
+		threadpool_playing_task t(T_PLAYSONG, cb, data);
+		threadpool_playing_post(t);
+	}
+
+	void playSongConcurrent()
+	{
+		playSongConcurrent(NULL, NULL);
+	}
+
+	void stopSongConcurrent(mainthread_callback_t cb, void *data)
+	{
+		threadpool_playing_task t(T_STOPSONG, cb, data);
+		threadpool_playing_post(t);
 	}
 	void stopSongConcurrent()
 	{
 		stopSongConcurrent(NULL, NULL);
 	}
 
-	void stopSongTrackerConcurrent(void (*mainthread_callback)(MainWindow *, void*), void *data)
+	void stopSongTrackerConcurrent(mainthread_callback_t cb, void *data)
 	{
-		// stop the song tracker without deadlocking the main thread
-		// should only be called from the main thread
-
-		if (stopping_song_thread != NULL)
-			delete stopping_song_thread;
-
-		stopping_song_thread = new boost::thread(stopsongtracker_thread, mainthread_callback, data);
+		threadpool_playing_task t(T_STOPSONGTRACKER, cb, data);
+		threadpool_playing_post(t);
 	}
 	void stopSongTrackerConcurrent()
 	{
@@ -536,12 +607,17 @@ namespace gui
 
 	void auditionNote(int channel, int octave, int note)
 	{
-		int instrument = activeDocInfo()->currentInstrument();
-		sgen->auditionNote(note - C, octave, instrument, channel);
+		threadpool_playing_task t(T_AUDITION);
+		t.m_audition.octave = octave;
+		t.m_audition.note = note - C;
+		t.m_audition.inst = activeDocInfo()->currentInstrument();
+		t.m_audition.channel = channel;
+		threadpool_playing_post(t);
 	}
 	void auditionNoteHalt()
 	{
-		sgen->auditionHalt();
+		threadpool_playing_task t(T_HALTAUDITION);
+		threadpool_playing_post(t);
 	}
 	void auditionDPCM(const CDSample *sample)
 	{

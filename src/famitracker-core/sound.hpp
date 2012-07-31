@@ -69,6 +69,7 @@ private:
 	static void timeCallback(core::u32 skip, void *data);
 
 	void startPlayback();
+	void stopPlayback();
 	void haltSounds();
 	bool requestFrame();
 	core::u32 requestSound(core::s16 *buf, core::u32 sz, core::u32 *idx);
