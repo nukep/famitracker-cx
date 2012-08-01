@@ -9,6 +9,7 @@
 namespace gui
 {
 	MainWindow::MainWindow()
+		: m_close_shutdown(false)
 	{
 		setupUi(this);
 		instruments->setIconSize(QSize(16,16));
@@ -177,12 +178,23 @@ namespace gui
 		mw->close();
 	}
 
+	void MainWindow::close_cb(MainWindow *mw, void *)
+	{
+		mw->m_close_shutdown = true;
+		mw->close();
+	}
+
 	void MainWindow::closeEvent(QCloseEvent *e)
 	{
 		if (gui::isPlaying())
 		{
 			((QEvent*)e)->ignore();
 			gui::stopSongConcurrent(doclose_cb);
+		}
+		else if (!m_close_shutdown)
+		{
+			((QEvent*)e)->ignore();
+			gui::deleteSinkConcurrent(close_cb);
 		}
 		else
 		{

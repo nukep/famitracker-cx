@@ -40,6 +40,7 @@ namespace gui
 	void stopSongConcurrent();
 	void stopSongTrackerConcurrent(mainthread_callback_t, void *data=NULL);
 	void stopSongTrackerConcurrent();
+	void deleteSinkConcurrent(mainthread_callback_t cb, void *data=NULL);
 	static inline void toggleSongPlaying()
 	{
 		if (isPlaying())

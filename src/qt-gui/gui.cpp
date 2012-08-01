@@ -250,7 +250,7 @@ namespace gui
 	{
 		T_PLAYSONG, T_STOPSONG, T_STOPSONGTRACKER,
 		T_AUDITION, T_HALTAUDITION,
-		T_TERMINATE
+		T_DELETESINK, T_TERMINATE
 	};
 
 	struct threadpool_playing_task
@@ -347,7 +347,7 @@ namespace gui
 	{
 		threadpool_playing_post(threadpool_playing_task(T_TERMINATE));
 		thread_threadpool_playing->join();
-		delete sink;
+	//	delete sink;
 		delete sgen;
 
 		delete mw;
@@ -517,6 +517,17 @@ namespace gui
 		sgen->auditionHalt();
 	}
 
+	static void deletesink_thread(mainthread_callback_t cb, void *data)
+	{
+		delete sink;
+		sink = NULL;
+
+		if (mw != NULL)
+		{
+			mw->sendIsPlayingSongEvent(cb, data, isPlaying());
+		}
+	}
+
 	static void func_threadpool_playing()
 	{
 		while (true)
@@ -558,6 +569,9 @@ namespace gui
 				auditionhalt_thread();
 				break;
 
+			case T_DELETESINK:
+				deletesink_thread(t.m_cb, t.m_cb_data);
+				break;
 			// gracefully end the thread pool
 			case T_TERMINATE:
 				return;
@@ -597,6 +611,11 @@ namespace gui
 	void stopSongTrackerConcurrent()
 	{
 		stopSongTrackerConcurrent(NULL, NULL);
+	}
+	void deleteSinkConcurrent(mainthread_callback_t cb, void *data)
+	{
+		threadpool_playing_task t(T_DELETESINK, cb, data);
+		threadpool_playing_post(t);
 	}
 
 	void toggleEditMode()

@@ -63,6 +63,9 @@ namespace gui
 
 		static void newDoc_cb(MainWindow*, void*);
 		static void open_cb(MainWindow*, void*);
+
+		static void close_cb(MainWindow*, void*);
+		bool m_close_shutdown;
 	public slots:
 		void newDoc();
 		void open();

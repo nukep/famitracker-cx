@@ -42,11 +42,12 @@ void AlsaSound::callback(void *data)
 	core::u64 latency = as->m_buffer_size;
 	latency = latency * 1000000 / sr;
 
-	as->m_threading->mtx_running.lock();
 
 	while (true)
 	{
+		as->m_threading->mtx_running.lock();
 		bool running = as->m_running;
+		as->m_threading->mtx_running.unlock();
 		if (!running)
 		{
 			break;
@@ -56,8 +57,6 @@ void AlsaSound::callback(void *data)
 
 		core::u32 sz = as->m_period_size;
 
-		as->m_threading->mtx_running.unlock();
-
 		as->performSoundCallback(buf, sz);
 
 		snd_pcm_sframes_t frames = snd_pcm_writei(as->m_handle, buf, sz);
@@ -66,13 +65,7 @@ void AlsaSound::callback(void *data)
 		core::s64 d = delayp * 1000000 / sr;
 		d -= latency;
 
-		as->m_threading->mtx_running.lock();
-
-		if (as->m_running)
-		{
-			// it's possible for the callback to turn off playback
-			as->applyTime(d);
-		}
+		as->applyTime(d);
 
 		if (frames < 0)
 		{
@@ -91,8 +84,6 @@ void AlsaSound::callback(void *data)
 			continue;
 		}
 	}
-
-	as->m_threading->mtx_running.unlock();
 
 	delete[] buf;
 
