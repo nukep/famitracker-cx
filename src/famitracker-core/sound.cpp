@@ -81,6 +81,7 @@ void SoundGen::setSoundSink(core::SoundSink *s)
 	if (m_sink != NULL)
 	{
 		m_sink->setPlaying(false);
+		m_sink->blockUntilTimerEmpty();
 	}
 	m_queued_sound.clear();
 	m_queued_rowframes.clear();

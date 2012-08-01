@@ -55,6 +55,7 @@ namespace core
 			m_threading->delthread();
 		}
 		setPlaying(false);
+		blockUntilStopped();
 
 		delete m_threading;
 	}
@@ -68,12 +69,6 @@ namespace core
 				return;
 
 			m_playing = playing;
-
-			if (!playing)
-			{
-				// wait for the timing thread to finish the ring buffer
-				blockUntilTimerEmpty();
-			}
 		}
 		m_threading->cond_playing.notify_one();
 	}
@@ -210,6 +205,8 @@ compare_time:
 		// in case the timer thread is waiting on the ring buffer, signal the thread
 
 		m_threading->cond_time_ringbuffer.notify_all();
+
+		m_timeidxsz = 0;
 	}
 /*
 	void SoundSink::performTimeCallback()
