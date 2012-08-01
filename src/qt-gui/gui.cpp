@@ -303,19 +303,11 @@ namespace gui
 		dinfo->setVolumes(rf.volumes);
 
 		mw->sendUpdateEvent();
-/*
-		if (!rf.tracker_running)
+
+		if (rf.halt_signal)
 		{
-			mtx_stopping_song.lock();
-			mtx_is_playing.lock();
-			if (is_playing)
-			{
-				is_playing = false;
-				mw->sendStoppedSongEvent(NULL, NULL);
-			}
-			mtx_is_playing.unlock();
-			mtx_stopping_song.unlock();
-		}*/
+			stopSongTrackerConcurrent();
+		}
 	}
 
 	void init(int &argc, char **argv)

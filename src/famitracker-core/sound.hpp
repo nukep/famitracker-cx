@@ -30,6 +30,7 @@ public:
 		unsigned int row, frame;
 		bool rowframe_changed;
 		bool tracker_running;
+		bool halt_signal;
 		const core::u8 * volumes;
 	};
 	typedef void (*trackerupdate_f)(rowframe_t rf, FtmDocument *doc);

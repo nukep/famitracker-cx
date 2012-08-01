@@ -511,6 +511,7 @@ core::u32 SoundGen::requestSound(core::s16 *buf, core::u32 sz, core::u32 *idx)
 			memset(buf, 0, sz*sizeof(core::s16));
 		}*/
 		bool rowchange = requestFrame();
+		bool haltsignal = m_bPlayerHalted && m_trackerActive;
 		{
 			idx[c++] = off;
 			rowframe_t rf;
@@ -518,6 +519,7 @@ core::u32 SoundGen::requestSound(core::s16 *buf, core::u32 sz, core::u32 *idx)
 			rf.frame = trackerController()->frame();
 			rf.rowframe_changed = rowchange;
 			rf.tracker_running = m_trackerActive;
+			rf.halt_signal = haltsignal;
 
 			core::u8 vols[MAX_CHANNELS];
 
@@ -533,7 +535,7 @@ core::u32 SoundGen::requestSound(core::s16 *buf, core::u32 sz, core::u32 *idx)
 			m_threading->mtx_rowframes.unlock();
 		}
 
-		if (m_bPlayerHalted && m_trackerActive)
+		if (haltsignal)
 		{
 			stopPlayback();
 		}
