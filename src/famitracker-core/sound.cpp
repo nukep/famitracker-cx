@@ -642,9 +642,6 @@ void SoundGen::startPlayback()
 	resetTempo();
 
 	m_sink->blockUntilTimerEmpty();
-
-	m_queued_sound.clear();
-	m_queued_rowframes.clear();
 }
 void SoundGen::stopPlayback()
 {
