@@ -409,6 +409,9 @@ namespace gui
 	}
 	void MainWindow::controlPanelVisibilityChanged()
 	{
+		action_ViewControlpanel->blockSignals(true);
+		action_ViewControlpanel->setChecked(controlPanel->isVisible());
+		action_ViewControlpanel->blockSignals(false);
 		viewControlpanel(controlPanel->isVisible());
 	}
 
