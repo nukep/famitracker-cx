@@ -367,7 +367,7 @@ namespace gui
 			y = (m.h - (p.y() - m.y)) * (maxValVisible() - minValVisible()) / m.h  + minValVisible();
 		}
 	}
-	static inline int posToXPoint(const SequenceEditor::metric_t &m, const QPoint &p, int &x)
+	static inline void posToXPoint(const SequenceEditor::metric_t &m, const QPoint &p, int &x)
 	{
 		x = (p.x() - m.x + m.step_width/2) / m.step_width;
 		if (p.x()+m.step_width/2 < m.x)
