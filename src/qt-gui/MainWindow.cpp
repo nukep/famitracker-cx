@@ -37,7 +37,7 @@ namespace gui
 		QObject::connect(action_ViewStatusBar, SIGNAL(toggled(bool)), this, SLOT(viewStatusBar(bool)));
 		QObject::connect(action_ViewControlpanel, SIGNAL(toggled(bool)), this, SLOT(viewControlpanel(bool)));
 		QObject::connect(toolBar, SIGNAL(visibilityChanged(bool)), action_ViewToolbar, SLOT(setChecked(bool)));
-		QObject::connect(controlPanel, SIGNAL(visibilityChanged(bool)), action_ViewControlpanel, SLOT(setChecked(bool)));
+		QObject::connect(controlPanel, SIGNAL(visibilityChanged(bool)), this, SLOT(controlPanelVisibilityChanged()));
 
 		QObject::connect(songs, SIGNAL(activated(int)), this, SLOT(setSong(int)));
 
@@ -406,6 +406,13 @@ namespace gui
 	void MainWindow::viewControlpanel(bool v)
 	{
 		this->controlPanel->setVisible(v);
+	}
+	void MainWindow::controlPanelVisibilityChanged()
+	{
+		action_ViewControlpanel->blockSignals(true);
+		action_ViewControlpanel->setChecked(controlPanel->isVisible());
+		action_ViewControlpanel->blockSignals(false);
+		viewControlpanel(controlPanel->isVisible());
 	}
 
 	void MainWindow::setSong_mw_cb()
