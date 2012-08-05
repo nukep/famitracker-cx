@@ -593,8 +593,6 @@ namespace gui
 	void DPCMWidget::assign()
 	{
 		{
-			FtmDocument_lock_guard lock(m_2a03->document());
-
 			int from_idx;
 			int to_octave, to_note;
 			{
@@ -605,7 +603,6 @@ namespace gui
 				from_idx = from->data(0, Qt::UserRole).toInt();
 				from->setSelected(false);
 			}
-			CInstrument2A03 *inst = (CInstrument2A03*)m_2a03->instrument();
 			{
 				QList<QTreeWidgetItem*> tl = m_treewidget_assigned->selectedItems();
 				to_octave = m_combobox_octave->currentIndex();
@@ -613,6 +610,8 @@ namespace gui
 				{
 					// the next unassigned note
 					to_note = -1;
+					FtmDocument_lock_guard lock(m_2a03->document());
+					CInstrument2A03 *inst = (CInstrument2A03*)m_2a03->instrument();
 					for (int i = 0; i < 12; i++)
 					{
 						int s = inst->GetSample(to_octave, i) - 1;
@@ -638,14 +637,13 @@ namespace gui
 	}
 	void DPCMWidget::unassign()
 	{
+		typedef QList<QTreeWidgetItem*> List;
+		List list = m_treewidget_assigned->selectedItems();
+
+		int octave = m_combobox_octave->currentIndex();
+
 		{
 			FtmDocument_lock_guard lock(m_2a03->document());
-
-			typedef QList<QTreeWidgetItem*> List;
-			List list = m_treewidget_assigned->selectedItems();
-
-			int octave = m_combobox_octave->currentIndex();
-
 			CInstrument2A03 *inst = (CInstrument2A03*)m_2a03->instrument();
 
 			for (List::iterator it = list.begin(); it != list.end(); ++it)
@@ -655,9 +653,12 @@ namespace gui
 				int note = item->data(0, Qt::UserRole).toInt();
 
 				inst->SetSample(octave, note, 0);
-
-				item->setSelected(false);
 			}
+		}
+		for (List::iterator it = list.begin(); it != list.end(); ++it)
+		{
+			QTreeWidgetItem *item = *it;
+			item->setSelected(false);
 		}
 		updateSamples();
 	}
