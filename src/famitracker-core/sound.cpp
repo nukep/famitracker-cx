@@ -406,6 +406,7 @@ void SoundGen::haltSounds()
 		if (m_pChannels[i] != NULL)
 		{
 			m_pChannels[i]->MakeSilent();
+			m_pTrackerChannels[i]->Reset();
 		}
 	}
 }
@@ -500,7 +501,6 @@ core::u32 SoundGen::requestSound(core::s16 *buf, core::u32 sz, core::u32 *idx)
 		off += read;
 	}
 
-	m_threading->mtx_sink.lock();
 	m_threading->mtx_running.lock();
 	m_pDocument->lock();
 	while (sz != 0)
@@ -564,7 +564,6 @@ core::u32 SoundGen::requestSound(core::s16 *buf, core::u32 sz, core::u32 *idx)
 		m_threading->mtx_running.unlock();
 	}
 
-	m_threading->mtx_sink.unlock();
 	return c;
 }
 

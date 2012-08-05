@@ -4,6 +4,7 @@
 namespace boost
 {
 	class thread;
+	class mutex;
 }
 
 namespace core
@@ -18,8 +19,10 @@ namespace core
 		void wait();
 	private:
 		boost::thread *m_thread;
+		boost::mutex *m_mtx_running;
 		volatile bool m_running;
 
+		void _wait_nomtx();
 		static void _job(SoundThread *t, callback_t f, void *data);
 		void _delthread();
 	};

@@ -109,8 +109,6 @@ void AlsaSound::setPlaying(bool playing)
 	}
 	else
 	{
-		m_thread.wait();
-		// call original setPlaying AFTER stopping the audio thread
 		SoundSink::setPlaying(playing);
 	}
 }
