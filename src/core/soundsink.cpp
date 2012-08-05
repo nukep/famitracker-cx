@@ -88,12 +88,15 @@ namespace core
 	// return true if the loop should end
 	bool SoundSink::_timeloop_read(timestamp_t &tgt, core::u32 &skip)
 	{
-		boost::unique_lock<boost::mutex> lock(m_threading->mtx_time_ringbuffer);
+		boost::mutex &mtx = m_threading->mtx_time_ringbuffer;
+		mtx.lock();
 		while (m_timeidx_ringbuffer.isEmpty())
 		{
 			// notify that the ringbuffer is empty
 			// (this shouldn't affect the wait we have shortly after)
 			m_threading->cond_time_ringbuffer.notify_all();
+
+			mtx.unlock();
 
 			if (skip > 0)
 			{
@@ -102,17 +105,21 @@ namespace core
 				skip = 0;
 			}
 
+			mtx.lock();
+
 			// SoundSink could be destructing. let's check
 			if (m_threading->destructing)
 			{
+				mtx.unlock();
 				// the thread has to finish
 				return true;
 			}
 
 			// wait until the ring buffer is filled
-			m_threading->cond_time_ringbuffer.wait(lock);
+			m_threading->cond_time_ringbuffer.wait(mtx);
 		}
 		m_timeidx_ringbuffer.read(&tgt, 1);
+		mtx.unlock();
 		return false;
 	}
 
