@@ -962,7 +962,7 @@ namespace gui
 				p.drawText(r, name, opt);
 				drawVolume(p, x + vol_x, height()/2 + 5, vols[i]);
 
-				int effnum = 1;
+				int effnum = d->GetEffColumns(i);
 
 				if (effnum > 0)
 				{
@@ -970,7 +970,7 @@ namespace gui
 					QPixmap *pix = hover ? m_decrementEffHover : m_decrementEff;
 					p.drawPixmap(x + eff_x, eff_y, *pix);
 				}
-				if (effnum < MAX_EFFECT_COLUMNS)
+				if (effnum < MAX_EFFECT_COLUMNS-1)
 				{
 					bool hover = eff_hovering == 1 && channel_hovering == i;
 					QPixmap *pix = hover ? m_incrementEffHover : m_incrementEff;
