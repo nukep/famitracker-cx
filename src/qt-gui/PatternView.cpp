@@ -1066,7 +1066,23 @@ namespace gui
 		}
 		if (k == Qt::Key_Enter || k == Qt::Key_Return)
 		{
-			gui::toggleSongPlaying();
+			if (e->isAutoRepeat())
+				return;
+
+			if (e->modifiers() & Qt::AltModifier)
+			{
+				// play from current row
+				gui::playSongAtRowConcurrent();
+			}
+			else if (e->modifiers() & Qt::ControlModifier)
+			{
+				// play row
+				gui::auditionRow();
+			}
+			else
+			{
+				gui::toggleSongPlaying();
+			}
 			return;
 		}
 		if (k == Qt::Key_Space)

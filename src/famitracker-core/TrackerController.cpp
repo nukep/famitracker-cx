@@ -86,7 +86,7 @@ void TrackerController::startAt(unsigned int frame, unsigned int row)
 	unsigned int num_rows = m_document->GetPatternLength();
 
 	m_frame = frame % num_frames;
-	m_row = row & num_rows;
+	m_row = row % num_rows;
 	m_jumpFrame = m_frame;
 	m_jumpRow = m_row;
 
