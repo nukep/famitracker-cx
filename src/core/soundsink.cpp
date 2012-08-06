@@ -96,16 +96,12 @@ namespace core
 			// (this shouldn't affect the wait we have shortly after)
 			m_threading->cond_time_ringbuffer.notify_all();
 
-			mtx.unlock();
-
 			if (skip > 0)
 			{
 				// perform skip callbacks before waiting
 				(*m_timeCallback)(skip, m_callbackData);
 				skip = 0;
 			}
-
-			mtx.lock();
 
 			// SoundSink could be destructing. let's check
 			if (m_threading->destructing)
@@ -119,6 +115,10 @@ namespace core
 			m_threading->cond_time_ringbuffer.wait(mtx);
 		}
 		m_timeidx_ringbuffer.read(&tgt, 1);
+		if (m_timeidx_ringbuffer.isEmpty())
+		{
+			m_threading->cond_time_ringbuffer.notify_all();
+		}
 		mtx.unlock();
 		return false;
 	}
