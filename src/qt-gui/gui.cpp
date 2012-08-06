@@ -271,9 +271,19 @@ namespace gui
 
 		struct audition_t
 		{
+			bool playrow;
 			int octave, note, inst, channel;
 		};
-		audition_t m_audition;
+		struct playing_t
+		{
+			bool startatrow0;
+		};
+
+		union
+		{
+			playing_t m_playing;
+			audition_t m_audition;
+		};
 	};
 
 	boost::thread *thread_threadpool_playing;
@@ -450,11 +460,15 @@ namespace gui
 		return edit_mode;
 	}
 
-	static void playsong_thread(mainthread_callback_t cb, void *data)
+	static void playsong_thread(mainthread_callback_t cb, void *data, const threadpool_playing_task::playing_t &p)
 	{
 		const DocInfo *dinfo = activeDocInfo();
 
-		sgen->trackerController()->startAt(dinfo->currentFrame(), 0);
+		bool startatrow0 = p.startatrow0;
+
+		int row = startatrow0?0:dinfo->currentRow();
+
+		sgen->trackerController()->startAt(dinfo->currentFrame(), row);
 
 		sgen->startTracker();
 
@@ -501,7 +515,15 @@ namespace gui
 
 	static void auditionnote_thread(const threadpool_playing_task::audition_t &a)
 	{
-		sgen->auditionNote(a.note, a.octave, a.inst, a.channel);
+		if (a.playrow)
+		{
+			DocInfo *dinfo = activeDocInfo();
+			sgen->auditionRow(dinfo->currentFrame(), dinfo->currentRow());
+		}
+		else
+		{
+			sgen->auditionNote(a.note, a.octave, a.inst, a.channel);
+		}
 	}
 
 	static void auditionhalt_thread()
@@ -546,7 +568,7 @@ namespace gui
 			switch (t.m_task)
 			{
 			case T_PLAYSONG:
-				playsong_thread(t.m_cb, t.m_cb_data);
+				playsong_thread(t.m_cb, t.m_cb_data, t.m_playing);
 				break;
 			case T_STOPSONG:
 				stopsong_thread(t.m_cb, t.m_cb_data);
@@ -577,12 +599,20 @@ namespace gui
 	void playSongConcurrent(mainthread_callback_t cb, void *data)
 	{
 		threadpool_playing_task t(T_PLAYSONG, cb, data);
+		t.m_playing.startatrow0 = true;
 		threadpool_playing_post(t);
 	}
 
 	void playSongConcurrent()
 	{
 		playSongConcurrent(NULL, NULL);
+	}
+
+	void playSongAtRowConcurrent()
+	{
+		threadpool_playing_task t(T_PLAYSONG);
+		t.m_playing.startatrow0 = false;
+		threadpool_playing_post(t);
 	}
 
 	void stopSongConcurrent(mainthread_callback_t cb, void *data)
@@ -619,10 +649,17 @@ namespace gui
 	void auditionNote(int channel, int octave, int note)
 	{
 		threadpool_playing_task t(T_AUDITION);
+		t.m_audition.playrow = false;
 		t.m_audition.octave = octave;
 		t.m_audition.note = note - C;
 		t.m_audition.inst = activeDocInfo()->currentInstrument();
 		t.m_audition.channel = channel;
+		threadpool_playing_post(t);
+	}
+	void auditionRow()
+	{
+		threadpool_playing_task t(T_AUDITION);
+		t.m_audition.playrow = true;
 		threadpool_playing_post(t);
 	}
 	void auditionNoteHalt()

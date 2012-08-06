@@ -36,6 +36,7 @@ namespace gui
 	static bool canEdit(){ return isEditing() && (!isPlaying()); }
 	void playSongConcurrent(mainthread_callback_t, void *data=NULL);
 	void playSongConcurrent();
+	void playSongAtRowConcurrent();
 	void stopSongConcurrent(mainthread_callback_t, void *data=NULL);
 	void stopSongConcurrent();
 	void stopSongTrackerConcurrent(mainthread_callback_t, void *data=NULL);
@@ -55,6 +56,7 @@ namespace gui
 	void toggleEditMode();
 
 	void auditionNote(int channel, int octave, int note);
+	void auditionRow();
 	void auditionNoteHalt();
 	void auditionDPCM(const CDSample *sample);
 

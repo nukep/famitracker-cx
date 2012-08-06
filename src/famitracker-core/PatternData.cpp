@@ -106,7 +106,21 @@ void CPatternData::SetPatternData(int Channel, int Pattern, int Row, const stCha
 	if (!m_pPatternData[Channel][Pattern])		// Allocate pattern if accessed for the first time
 		AllocatePattern(Channel, Pattern);
 
-	*(m_pPatternData[Channel][Pattern] + Row) = *note;
+	stChanNote n = *note;
+
+	// todo: use enumerator constant
+	if (Channel == 3)
+	{
+		if (n.Note != NONE && n.Note != HALT && n.Note != RELEASE)
+		{
+			// normalize noise to octave 1 and 2
+			int v = (n.Note - C + n.Octave*12) % 16 + 16;
+			n.Octave = v / 12;
+			n.Note = v % 12 + C;
+		}
+	}
+
+	*(m_pPatternData[Channel][Pattern] + Row) = n;
 	m_patternPlayLengths[Channel][Pattern] = -1;
 }
 

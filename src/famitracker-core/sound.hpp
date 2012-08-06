@@ -59,6 +59,7 @@ public:
 	void startTracker();
 	void stopTracker();
 	void auditionNote(int note, int octave, int instrument, int channel);
+	void auditionRow(unsigned int frame, unsigned int row);
 	void auditionHalt();
 
 	bool isTrackerActive();

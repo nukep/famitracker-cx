@@ -111,9 +111,6 @@ void SoundGen::setDocument(FtmDocument *doc)
 
 	resetTempo();
 
-	m_lastRow = ~0;
-	m_lastFrame = ~0;
-
 	const std::vector<int> & chans = doc->getChannelsFromChip();
 	m_iChannels = chans.size();
 	for (int i = 0; i < m_iChannels; i++)
@@ -622,6 +619,9 @@ void SoundGen::startPlayback()
 {
 	m_sinkStopTick = -1;
 
+	m_lastRow = ~0;
+	m_lastFrame = ~0;
+
 	m_bPlayerHalted = false;
 	m_iFrameCounter = 0;
 
@@ -734,6 +734,38 @@ void SoundGen::auditionNote(int note, int octave, int instrument, int channel)
 		m_threading->mtx_sink.unlock();
 	}
 }
+void SoundGen::auditionRow(unsigned int frame, unsigned int row)
+{
+	bool play = false;
+
+	m_threading->mtx_running.lock();
+
+	if (!m_trackerActive)
+	{
+		startPlayback();
+
+		m_pDocument->lock();
+		for (int i = 0; i < m_channels; i++)
+		{
+			stChanNote n;
+			m_pDocument->GetNoteData(frame, i, row, &n);
+			m_pActiveTrackerChannels[i]->SetNote(n);
+		}
+		m_pDocument->unlock();
+
+		play = true;
+	}
+
+	m_threading->mtx_running.unlock();
+
+	if (play)
+	{
+		m_threading->mtx_sink.lock();
+		m_sink->setPlaying(true);
+		m_threading->mtx_sink.unlock();
+	}
+}
+
 void SoundGen::auditionHalt()
 {
 	m_threading->mtx_running.lock();

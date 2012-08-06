@@ -68,6 +68,8 @@ namespace styles
 			return color_default(c);
 		else if (style == 1)
 			return color_monochrome(c);
+
+		return color_default(c);
 	}
 
 	void selectStyle(const char *name)

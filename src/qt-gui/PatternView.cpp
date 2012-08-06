@@ -311,7 +311,7 @@ namespace gui
 		}
 
 		// returns true if note terminates frame
-		bool drawNote(QPainter &p, int x, int y, const stChanNote &n, int effColumns, const QColor &primary, bool selected)
+		bool drawNote(QPainter &p, int x, int y, const stChanNote &n, int effColumns, const QColor &primary, bool selected, int channel)
 		{
 			const QColor volcol = stylecolor(styles::PATTERN_VOL, selected);
 			const QColor effcol = stylecolor(styles::PATTERN_EFFNUM, selected);
@@ -322,6 +322,9 @@ namespace gui
 			char buf[6];
 
 			const QColor blankcol = color_interpolate(stylecolor(styles::PATTERN_BG), primary, 0.4);
+
+			// todo: use enumerator constant
+			bool noisechannel = channel == 3;
 
 			if (n.Note == NONE)
 			{
@@ -355,18 +358,32 @@ namespace gui
 			else
 			{
 				int ni = n.Note - C;
-				gui::activeDocInfo()->noteNotation(ni, buf);
+				if (!noisechannel)
+				{
+					gui::activeDocInfo()->noteNotation(ni, buf);
 
-				drawChar(p, x, y, buf[0], primary, blankcol);
-				x += px_unit;
+					drawChar(p, x, y, buf[0], primary, blankcol);
+					x += px_unit;
 
-				if (buf[1] == ' ') buf[1] = '-';
-				drawChar(p, x, y, buf[1], primary, blankcol);
-				x += px_unit;
+					if (buf[1] == ' ') buf[1] = '-';
+					drawChar(p, x, y, buf[1], primary, blankcol);
+					x += px_unit;
 
-				sprintf(buf, "%d", n.Octave);
-				drawChar(p, x, y, buf[0], primary, blankcol);
-				x += px_unit + colspace;
+					sprintf(buf, "%d", n.Octave);
+					drawChar(p, x, y, buf[0], primary, blankcol);
+					x += px_unit + colspace;
+				}
+				else
+				{
+					ni = (ni + n.Octave*12) % 16;
+					sprintf(buf, "%X-#", ni);
+					for (int i = 0; i < 3; i++)
+					{
+						drawChar(p, x, y, buf[i], primary, blankcol);
+						x += px_unit;
+					}
+					x += colspace;
+				}
 			}
 
 			const QColor *use_instcol = &instcol;
@@ -467,7 +484,7 @@ namespace gui
 
 					unsigned int effcolumns = d->GetEffColumns(j);
 
-					terminateFrame |= drawNote(p, x, y, note, effcolumns, rownumcol, selected);
+					terminateFrame |= drawNote(p, x, y, note, effcolumns, rownumcol, selected, j);
 
 					x += columnWidth(effcolumns) + colspace;
 				}
@@ -776,13 +793,27 @@ namespace gui
 	class PatternView_Header : public QWidget
 	{
 	public:
+		static const int vol_x = 5;
+		static const int vol_squaresize = 5;
+		static const int vol_stride = vol_squaresize + 2;
+		static const int vol_width = vol_stride * 16;
+		static const int eff_x = vol_x + vol_width - 20;
+		static const int eff_y = 6;
+		static const int eff_width = 6;
+		static const int eff_height = 12;
+		static const int eff_stride = eff_width + 4;
+
 		PatternView_Header(PatternView_Body *body)
-			: m_body(body)
+			: m_body(body), channel_hovering(-1), eff_hovering(-1)
 		{
 			m_font.setPixelSize(12);
 			setFixedHeight(header_height);
 
 			m_gradientPixmap = new QPixmap(1, header_height);
+			m_decrementEff = new QPixmap(eff_width, eff_height);
+			m_incrementEff = new QPixmap(eff_width, eff_height);
+			m_decrementEffHover = new QPixmap(eff_width, eff_height);
+			m_incrementEffHover = new QPixmap(eff_width, eff_height);
 
 			QPainter p;
 			p.begin(m_gradientPixmap);
@@ -798,10 +829,54 @@ namespace gui
 				p.drawRect(0, 0, 1, header_height);
 			}
 			p.end();
+
+			const QColor eff_unhovered(80,80,80);
+			const QColor eff_hovered = Qt::white;
+
+			m_decrementEff->fill(Qt::transparent);
+			p.begin(m_decrementEff);
+			drawArrow(p, true, eff_unhovered);
+			p.end();
+
+			m_decrementEffHover->fill(Qt::transparent);
+			p.begin(m_decrementEffHover);
+			drawArrow(p, true, eff_hovered);
+			p.end();
+
+			m_incrementEff->fill(Qt::transparent);
+			p.begin(m_incrementEff);
+			drawArrow(p, false, eff_unhovered);
+			p.end();
+
+			m_incrementEffHover->fill(Qt::transparent);
+			p.begin(m_incrementEffHover);
+			drawArrow(p, false, eff_hovered);
+			p.end();
+
+			setMouseTracking(true);
 		}
 		~PatternView_Header()
 		{
+			delete m_incrementEffHover;
+			delete m_decrementEffHover;
+			delete m_incrementEff;
+			delete m_decrementEff;
 			delete m_gradientPixmap;
+		}
+		void drawArrow(QPainter &p, bool left, const QColor col)
+		{
+			const QColor arrow_pencolor(128,128,128);
+
+			p.setRenderHint(QPainter::Antialiasing);
+			p.setPen(arrow_pencolor);
+			p.setBrush(col);
+			QPolygon poly;
+			int l = 0;
+			int r = eff_width;
+			int lx = left?r:l;
+			int rx = left?l:r;
+			poly << QPoint(lx, 0) << QPoint(rx, eff_height/2) << QPoint(lx, eff_height);
+			p.drawPolygon(poly);
 		}
 
 		void drawLine(QPainter &p, int x, int y, int h)
@@ -824,8 +899,6 @@ namespace gui
 		// vol is 0..15
 		void drawVolume(QPainter &p, int x, int y, int vol)
 		{
-			int squaresize = 5;
-			int stride = squaresize + 2;
 			int nx, ny;
 
 			p.setPen(Qt::NoPen);
@@ -837,9 +910,9 @@ namespace gui
 
 			for (int i = 0; i < 15; i++)
 			{
-				p.drawRect(nx, ny, squaresize, squaresize);
+				p.drawRect(nx, ny, vol_squaresize, vol_squaresize);
 
-				nx += stride;
+				nx += vol_stride;
 			}
 
 			p.setBrush(Qt::green);
@@ -852,9 +925,9 @@ namespace gui
 					p.setBrush(Qt::gray);
 
 				}
-				p.drawRect(nx, ny, squaresize, squaresize);
+				p.drawRect(nx, ny, vol_squaresize, vol_squaresize);
 
-				nx += stride;
+				nx += vol_stride;
 			}
 		}
 
@@ -887,33 +960,102 @@ namespace gui
 				const char *name = app::channelMap()->GetChannelName(d->getChannelsFromChip()[i]);
 
 				p.drawText(r, name, opt);
-				drawVolume(p, x + 5, height()/2 + 5, vols[i]);
+				drawVolume(p, x + vol_x, height()/2 + 5, vols[i]);
+
+				int effnum = 1;
+
+				if (effnum > 0)
+				{
+					bool hover = eff_hovering == 0 && channel_hovering == i;
+					QPixmap *pix = hover ? m_decrementEffHover : m_decrementEff;
+					p.drawPixmap(x + eff_x, eff_y, *pix);
+				}
+				if (effnum < MAX_EFFECT_COLUMNS)
+				{
+					bool hover = eff_hovering == 1 && channel_hovering == i;
+					QPixmap *pix = hover ? m_incrementEffHover : m_incrementEff;
+					p.drawPixmap(x + eff_x + eff_stride, eff_y, *pix);
+				}
+
 				x += w;
 				drawLine(p, x, 1, height()-1);
 			}
 
 			p.end();
 		}
+		void mouseMoveEvent(QMouseEvent *e)
+		{
+			channel_hovering = m_body->channelAtX(e->x());
+			int peh = eff_hovering;
+			eff_hovering = -1;
+			if (channel_hovering >= 0)
+			{
+				int x = e->x();
+				int y = e->y();
+				x = x - m_body->xAtChannel(channel_hovering) - eff_x;
+				y = y - eff_y;
+
+				if (x >= 0 && x < (eff_stride + eff_width) &&
+					y >= 0 && y < eff_height)
+				{
+					// hovering effect arrow
+					eff_hovering = x < eff_stride ? 0 : 1;
+				}
+			}
+
+			if (peh != eff_hovering)
+			{
+				repaint();
+			}
+		}
+
 		void mousePressEvent(QMouseEvent *e)
 		{
-			int chan = m_body->channelAtX(e->x());
-			if (chan < 0)
+			if (channel_hovering < 0)
 				return;
+			if (eff_hovering == -1)
+			{
+				gui::toggleMuted(channel_hovering);
+				repaint();
+				return;
+			}
+			FtmDocument *doc = gui::activeDocument();
 
-			gui::toggleMuted(chan);
-			repaint();
+			doc->lock();
+			if (eff_hovering == 0)
+			{
+				doc->decreaseEffColumns(channel_hovering);
+			}
+			else if (eff_hovering == 1)
+			{
+				doc->increaseEffColumns(channel_hovering);
+			}
+			doc->unlock();
+
+			gui::updateFrameChannel(true);
 		}
 		void mouseDoubleClickEvent(QMouseEvent *e)
 		{
-			int chan = m_body->channelAtX(e->x());
-			if (chan < 0)
+			if (channel_hovering < 0)
 				return;
 
-			gui::toggleSolo(chan);
-			repaint();
+			if (eff_hovering == -1)
+			{
+				gui::toggleSolo(channel_hovering);
+				repaint();
+				return;
+			}
+
+			QWidget::mouseDoubleClickEvent(e);
 		}
 
+		int channel_hovering;
+		int eff_hovering;		// -1, 0, 1: none, left, right
 		QPixmap *m_gradientPixmap;
+		QPixmap *m_decrementEff;
+		QPixmap *m_incrementEff;
+		QPixmap *m_decrementEffHover;
+		QPixmap *m_incrementEffHover;
 		QFont m_font;
 		PatternView_Body *m_body;
 	};
@@ -1049,7 +1191,23 @@ namespace gui
 		}
 		if (k == Qt::Key_Enter || k == Qt::Key_Return)
 		{
-			gui::toggleSongPlaying();
+			if (e->isAutoRepeat())
+				return;
+
+			if (e->modifiers() & Qt::AltModifier)
+			{
+				// play from current row
+				gui::playSongAtRowConcurrent();
+			}
+			else if (e->modifiers() & Qt::ControlModifier)
+			{
+				// play row
+				gui::auditionRow();
+			}
+			else
+			{
+				gui::toggleSongPlaying();
+			}
 			return;
 		}
 		if (k == Qt::Key_Space)
