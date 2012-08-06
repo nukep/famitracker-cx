@@ -1720,6 +1720,23 @@ void FtmDocument::DecreaseEffect(unsigned int Frame, unsigned int Channel, unsig
 	}
 }
 
+void FtmDocument::increaseEffColumns(unsigned int channel)
+{
+	unsigned int cols = GetEffColumns(channel);
+	if (cols >= MAX_EFFECT_COLUMNS-1)
+		return;
+
+	SetEffColumns(channel, cols+1);
+}
+void FtmDocument::decreaseEffColumns(unsigned int channel)
+{
+	unsigned int cols = GetEffColumns(channel);
+	if (cols == 0)
+		return;
+
+	SetEffColumns(channel, cols-1);
+}
+
 void FtmDocument::SetNoteData(unsigned int Frame, unsigned int Channel, unsigned int Row, const stChanNote *Data)
 {
 	ftm_Assert(Frame < MAX_FRAMES);

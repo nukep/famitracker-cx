@@ -117,6 +117,9 @@ public:
 	void			IncreaseEffect(unsigned int Frame, unsigned int Channel, unsigned int Row, unsigned int Index);
 	void			DecreaseEffect(unsigned int Frame, unsigned int Channel, unsigned int Row, unsigned int Index);
 
+	void			increaseEffColumns(unsigned int channel);
+	void			decreaseEffColumns(unsigned int channel);
+
 	void			SetNoteData(unsigned int Frame, unsigned int Channel, unsigned int Row, const stChanNote *Data);
 	void			GetNoteData(unsigned int Frame, unsigned int Channel, unsigned int Row, stChanNote *Data) const;
 
