@@ -311,7 +311,7 @@ namespace gui
 		}
 
 		// returns true if note terminates frame
-		bool drawNote(QPainter &p, int x, int y, const stChanNote &n, int effColumns, const QColor &primary, bool selected)
+		bool drawNote(QPainter &p, int x, int y, const stChanNote &n, int effColumns, const QColor &primary, bool selected, int channel)
 		{
 			const QColor volcol = stylecolor(styles::PATTERN_VOL, selected);
 			const QColor effcol = stylecolor(styles::PATTERN_EFFNUM, selected);
@@ -322,6 +322,9 @@ namespace gui
 			char buf[6];
 
 			const QColor blankcol = color_interpolate(stylecolor(styles::PATTERN_BG), primary, 0.4);
+
+			// todo: use enumerator constant
+			bool noisechannel = channel == 3;
 
 			if (n.Note == NONE)
 			{
@@ -355,18 +358,32 @@ namespace gui
 			else
 			{
 				int ni = n.Note - C;
-				gui::activeDocInfo()->noteNotation(ni, buf);
+				if (!noisechannel)
+				{
+					gui::activeDocInfo()->noteNotation(ni, buf);
 
-				drawChar(p, x, y, buf[0], primary, blankcol);
-				x += px_unit;
+					drawChar(p, x, y, buf[0], primary, blankcol);
+					x += px_unit;
 
-				if (buf[1] == ' ') buf[1] = '-';
-				drawChar(p, x, y, buf[1], primary, blankcol);
-				x += px_unit;
+					if (buf[1] == ' ') buf[1] = '-';
+					drawChar(p, x, y, buf[1], primary, blankcol);
+					x += px_unit;
 
-				sprintf(buf, "%d", n.Octave);
-				drawChar(p, x, y, buf[0], primary, blankcol);
-				x += px_unit + colspace;
+					sprintf(buf, "%d", n.Octave);
+					drawChar(p, x, y, buf[0], primary, blankcol);
+					x += px_unit + colspace;
+				}
+				else
+				{
+					ni = (ni + n.Octave*12) % 16;
+					sprintf(buf, "%X-#", ni);
+					for (int i = 0; i < 3; i++)
+					{
+						drawChar(p, x, y, buf[i], primary, blankcol);
+						x += px_unit;
+					}
+					x += colspace;
+				}
 			}
 
 			const QColor *use_instcol = &instcol;
@@ -467,7 +484,7 @@ namespace gui
 
 					unsigned int effcolumns = d->GetEffColumns(j);
 
-					terminateFrame |= drawNote(p, x, y, note, effcolumns, rownumcol, selected);
+					terminateFrame |= drawNote(p, x, y, note, effcolumns, rownumcol, selected, j);
 
 					x += columnWidth(effcolumns) + colspace;
 				}
