@@ -12,6 +12,7 @@ namespace gui
 		: m_close_shutdown(false)
 	{
 		setupUi(this);
+		setWindowTitle(QApplication::applicationName());
 		instruments->setIconSize(QSize(16,16));
 
 		speed->setRange(MIN_SPEED, MAX_SPEED);

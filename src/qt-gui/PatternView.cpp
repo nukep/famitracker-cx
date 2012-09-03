@@ -246,7 +246,7 @@ namespace gui
 			QPainter p;
 			p.begin(*pix);
 			{
-				const double x = 1.25;
+				const double x = 1.50;
 				const double y = 1.00;
 				const double z = 0.65;
 				QLinearGradient lg(0, 0, 0, 1);
@@ -321,7 +321,7 @@ namespace gui
 
 			char buf[6];
 
-			const QColor blankcol = color_interpolate(stylecolor(styles::PATTERN_BG), primary, 0.4);
+			const QColor blankcol = color_interpolate(stylecolor(styles::PATTERN_BG), primary, 0.3);
 
 			// todo: use enumerator constant
 			bool noisechannel = channel == 3;

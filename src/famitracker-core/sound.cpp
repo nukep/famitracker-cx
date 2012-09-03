@@ -745,12 +745,8 @@ void SoundGen::auditionRow(unsigned int frame, unsigned int row)
 		startPlayback();
 
 		m_pDocument->lock();
-		for (int i = 0; i < m_channels; i++)
-		{
-			stChanNote n;
-			m_pDocument->GetNoteData(frame, i, row, &n);
-			m_pActiveTrackerChannels[i]->SetNote(n);
-		}
+		trackerController()->startAt(frame, row);
+		trackerController()->playRow();
 		m_pDocument->unlock();
 
 		play = true;
