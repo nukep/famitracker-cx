@@ -323,7 +323,7 @@ namespace gui
 	void init(int &argc, char **argv)
 	{
 		app = new QApplication(argc, argv);
-		app->setApplicationName(QApplication::tr("FamiTracker-cx"));
+		app->setApplicationName(QApplication::tr("FamiTracker CX"));
 		app->setWindowIcon(QIcon(":/appicon"));
 	}
 

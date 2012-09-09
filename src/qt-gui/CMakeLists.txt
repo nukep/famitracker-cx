@@ -4,6 +4,7 @@ set(SRC
 	../parse_arguments.cpp
 	../parse_arguments.hpp
 	../defaults.hpp
+	../version.hpp
 
 	main.cpp
 
@@ -23,6 +24,10 @@ set(SRC
 	InstrumentEditor.hpp
 	InstrumentEditorTypes.cpp
 )
+
+if (WIN32)
+	list(APPEND SRC FamiTracker.rc)
+endif()
 
 set(MOC_INC
 	MainWindow.hpp
