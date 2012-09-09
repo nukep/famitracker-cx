@@ -21,6 +21,7 @@
 #pragma once
 
 #include "CustomExporterInterfaces.h"
+#include "common.hpp"
 
 // Instrument types
 enum {
@@ -50,7 +51,7 @@ namespace core
 // TODO - dan: CCompiler
 
 // Instrument base class
-class CInstrument {
+class FAMICOREAPI CInstrument {
 public:
 	CInstrument();
 	virtual ~CInstrument();
@@ -73,7 +74,7 @@ private:
 	int	 m_iType;
 };
 
-class CInstrument2A03 : public CInstrument, public CInstrument2A03Interface {
+class FAMICOREAPI CInstrument2A03 : public CInstrument, public CInstrument2A03Interface {
 public:
 	CInstrument2A03();
 	virtual int	GetType() const { return INST_2A03; }
@@ -123,7 +124,7 @@ private:
 
 class CInstrumentVRC6;
 
-class CInstrumentVRC6 : public CInstrument {
+class FAMICOREAPI CInstrumentVRC6 : public CInstrument {
 public:
 	CInstrumentVRC6();
 	virtual int	GetType() const { return INST_VRC6; }
@@ -177,7 +178,7 @@ private:
 
 #endif
 
-class CInstrumentFDS : public CInstrument {
+class FAMICOREAPI CInstrumentFDS : public CInstrument {
 public:
 	CInstrumentFDS();
 	virtual ~CInstrumentFDS();

@@ -4,6 +4,7 @@
 #include <boost/thread/mutex.hpp>
 #include <boost/thread/condition.hpp>
 #include "sound.hpp"
+#include "core/ringbuffer.hpp"
 #include "FtmDocument.hpp"
 #include "FamiTrackerTypes.h"
 #include "TrackerChannel.h"
@@ -38,23 +39,25 @@ struct _soundgen_threading_t
 };
 
 SoundGen::SoundGen()
-	: m_apu(&m_samplemem), m_iConsumedCycles(0), m_pDocument(NULL),
+	: m_iConsumedCycles(0), m_pDocument(NULL),
 	  m_trackerUpdateCallback(NULL), m_sink(NULL),
-	  m_queued_rowframes(sizeof(rowframe_t)),
-	  m_queued_sound(sizeof(core::s16)),
 	  m_volumes_ring(NULL),
 	  m_trackerActive(false),
 	  m_timer_trackerActive(false)
 {
+	m_samplemem = new CSampleMem;
+	m_apu = new CAPU(m_samplemem);
+	m_queued_rowframes = new core::RingBuffer(sizeof(rowframe_t));
+	m_queued_sound = new core::RingBuffer(sizeof(core::s16));
 	m_threading = new _soundgen_threading_t;
 	// Create all kinds of channels
 	createChannels();
 
 	m_trackerctlr = new TrackerController;
 
-	m_queued_rowframes.resize(rowframes_size);
-	m_queued_sound.resize(16384);
-	m_apu.SetCallback(apuCallback, this);
+	m_queued_rowframes->resize(rowframes_size);
+	m_queued_sound->resize(16384);
+	m_apu->SetCallback(apuCallback, this);
 }
 
 SoundGen::~SoundGen()
@@ -74,6 +77,10 @@ SoundGen::~SoundGen()
 			delete m_pTrackerChannels[i];
 	}
 	delete m_threading;
+	delete m_queued_sound;
+	delete m_queued_rowframes;
+	delete m_apu;
+	delete m_samplemem;
 }
 
 void SoundGen::setSoundSink(core::SoundSink *s)
@@ -83,8 +90,8 @@ void SoundGen::setSoundSink(core::SoundSink *s)
 		m_sink->setPlaying(false);
 		m_sink->blockUntilTimerEmpty();
 	}
-	m_queued_sound.clear();
-	m_queued_rowframes.clear();
+	m_queued_sound->clear();
+	m_queued_rowframes->clear();
 	m_sink = s;
 	m_sink->setCallbackData(this);
 	m_sink->setSoundCallback(soundCallback);
@@ -100,13 +107,13 @@ void SoundGen::setDocument(FtmDocument *doc)
 	generateVibratoTable(doc->GetVibratoStyle());
 
 	// TODO - dan: load settings
-	m_apu.SetupSound(m_sink->sampleRate(), 1, doc->GetMachine());
-	m_apu.SetupMixer(16, 12000, 24, 100);
+	m_apu->SetupSound(m_sink->sampleRate(), 1, doc->GetMachine());
+	m_apu->SetupMixer(16, 12000, 24, 100);
 
 	loadMachineSettings(doc->GetMachine(), doc->GetEngineSpeed());
 
 	unsigned char chip = doc->GetExpansionChip();
-	m_apu.SetExternalSound(chip);
+	m_apu->SetExternalSound(chip);
 	resetAPU();
 
 	resetTempo();
@@ -143,7 +150,7 @@ void SoundGen::loadMachineSettings(int machine, int rate)
 
 	m_iMachineType = machine;
 
-	m_apu.ChangeMachine(machine == NTSC ? MACHINE_NTSC : MACHINE_PAL);
+	m_apu->ChangeMachine(machine == NTSC ? MACHINE_NTSC : MACHINE_PAL);
 
 	// Choose a default rate if not predefined
 	if (rate == 0)
@@ -267,7 +274,7 @@ void SoundGen::addCycles(int count)
 {
 	// Add APU cycles
 	m_iConsumedCycles += count;
-	m_apu.AddTime(count);
+	m_apu->AddTime(count);
 }
 
 void SoundGen::createChannels()
@@ -284,7 +291,7 @@ void SoundGen::createChannels()
 	assignChannel(CHANID_SQUARE2, new CSquare2Chan(this));
 	assignChannel(CHANID_TRIANGLE, new CTriangleChan(this));
 	assignChannel(CHANID_NOISE, new CNoiseChan(this));
-	assignChannel(CHANID_DPCM, new CDPCMChan(this, &m_samplemem));
+	assignChannel(CHANID_DPCM, new CDPCMChan(this, m_samplemem));
 
 	// Konami VRC6
 	assignChannel(CHANID_VRC6_PULSE1, new CVRC6Square1(this));
@@ -332,7 +339,7 @@ void SoundGen::setupChannels()
 	{
 		if (m_pChannels[i] != NULL)
 		{
-			m_pChannels[i]->InitChannel(&m_apu, m_iVibratoTable, m_pDocument);
+			m_pChannels[i]->InitChannel(m_apu, m_iVibratoTable, m_pDocument);
 			m_pChannels[i]->SetVibratoStyle(m_pDocument->GetVibratoStyle());
 			m_pChannels[i]->MakeSilent();
 		}
@@ -352,16 +359,16 @@ void SoundGen::assignChannel(int id, CChannelHandler *renderer)
 void SoundGen::resetAPU()
 {
 	// Reset the APU
-	m_apu.Reset();
+	m_apu->Reset();
 
 	// Enable all channels
-	m_apu.Write(0x4015, 0x0F);
-	m_apu.Write(0x4017, 0x00);
+	m_apu->Write(0x4015, 0x0F);
+	m_apu->Write(0x4017, 0x00);
 
 	// MMC5
-	m_apu.ExternalWrite(0x5015, 0x03);
+	m_apu->ExternalWrite(0x5015, 0x03);
 
-	m_samplemem.SetMem(NULL, 0);
+	m_samplemem->SetMem(NULL, 0);
 }
 
 void SoundGen::playNote(int channel, stChanNote *noteData, int effColumns)
@@ -383,17 +390,17 @@ void SoundGen::runFrame()
 
 void SoundGen::playSample(CDSample *sample, int offset, int pitch)
 {
-	m_samplemem.SetMem(sample->SampleData, sample->SampleSize);
+	m_samplemem->SetMem(sample->SampleData, sample->SampleSize);
 
 	int loop=0;
 	// (samplesize-1)/16 - offset*4
 	int length = ((sample->SampleSize-1) >> 4) - (offset << 2);
 
-	m_apu.Write(0x4010, pitch | loop);
-	m_apu.Write(0x4012, offset);			// load address, start at $C000
-	m_apu.Write(0x4013, length);			// length
-	m_apu.Write(0x4015, 0x0F);
-	m_apu.Write(0x4015, 0x1F);				// fire sample
+	m_apu->Write(0x4010, pitch | loop);
+	m_apu->Write(0x4012, offset);			// load address, start at $C000
+	m_apu->Write(0x4013, length);			// length
+	m_apu->Write(0x4015, 0x0F);
+	m_apu->Write(0x4015, 0x1F);				// fire sample
 }
 
 void SoundGen::haltSounds()
@@ -435,7 +442,7 @@ bool SoundGen::requestFrame()
 		m_pChannels[i]->SetPitch(pitch);
 
 		// Update volume meters
-		m_pTrackerChannels[i]->SetVolumeMeter(m_apu.GetVol(i));
+		m_pTrackerChannels[i]->SetVolumeMeter(m_apu->GetVol(i));
 	}
 
 	const int CHANNEL_DELAY = 250;
@@ -451,7 +458,7 @@ bool SoundGen::requestFrame()
 		{
 			m_pChannels[i]->ProcessChannel();
 			m_pChannels[i]->RefreshChannel();
-			m_apu.Process();
+			m_apu->Process();
 			// Add some delay between each channel update
 			if (frameRate == CAPU::FRAME_RATE_NTSC || frameRate == CAPU::FRAME_RATE_PAL)
 				addCycles(CHANNEL_DELAY);
@@ -459,8 +466,8 @@ bool SoundGen::requestFrame()
 	}
 
 	// Finish the audio frame
-	m_apu.AddTime(m_iUpdateCycles - m_iConsumedCycles);
-	m_apu.Process();
+	m_apu->AddTime(m_iUpdateCycles - m_iConsumedCycles);
+	m_apu->Process();
 
 	unsigned int row = m_trackerctlr->row();
 	unsigned int frame = m_trackerctlr->frame();
@@ -476,7 +483,7 @@ bool SoundGen::requestFrame()
 void SoundGen::apuCallback(const int16 *buf, uint32 sz, void *data)
 {
 	SoundGen *sg = (SoundGen*)data;
-	sg->m_queued_sound.write(buf, sz);
+	sg->m_queued_sound->write(buf, sz);
 }
 
 core::u32 SoundGen::soundCallback(core::s16 *buf, core::u32 sz, void *data, core::u32 *idx)
@@ -490,9 +497,9 @@ core::u32 SoundGen::requestSound(core::s16 *buf, core::u32 sz, core::u32 *idx)
 	core::u32 c = 0;
 	core::u32 off = 0;
 	// read remaining sound buffer data from the last callback
-	if (!m_queued_sound.isEmpty())
+	if (!m_queued_sound->isEmpty())
 	{
-		core::Quantity read = m_queued_sound.read(buf, sz);
+		core::Quantity read = m_queued_sound->read(buf, sz);
 		buf += read;
 		sz -= read;
 		off += read;
@@ -528,7 +535,7 @@ core::u32 SoundGen::requestSound(core::s16 *buf, core::u32 sz, core::u32 *idx)
 			rf.volumes = writeVolume(vols);
 
 			m_threading->mtx_rowframes.lock();
-			m_queued_rowframes.write(&rf, 1);
+			m_queued_rowframes->write(&rf, 1);
 			m_threading->mtx_rowframes.unlock();
 		}
 
@@ -537,7 +544,7 @@ core::u32 SoundGen::requestSound(core::s16 *buf, core::u32 sz, core::u32 *idx)
 			stopPlayback();
 		}
 
-		core::Quantity read = m_queued_sound.read(buf, sz);
+		core::Quantity read = m_queued_sound->read(buf, sz);
 		buf += read;
 		sz -= read;
 		off += read;
@@ -592,10 +599,10 @@ void SoundGen::timeCallback(core::u32 skip, void *data)
 	sg->m_threading->mtx_rowframes.lock();
 	if (skip > 1)
 	{
-		sg->m_queued_rowframes.skipRead(skip-1);
+		sg->m_queued_rowframes->skipRead(skip-1);
 	}
 	rowframe_t rf;
-	if (sg->m_queued_rowframes.read(&rf, 1) != 1)
+	if (sg->m_queued_rowframes->read(&rf, 1) != 1)
 	{
 		sg->m_threading->mtx_rowframes.unlock();
 		fprintf(stderr, "SoundGen::timeCallback(): ringbuffer underrun\n");

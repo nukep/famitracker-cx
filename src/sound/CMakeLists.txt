@@ -1,14 +1,31 @@
 include_directories("..")
 
-find_package(ALSA REQUIRED)
-include(${ALSA_INCLUDE_DIR})
+add_definitions(-DBOOST_ALL_NO_LIB)	# turn off boost auto-linking
+find_package(Boost)
+if (Boost_FOUND)
+	include_directories(${Boost_INCLUDE_DIR})
+endif()
 
-add_library(core-alsa-sound MODULE alsa.cpp alsa.hpp)
-target_link_libraries(core-alsa-sound ${ALSA_LIBRARY})
+if ("${CMAKE_SYSTEM}" MATCHES "Linux")
+	find_package(ALSA REQUIRED)
+	include(${ALSA_INCLUDE_DIR})
 
-install(TARGETS core-alsa-sound
-	LIBRARY DESTINATION lib
-)
+	add_library(core-alsa-sound MODULE alsa.cpp alsa.hpp)
+	target_link_libraries(core-alsa-sound ${ALSA_LIBRARY})
+	
+	install(TARGETS core-alsa-sound
+		LIBRARY DESTINATION lib
+	)
+endif()
+if (WIN32)
+	# directsound
+	add_library(core-dx-sound MODULE dsound.cpp dsound.hpp)
+	target_link_libraries(core-dx-sound core)
+
+	install(TARGETS core-dx-sound
+		DESTINATION .
+	)
+endif()
 
 find_package(Jack)
 

@@ -412,7 +412,7 @@ namespace gui
 			drawChar(p, x, y, buf[0], volcol, blankcol);
 			x += px_unit + colspace;
 
-			for (unsigned int i = 0; i <= effColumns; i++)
+			for (int i = 0; i <= effColumns; i++)
 			{
 				unsigned char eff = n.EffNumber[i];
 
@@ -455,7 +455,7 @@ namespace gui
 			unsigned int channels = d->GetAvailableChannels();
 
 			from = from < 0 ? 0 : from;
-			to = to > patternLength-1 ? patternLength-1 : to;
+			to = to > (int)patternLength-1 ? (int)patternLength-1 : to;
 
 			for (int i = from; i <= to; i++)
 			{
@@ -548,7 +548,7 @@ namespace gui
 			unsigned int row = dinfo->currentRow();
 
 			int rowWidth = 0;
-			for (int i = 0; i < channels; i++)
+			for (unsigned int i = 0; i < channels; i++)
 			{
 				rowWidth += columnWidth(d->GetEffColumns(i)) + colspace;
 			}
@@ -611,7 +611,7 @@ namespace gui
 			int from = row - y_offset / px_vspace;
 			int to = row + y_offset / px_vspace;
 
-			int highlight_to = to+1>currentframe_playlength?currentframe_playlength:to+1;
+			int highlight_to = to+1>(int)currentframe_playlength?currentframe_playlength:to+1;
 
 			for (int i = from<0?0:from; i < highlight_to; i++)
 			{
@@ -662,7 +662,7 @@ namespace gui
 
 			p.setPen(QColor(80,80,80));
 			int x = px_unit*3 - colspace/2;
-			for (int i = 0; i <= channels; i++)
+			for (unsigned int i = 0; i <= channels; i++)
 			{
 				p.drawLine(x, 0, x, height());
 				x += columnWidth(d->GetEffColumns(i)) + colspace;
@@ -703,13 +703,13 @@ namespace gui
 					if (y < 0)
 						goto norowframe;
 				}
-				else if (y >= d->getFramePlayLength(frame))
+				else if (y >= (int)d->getFramePlayLength(frame))
 				{
 					frame++;
 					if (frame == dinfo->doc()->GetFrameCount())
 						goto norowframe;
 					y -= d->getFramePlayLength(frame-1);
-					if (y >= d->getFramePlayLength(frame))
+					if (y >= (int)d->getFramePlayLength(frame))
 						goto norowframe;
 				}
 
@@ -737,7 +737,7 @@ namespace gui
 
 			unsigned int channels = d->GetAvailableChannels();
 
-			for (int i = 0; i < channels; i++)
+			for (unsigned int i = 0; i < channels; i++)
 			{
 				int eff = d->GetEffColumns(i);
 				int w = columnWidth(eff) + colspace;
@@ -950,7 +950,7 @@ namespace gui
 
 			const core::u8 *vols = gui::activeDocInfo()->volumes();
 
-			for (int i = 0; i < d->GetAvailableChannels(); i++)
+			for (unsigned int i = 0; i < d->GetAvailableChannels(); i++)
 			{
 				bool enabled = !gui::isMuted(i);
 				int w = m_body->xAtChannel(i+1) - x;
@@ -1231,7 +1231,7 @@ namespace gui
 			return;
 		if (k == Qt::Key_Up)
 		{
-			dinfo->scrollFrameBy(-dinfo->editStep());
+			dinfo->scrollFrameBy(-(int)dinfo->editStep());
 			gui::updateFrameChannel();
 			return;
 		}

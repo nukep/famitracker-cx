@@ -1,10 +1,17 @@
 #include <stdio.h>
-#include <dlfcn.h>
 #include <map>
 #include <string>
 #include <boost/thread.hpp>
 #include <boost/thread/mutex.hpp>
 #include <boost/thread/condition.hpp>
+#include "common.hpp"
+#include "../defaults.hpp"
+#ifdef UNIX
+#   include <dlfcn.h>
+#elif defined(WINDOWS)
+#   include <Windows.h>
+#endif
+#include "ringbuffer.hpp"
 #include "soundsink.hpp"
 #include "time.hpp"
 
@@ -29,11 +36,11 @@ namespace core
 	};
 
 	SoundSink::SoundSink()
-		: m_timeidxsz(0), m_playing(false),
-		  m_timeidx_ringbuffer(sizeof(core::timestamp_t))
+		: m_timeidxsz(0), m_playing(false)
 	{
+		m_timeidx_ringbuffer = new RingBuffer(sizeof(core::timestamp_t));
 		// give the ring buffer a generous amount of memory
-		m_timeidx_ringbuffer.resize(MAX_TIMEIDX*16);
+		m_timeidx_ringbuffer->resize(MAX_TIMEIDX*16);
 
 		m_threading = new _soundsink_threading_t;
 		m_threading->destructing = false;
@@ -58,6 +65,8 @@ namespace core
 		blockUntilStopped();
 
 		delete m_threading;
+
+		delete m_timeidx_ringbuffer;
 	}
 	void SoundSink::setPlaying(bool playing)
 	{
@@ -77,7 +86,7 @@ namespace core
 	{
 		core::u64 a = v;
 		a = a * 1000000 / sr;
-		return a;
+		return (core::u32)a;
 	}
 
 	static inline core::u32 ms_from_idx(core::u32 v, core::u32 sr)
@@ -90,7 +99,7 @@ namespace core
 	{
 		boost::mutex &mtx = m_threading->mtx_time_ringbuffer;
 		mtx.lock();
-		while (m_timeidx_ringbuffer.isEmpty())
+		while (m_timeidx_ringbuffer->isEmpty())
 		{
 			// notify that the ringbuffer is empty
 			// (this shouldn't affect the wait we have shortly after)
@@ -114,8 +123,8 @@ namespace core
 			// wait until the ring buffer is filled
 			m_threading->cond_time_ringbuffer.wait(mtx);
 		}
-		m_timeidx_ringbuffer.read(&tgt, 1);
-		if (m_timeidx_ringbuffer.isEmpty())
+		m_timeidx_ringbuffer->read(&tgt, 1);
+		if (m_timeidx_ringbuffer->isEmpty())
 		{
 			m_threading->cond_time_ringbuffer.notify_all();
 		}
@@ -203,7 +212,7 @@ compare_time:
 		{
 			boost::lock_guard<boost::mutex>(m_threading->mtx_time_ringbuffer);
 
-			if (m_timeidx_ringbuffer.write(arr, m_timeidxsz) < m_timeidxsz)
+			if (m_timeidx_ringbuffer->write(arr, m_timeidxsz) < m_timeidxsz)
 			{
 				fprintf(stderr, "m_timeidx_ringbuffer overrun\n");
 				// buffer overrun
@@ -267,7 +276,7 @@ compare_time:
 		// (it's possible for this to unblock while the sound sink is active, as
 		// the time loop may temporarily run out of times as it's waiting for them)
 		boost::unique_lock<boost::mutex> lock(m_threading->mtx_time_ringbuffer);
-		while (!m_timeidx_ringbuffer.isEmpty())
+		while (!m_timeidx_ringbuffer->isEmpty())
 		{
 			// wait until the ring buffer is empty
 			m_threading->cond_time_ringbuffer.wait(lock);
@@ -277,9 +286,76 @@ compare_time:
 	struct sound_handle_t
 	{
 		typedef core::SoundSink*(*create_f)();
+#ifdef UNIX
 		void *handle;
+#elif defined(WINDOWS)
+		HMODULE handle;
+#endif
 		create_f create;
 	};
+
+#ifdef UNIX
+	static bool loadSoundSink_os(sound_handle_t &h, const char *name)
+	{
+		char libname[128];
+		sprintf(libname, SOUNDSINKLIB_FORMAT, name);
+		h.handle = dlopen(libname, RTLD_LAZY);
+		if (h.handle == NULL)
+		{
+			fprintf(stderr, "loadSoundSink: Could not load: %s\n", dlerror());
+			return false;
+		}
+
+		h.create = (sound_handle_t::create_f)dlsym(h.handle, "sound_create");
+		if (h.create == NULL)
+		{
+			fprintf(stderr, "loadSoundSink: %s\n", dlerror());
+			return false;
+		}
+
+		return true;
+	}
+
+#elif defined(WINDOWS)
+
+	static void lastError()
+	{
+		LPVOID lpMsgBuf;
+		FormatMessage(FORMAT_MESSAGE_ALLOCATE_BUFFER |
+					  FORMAT_MESSAGE_FROM_SYSTEM |
+					  FORMAT_MESSAGE_IGNORE_INSERTS,
+					  NULL,
+					  GetLastError(),
+					  MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
+					  (LPTSTR)&lpMsgBuf,
+					  0,
+					  NULL);
+	}
+
+	static bool loadSoundSink_os(sound_handle_t &h, const char *name)
+	{
+		char libname[128];
+		sprintf(libname, SOUNDSINKLIB_FORMAT, name);
+
+		h.handle = LoadLibrary(libname);
+		if (h.handle == NULL)
+		{
+			fprintf(stderr, "loadSoundSink: Could not load: %u\n", GetLastError());
+			return false;
+		}
+		FARPROC create = GetProcAddress(h.handle, "sound_create");
+		if (create == NULL)
+		{
+			fprintf(stderr, "loadSoundSink: %u\n", GetLastError());
+			return false;
+		}
+		h.create = (sound_handle_t::create_f)create;
+
+		return true;
+	}
+#else
+#error Unimplemented
+#endif
 
 	typedef std::map<std::string, sound_handle_t> LoadedSoundSinksMap;
 	static LoadedSoundSinksMap loaded_sound_sinks;
@@ -291,21 +367,10 @@ compare_time:
 		{
 			// not found
 			sound_handle_t h;
-			char libname[128];
-			sprintf(libname, "libcore-%s-sound.so", name);
-			h.handle = dlopen(libname, RTLD_LAZY);
-			if (h.handle == NULL)
-			{
-				fprintf(stderr, "loadSoundSink: Could not load: %s\n", dlerror());
-				return NULL;
-			}
 
-			h.create = (sound_handle_t::create_f)dlsym(h.handle, "sound_create");
-			if (h.create == NULL)
-			{
-				fprintf(stderr, "loadSoundSink: %s\n", dlerror());
+			if (!loadSoundSink_os(h, name))
 				return NULL;
-			}
+
 			loaded_sound_sinks[name] = h;
 
 			return (*h.create)();
@@ -315,5 +380,20 @@ compare_time:
 			const sound_handle_t &h = it->second;
 			return (*h.create)();
 		}
+	}
+
+	SoundSinkPlayback::SoundSinkPlayback()
+	{
+	}
+	SoundSinkPlayback::SoundSinkPlayback(const SoundSinkPlayback &)
+	{
+	}
+	SoundSinkPlayback & SoundSinkPlayback::operator =(const SoundSinkPlayback &)
+	{
+		return *this;
+	}
+
+	SoundSinkPlayback::~SoundSinkPlayback()
+	{
 	}
 }

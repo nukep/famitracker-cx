@@ -88,6 +88,10 @@ class CSampleMem
 // dst_sz is the size of the entire dst buffer, including last null character
 static inline void safe_strcpy(char *dst, const char *src, size_t dst_sz)
 {
+#ifdef WINDOWS
+	strcpy_s(dst, dst_sz, src);
+#else
 	strncpy(dst, src, dst_sz-1);
 	dst[dst_sz-1] = 0;
+#endif
 }

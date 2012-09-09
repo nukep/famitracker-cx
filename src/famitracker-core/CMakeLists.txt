@@ -73,12 +73,21 @@ endmacro()
 
 add_subdirectory("APU")
 
+add_definitions(-DBOOST_ALL_NO_LIB)	# turn off boost auto-linking
 find_package(Boost REQUIRED thread)
 include_directories(${Boost_INCLUDE_DIR})
+
+add_definitions(-DFAMICORE_ISLIB)
 
 add_library(fami-core SHARED ${SRC})
 target_link_libraries(fami-core core ${Boost_LIBRARIES})
 
-install(TARGETS fami-core
-	LIBRARY DESTINATION lib
-)
+if (UNIX)
+	install(TARGETS fami-core
+		LIBRARY DESTINATION lib
+	)
+else()
+	install(TARGETS fami-core
+		DESTINATION .
+	)
+endif()
