@@ -640,7 +640,7 @@ namespace gui
 		gui::activeDocInfo()->setCurrentInstrument(inst);
 
 		refreshInstruments();
-		patternView->update();
+		patternView->update(true);
 	}
 	void MainWindow::removeInstrument()
 	{
@@ -685,7 +685,7 @@ namespace gui
 		gui::activeDocInfo()->setCurrentInstrument(ni);
 
 		refreshInstruments();
-		patternView->update();
+		patternView->update(true);
 	}
 	void MainWindow::editInstrument()
 	{

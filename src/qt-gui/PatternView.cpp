@@ -12,8 +12,7 @@
 #include "styles.hpp"
 #include "famitracker-core/FtmDocument.hpp"
 #include "famitracker-core/App.hpp"
-
-
+#include "RowPages.hpp"
 #include "pixelfonts/vincent/vincent.h"
 
 namespace gui
@@ -99,15 +98,30 @@ namespace gui
 		return QColor(v.r, v.g, v.b);
 	}
 
+
 	class PatternView_Body : public QWidget
 	{
 	public:
+
 		int px_unit, px_hspace, px_vspace;
 		int px_pixfont_w, px_pixfont_h;
 		int colspace;
 		QTextOption opt;
 		QBitmap *m_pixelfont_bitmap;
 		bool m_usesystemfont;
+
+		QFont m_systemfont;
+		int m_currentFrameRows;
+		QPixmap *m_currentRowHighlightPixmap;
+		QPixmap *m_currentRowNoFocusHighlightPixmap;
+		QPixmap *m_currentRowRecordHighlightPixmap;
+		QPixmap *m_primaryHighlightPixmap;
+		QPixmap *m_secondaryHighlightPixmap;
+
+		bool m_modified;
+
+		RowPages m_rowpages;
+
 		PatternView_Body()
 			: m_currentRowHighlightPixmap(NULL),
 			  m_currentRowNoFocusHighlightPixmap(NULL),
@@ -123,6 +137,8 @@ namespace gui
 			opt.setAlignment(Qt::AlignHCenter | Qt::AlignVCenter);
 
 			redrawHighlightPixmaps();
+
+			m_rowpages.setRequestCallback(requestCallback);
 		}
 		~PatternView_Body()
 		{
@@ -142,6 +158,7 @@ namespace gui
 		}
 		void updateStyles()
 		{
+			m_rowpages.clear();
 			redrawHighlightPixmaps();
 			repaint();
 		}
@@ -280,7 +297,7 @@ namespace gui
 		PatternView * m_pvParent;
 
 		// c=' ': -
-		void drawChar(QPainter &p, int x, int y, char c, const QColor &col, const QColor &primary)
+		void drawChar(QPainter &p, int x, int y, char c, const QColor &col, const QColor &primary) const
 		{
 			if (c == ' ')
 			{
@@ -305,13 +322,13 @@ namespace gui
 			}
 		}
 
-		int columnWidth(int effColumns)
+		int columnWidth(int effColumns) const
 		{
 			return px_unit*6 + colspace*2 + (px_unit*3+colspace)*(effColumns+1);
 		}
 
 		// returns true if note terminates frame
-		bool drawNote(QPainter &p, int x, int y, const stChanNote &n, int effColumns, const QColor &primary, bool selected, int channel)
+		bool drawNote(QPainter &p, int x, int y, const stChanNote &n, int effColumns, const QColor &primary, bool selected, int channel) const
 		{
 			const QColor volcol = stylecolor(styles::PATTERN_VOL, selected);
 			const QColor effcol = stylecolor(styles::PATTERN_EFFNUM, selected);
@@ -445,7 +462,7 @@ namespace gui
 		}
 
 		// returns last row drawn ("to")
-		int drawFrame(QPainter &p, unsigned int frame, int from, int to, bool selected)
+		int drawFrame(QPainter &p, unsigned int frame, int from, int to, bool selected) const
 		{
 			FtmDocument *d = gui::activeDocument();
 			unsigned int patternLength = d->GetPatternLength();
@@ -630,33 +647,13 @@ namespace gui
 				}
 			}
 
-			if (from < 0)
+			if (m_modified)
 			{
-				// draw the previous frame
-				if (frame > 0)
-				{
-					int prevlen = d->getFramePlayLength(frame-1);
-					int prevlen_pix = prevlen*px_vspace;
-
-					p.translate(0, -prevlen_pix);
-
-					drawFrame(p, frame-1, from+prevlen, prevlen-1, false);
-
-					p.translate(0, prevlen_pix);
-				}
+				// pixmaps are invalidated
+				m_rowpages.clear();
 			}
-
-			int lr = drawFrame(p, frame, from, to, true);
-
-			if (to > lr)
-			{
-				if (frame+1 < d->GetFrameCount())
-				{
-					// draw the next frame, too
-					p.translate(0, (lr+1)*px_vspace);
-					drawFrame(p, frame+1, 0, to-lr-1, false);
-				}
-			}
+			m_rowpages.requestRowPages(d, this, from, to, frame);
+			m_rowpages.render(p, frame, from, px_vspace);
 
 			p.resetTransform();
 
@@ -671,6 +668,30 @@ namespace gui
 
 			m_modified = false;
 		}
+
+		static void requestCallback(rowpage_t *r, unsigned int rowpagesize, void *data)
+		{
+			const PatternView_Body *pb = (const PatternView_Body*)data;
+
+			FtmDocument *d = gui::activeDocument();
+			int width = pb->xAtChannel(d->GetAvailableChannels());
+			int height = pb->px_vspace * r->row_count;
+			QImage *img = new QImage(width, height, QImage::Format_ARGB32_Premultiplied);
+			img->fill(Qt::NoAlpha);
+
+			QPainter p;
+			p.begin(img);
+
+			unsigned int from = r->row_index*rowpagesize;
+			int off_y = -from*pb->px_vspace;
+			p.translate(0, off_y);
+			pb->drawFrame(p, r->frame, from, from+r->row_count, r->selected);
+
+			p.end();
+
+			r->image = img;
+		}
+
 		void mouseReleaseEvent(QMouseEvent *e)
 		{
 			DocInfo *dinfo = gui::activeDocInfo();
@@ -748,7 +769,7 @@ namespace gui
 
 			return -1;
 		}
-		int xAtChannel(int channel)
+		int xAtChannel(int channel) const
 		{
 			FtmDocument *d = gui::activeDocument();
 
@@ -779,15 +800,6 @@ namespace gui
 			int cx = xAtChannel(channel);
 			col = colAtRelX(x - cx);
 		}
-
-		QFont m_systemfont;
-		int m_currentFrameRows;
-		QPixmap *m_currentRowHighlightPixmap;
-		QPixmap *m_currentRowNoFocusHighlightPixmap;
-		QPixmap *m_currentRowRecordHighlightPixmap;
-		QPixmap *m_primaryHighlightPixmap;
-		QPixmap *m_secondaryHighlightPixmap;
-		bool m_modified;
 	};
 
 	class PatternView_Header : public QWidget

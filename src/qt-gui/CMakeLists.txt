@@ -15,6 +15,9 @@ set(SRC
 	MainWindow.cpp
 	PatternView.cpp
 	FrameView.cpp
+	
+	RowPages.cpp
+	RowPages.hpp
 
 	SequenceEditor.cpp
 
