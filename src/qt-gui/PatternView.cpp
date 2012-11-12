@@ -34,10 +34,17 @@ namespace gui
 
 		int ob = octave_base;
 
+#if defined(UNIX)
 		const int b1 = 10;	// top black row		(1)
 		const int w1 = 24;	// top white row		(Q)
 		const int b2 = 38;	// bottom black row		(A)
 		const int w2 = 52;	// bottom white row		(Z)
+#elif defined(WINDOWS)
+		const int b1 = 2;
+		const int w1 = 16;
+		const int b2 = 30;
+		const int w2 = 44;
+#endif
 
 		switch (scancode)
 		{

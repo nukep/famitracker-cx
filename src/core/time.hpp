@@ -77,7 +77,7 @@ namespace core
 	public:
 		void gettime()
 		{
-			GetTickCount();
+			tick = GetTickCount();
 		}
 		int diff_us(const timestamp_t &before) const
 		{

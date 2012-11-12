@@ -19,8 +19,19 @@ if ("${CMAKE_SYSTEM}" MATCHES "Linux")
 endif()
 if (WIN32)
 	# directsound
+
+	find_path(DSOUND_INCLUDE_DIR
+		NAMES dsound.h
+	)
+
+	find_library(DSOUND_LIBRARY
+		NAMES dsound
+	)
+
+	include_directories("${DSOUND_INCLUDE_DIR}")
+
 	add_library(core-dx-sound MODULE dsound.cpp dsound.hpp)
-	target_link_libraries(core-dx-sound core)
+	target_link_libraries(core-dx-sound core "${DSOUND_LIBRARY}")
 
 	install(TARGETS core-dx-sound
 		DESTINATION .
@@ -32,9 +43,9 @@ find_package(Jack)
 if (JACK_FOUND)
 	option(WITH_JACK "Use JACK audio" ON)
 	if (WITH_JACK)
-		include(${JACK_INCLUDE_DIR})
+		include("${JACK_INCLUDE_DIR}")
 		add_library(core-jack-sound MODULE jack.cpp jack.hpp)
-		target_link_libraries(core-jack-sound ${JACK_LIBRARY})
+		target_link_libraries(core-jack-sound "${JACK_LIBRARY}")
 
 		install(TARGETS core-jack-sound
 			LIBRARY DESTINATION lib
