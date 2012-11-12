@@ -132,7 +132,7 @@ namespace gui
 			  m_pixelfont_bitmap(NULL)
 		{
 			QFont font;
-			font.setPixelSize(11);
+			font.setPointSize(11);
 			setSystemFont(font);
 			opt.setAlignment(Qt::AlignHCenter | Qt::AlignVCenter);
 
@@ -195,6 +195,7 @@ namespace gui
 					}
 				}
 			}
+
 			*m_pixelfont_bitmap = QPixmap::fromImage(img);
 			px_unit = px_pixfont_w;
 			px_vspace = px_pixfont_h;
@@ -205,7 +206,8 @@ namespace gui
 		void setSystemFont(const QFont &font)
 		{
 			m_systemfont = font;
-			px_unit = m_systemfont.pixelSize();
+			QFontMetrics fm(m_systemfont);
+			px_unit = fm.ascent()*0.9;
 			px_hspace = px_unit * horizontal_factor;
 			px_vspace = px_unit * vertical_factor;
 			colspace = px_unit/2;
@@ -557,11 +559,6 @@ namespace gui
 			QPainter p;
 			p.begin(this);
 
-			if (m_usesystemfont)
-			{
-				p.setFont(m_systemfont);
-			}
-
 			unsigned int row = dinfo->currentRow();
 
 			int rowWidth = 0;
@@ -681,6 +678,11 @@ namespace gui
 
 			QPainter p;
 			p.begin(img);
+
+			if (pb->m_usesystemfont)
+			{
+				p.setFont(pb->m_systemfont);
+			}
 
 			unsigned int from = r->row_index*rowpagesize;
 			int off_y = -from*pb->px_vspace;
