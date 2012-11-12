@@ -26,6 +26,9 @@ set(SRC
 	InstrumentEditor.cpp
 	InstrumentEditor.hpp
 	InstrumentEditorTypes.cpp
+
+	Settings.cpp
+	Settings.hpp
 )
 
 if (WIN32)

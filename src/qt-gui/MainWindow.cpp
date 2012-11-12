@@ -2,6 +2,7 @@
 #include <QDebug>
 #include "MainWindow.hpp"
 #include "gui.hpp"
+#include "Settings.hpp"
 #include "styles.hpp"
 #include "famitracker-core/FtmDocument.hpp"
 #include "InstrumentEditor.hpp"
@@ -72,6 +73,25 @@ namespace gui
 
 		QObject::connect(step, SIGNAL(valueChanged(int)), this, SLOT(changeEditSettings()));
 		QObject::connect(keyRepetition, SIGNAL(stateChanged(int)), this, SLOT(changeEditSettings()));
+
+		{
+			// recent files
+			int capacity = gui::recentFileCapacity();
+			m_recentFiles = new QAction*[capacity];
+			for (int i = 0; i < capacity; i++)
+			{
+				QAction *a = new QAction(this);
+				a->setVisible(false);
+				connect(a, SIGNAL(triggered()),
+						this, SLOT(openRecentFile()));
+				m_recentFiles[i] = a;
+				menuRecent->addAction(a);
+			}
+
+			// end recent files
+		}
+
+		reloadRecentFiles();
 
 		// the designer doesn't allow adding widgets
 
@@ -280,6 +300,23 @@ namespace gui
 		keyRepetition->setChecked(dinfo->keyRepetition());
 		keyRepetition->blockSignals(false);
 	}
+	void MainWindow::reloadRecentFiles()
+	{
+		bool containsRecentFiles = false;
+		int capacity = gui::recentFileCapacity();
+		for (int i = 0; i < capacity; i++)
+		{
+			QVariant v = gui::recentFileVariant(i);
+			m_recentFiles[i]->setVisible(v.isValid());
+			if (v.isValid())
+			{
+				containsRecentFiles = true;
+				m_recentFiles[i]->setText(QString("%1. %2").arg(i+1).arg(v.toString()));
+				m_recentFiles[i]->setData(v.toString());
+			}
+		}
+		actionNo_recent_files->setVisible(!containsRecentFiles);
+	}
 
 	void MainWindow::refreshInstruments()
 	{
@@ -359,21 +396,42 @@ namespace gui
 
 	void MainWindow::open()
 	{
-		QString path = QFileDialog::getOpenFileName(this, tr("Open"), QString(), tr("FamiTracker files (*.ftm);;All files (*.*)"), 0, 0);
+		QString ftmpath = settings()->value(SETTINGS_FTMPATH).toString();
+		QString path = QFileDialog::getOpenFileName(this, tr("Open"), ftmpath, tr("FamiTracker files (*.ftm);;All files (*.*)"), 0, 0);
 		if (path.isEmpty())
 			return;
+
+		openFile(path);
+	}
+	void MainWindow::openRecentFile()
+	{
+		QAction *action = qobject_cast<QAction *>(sender());
+		if (action)
+		{
+			openFile(action->data().toString());
+		}
+	}
+
+	void MainWindow::openFile(const QString &path)
+	{
+		QString ftmpath = QFileInfo(path).absoluteDir().absolutePath();
+		settings()->setValue(SETTINGS_FTMPATH, ftmpath);
 
 		core::FileIO *io = new core::FileIO(path.toLocal8Bit(), core::IO_READ);
 
 		gui::stopSongConcurrent(open_cb, io);
+		gui::addRecentFile(path);
+		reloadRecentFiles();
 	}
+
 	void MainWindow::save()
 	{
 		saveAs();
 	}
 	void MainWindow::saveAs()
 	{
-		QString path = QFileDialog::getSaveFileName(this, tr("Save As"), QString(), tr("FamiTracker files (*.ftm);;All files (*.*)"), 0, 0);
+		QString ftmpath = settings()->value(SETTINGS_FTMPATH).toString();
+		QString path = QFileDialog::getSaveFileName(this, tr("Save As"), ftmpath, tr("FamiTracker files (*.ftm);;All files (*.*)"), 0, 0);
 		if (path.isEmpty())
 			return;
 
@@ -383,6 +441,8 @@ namespace gui
 		{
 			path += ".ftm";
 		}
+		ftmpath = file.absoluteDir().absolutePath();
+		settings()->setValue(SETTINGS_FTMPATH, ftmpath);
 
 		core::FileIO *io = new core::FileIO(path.toLocal8Bit(), core::IO_WRITE);
 

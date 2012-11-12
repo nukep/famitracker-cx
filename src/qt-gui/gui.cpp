@@ -6,6 +6,7 @@
 #include <QThread>
 #include <boost/thread.hpp>
 #include "gui.hpp"
+#include "Settings.hpp"
 #include "MainWindow.hpp"
 #include "famitracker-core/FtmDocument.hpp"
 #include "famitracker-core/sound.hpp"
@@ -329,6 +330,8 @@ namespace gui
 
 	void init_2(const char *sound_name)
 	{
+		init_settings();
+		qDebug() << QApplication::applicationDirPath();
 		thread_threadpool_playing = new boost::thread(func_threadpool_playing);
 
 		active_doc_index = -1;
@@ -343,7 +346,17 @@ namespace gui
 
 		mw = new MainWindow;
 		mw->updateDocument();
-		mw->resize(1024, 768);
+
+		QVariant geom = settings()->value(SETTINGS_WINDOWGEOMETRY);
+		if (geom.isValid())
+		{
+			mw->setGeometry(geom.toRect());
+		}
+		else
+		{
+			mw->resize(1024, 768);
+		}
+
 	}
 	void destroy()
 	{
@@ -352,8 +365,10 @@ namespace gui
 	//	delete sink;
 		delete sgen;
 
+		settings()->setValue(SETTINGS_WINDOWGEOMETRY, mw->geometry());
 		delete mw;
 		delete thread_threadpool_playing;
+		destroy_settings();
 		delete app;
 	}
 	void spin()

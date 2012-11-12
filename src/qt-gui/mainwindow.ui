@@ -36,13 +36,19 @@
      <x>0</x>
      <y>0</y>
      <width>800</width>
-     <height>25</height>
+     <height>24</height>
     </rect>
    </property>
    <widget class="QMenu" name="menu_File">
     <property name="title">
      <string>&amp;File</string>
     </property>
+    <widget class="QMenu" name="menuRecent">
+     <property name="title">
+      <string>Recent</string>
+     </property>
+     <addaction name="actionNo_recent_files"/>
+    </widget>
     <addaction name="actionNew"/>
     <addaction name="action_Open"/>
     <addaction name="action_Save"/>
@@ -54,6 +60,7 @@
     <addaction name="separator"/>
     <addaction name="action_Configuration"/>
     <addaction name="separator"/>
+    <addaction name="menuRecent"/>
     <addaction name="separator"/>
     <addaction name="actionE_xit"/>
    </widget>
@@ -501,6 +508,14 @@
   <action name="actionEdit_instrument">
    <property name="text">
     <string>Edit instrument</string>
+   </property>
+  </action>
+  <action name="actionNo_recent_files">
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
+   <property name="text">
+    <string>No recent files</string>
    </property>
   </action>
  </widget>

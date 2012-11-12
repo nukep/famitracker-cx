@@ -53,6 +53,8 @@ namespace gui
 		void stopSongConcurrent(void(*mainthread_callback)(void *data));
 
 		void updateDocument();
+
+		void reloadRecentFiles();
 	protected:
 		void closeEvent(QCloseEvent *);
 		bool event(QEvent *event);
@@ -69,6 +71,8 @@ namespace gui
 	public slots:
 		void newDoc();
 		void open();
+		void openRecentFile();
+		void openFile(const QString &path);
 		void save();
 		void saveAs();
 		void quit();
@@ -110,6 +114,7 @@ namespace gui
 		boost::condition m_cond_updateEvent;
 		InstrumentEditor *m_instrumenteditor;
 		QComboBox *octave;
+		QAction ** m_recentFiles;
 	};
 }
 
