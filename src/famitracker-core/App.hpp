@@ -3,6 +3,7 @@
 
 #include "ChannelMap.h"
 #include "Settings.h"
+#include "common.hpp"
 
 namespace core
 {
@@ -11,8 +12,8 @@ namespace core
 
 namespace app
 {
-	const CChannelMap * channelMap();
-	const CSettings * settings();
+	FAMICOREAPI const CChannelMap * channelMap();
+	FAMICOREAPI const CSettings * settings();
 }
 
 #endif

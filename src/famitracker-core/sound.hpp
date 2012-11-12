@@ -3,9 +3,16 @@
 
 #include "APU/APU.h"
 #include "core/soundsink.hpp"
-#include "core/ringbuffer.hpp"
 #include "FamiTrackerTypes.h"
+#include "common.hpp"
 
+namespace core
+{
+	class RingBuffer;
+}
+
+class CAPU;
+class CSampleMem;
 class CDSample;
 struct stChanNote;
 class CTrackerChannel;
@@ -22,7 +29,7 @@ typedef enum { SONG_TIME_LIMIT, SONG_LOOP_LIMIT } RENDER_END;
 
 struct _soundgen_threading_t;
 
-class SoundGen
+class FAMICOREAPI SoundGen
 {
 public:
 	struct rowframe_t
@@ -76,8 +83,8 @@ private:
 	bool requestFrame();
 	core::u32 requestSound(core::s16 *buf, core::u32 sz, core::u32 *idx);
 
-	core::RingBuffer m_queued_rowframes;
-	core::RingBuffer m_queued_sound;
+	core::RingBuffer *m_queued_rowframes;
+	core::RingBuffer *m_queued_sound;
 	core::u8 * m_volumes_ring;
 	unsigned int m_volumes_read_offset, m_volumes_write_offset;
 	unsigned int m_volumes_size;
@@ -109,8 +116,8 @@ private:
 private:
 
 	// Sound
-	CSampleMem m_samplemem;
-	CAPU m_apu;
+	CSampleMem *m_samplemem;
+	CAPU *m_apu;
 	core::SoundSink *m_sink;
 
 	unsigned int m_iChannels;

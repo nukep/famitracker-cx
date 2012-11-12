@@ -6,6 +6,7 @@
 #include "types.hpp"
 #include "FamiTrackerTypes.h"
 #include "Instrument.h"
+#include "common.hpp"
 
 #include <string>
 #include <vector>
@@ -49,7 +50,7 @@ struct stSequence {
 	signed char Value[MAX_SEQUENCE_ITEMS];
 };
 
-class FtmDocument
+class FAMICOREAPI FtmDocument
 {
 public:
 	FtmDocument();

@@ -1,6 +1,8 @@
 #ifndef CORE_SOUNDTHREAD_HPP
 #define CORE_SOUNDTHREAD_HPP
 
+#include "common.hpp"
+
 namespace boost
 {
 	class thread;
@@ -9,7 +11,7 @@ namespace boost
 
 namespace core
 {
-	class SoundThread
+	class COREAPI SoundThread
 	{
 	public:
 		typedef void (*callback_t)(void*);

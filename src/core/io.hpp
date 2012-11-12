@@ -1,7 +1,7 @@
 #ifndef CORE_IO_HPP
 #define CORE_IO_HPP
 
-#include "types.hpp"
+#include "common.hpp"
 
 namespace core
 {
@@ -19,7 +19,7 @@ namespace core
 		IO_READWRITE=3
 	};
 
-	class IO
+	class COREAPI IO
 	{
 	public:
 		virtual Quantity read(void *buf, Quantity sz) = 0;
@@ -77,7 +77,7 @@ namespace core
 		}
 	};
 
-	class FileIO : public IO
+	class LIBEXPORT FileIO : public IO
 	{
 	public:
 		FileIO(const char *filename, int flags);

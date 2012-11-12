@@ -46,7 +46,7 @@ namespace gui
 			return;
 		m_currentChannel = chan;
 
-		int patcols = patternColumns(chan);
+		unsigned int patcols = patternColumns(chan);
 		if (m_currentChannelColumn >= patcols)
 		{
 			m_currentChannelColumn = patcols-1;
@@ -114,11 +114,11 @@ namespace gui
 			}
 			r = doc()->getFramePlayLength(f) + r;
 		}
-		else if (r >= doc()->getFramePlayLength(f))
+		else if ((unsigned int)r >= doc()->getFramePlayLength(f))
 		{
 			r = r - doc()->getFramePlayLength(f);
 			f++;
-			if (f >= doc()->GetFrameCount())
+			if ((unsigned int)f >= doc()->GetFrameCount())
 			{
 				// wrap to the beginning
 				f = 0;
@@ -140,7 +140,7 @@ namespace gui
 		{
 			ch += doc()->GetAvailableChannels();
 		}
-		while (ch >= doc()->GetAvailableChannels())
+		while ((unsigned int)ch >= doc()->GetAvailableChannels())
 		{
 			ch -= doc()->GetAvailableChannels();
 		}
@@ -176,7 +176,7 @@ namespace gui
 	}
 	void DocInfo::scrollOctaveBy(int delta)
 	{
-		if (delta < 0 && (-delta > m_currentOctave))
+		if (delta < 0 && (-delta > (int)m_currentOctave))
 		{
 			// will go below 0
 			m_currentOctave = 0;

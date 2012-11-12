@@ -5,8 +5,9 @@
 #include "famitracker-core/sound.hpp"
 #include "famitracker-core/TrackerController.hpp"
 #include "../parse_arguments.hpp"
+#include "../defaults.hpp"
 
-const char *default_sound="alsa";
+const char *default_sound=DEFAULT_SOUND;
 
 struct arguments_t
 {
@@ -46,10 +47,12 @@ static void print_help()
 "        Set the playback sample rate in herz. Default is 48000.\n"
 "    -sound ENGINE\n"
 "        Specify which sound engine to use. This will load a module\n"
-"        in your PATH named libcore-ENGINE-sound.so. Default is alsa.\n"
+"        in your PATH named " SOUNDSINKLIB_FORMAT ". Default is " DEFAULT_SOUND ".\n"
 "        (eg. -sound jack)\n"
 "    --help\n"
-"        Print this message\n"
+"        Print this message\n",
+
+				"ENGINE"
 	);
 }
 

@@ -19,10 +19,11 @@
 */
 
 #include <vector>
+#include "common.hpp"
 
 class CInstrument;
 
-class CChannelMap
+class FAMICOREAPI CChannelMap
 {
 public:
 	CChannelMap();

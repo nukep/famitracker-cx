@@ -68,7 +68,57 @@ namespace core
 	}
 }
 #elif defined(WINDOWS)
-#error Unimplemented
+#include <Windows.h>
+
+namespace core
+{
+	struct timestamp_t
+	{
+	public:
+		void gettime()
+		{
+			tick = GetTickCount();
+		}
+		int diff_us(const timestamp_t &before) const
+		{
+			return diff_ms(before) * 1000;
+		}
+		int diff_ms(const timestamp_t &before) const
+		{
+			return tick - before.tick;
+		}
+		bool isLessThan(const timestamp_t &before) const
+		{
+			if (tick < before.tick)
+				return true;
+
+			return false;
+		}
+		timestamp_t add_us(unsigned int us) const
+		{
+			return add_ms(us / 1000);
+		}
+		timestamp_t add_ms(unsigned int ms) const
+		{
+			timestamp_t t = *this;
+			t.tick += ms;
+			return t;
+		}
+
+		void debug_print(FILE *out) const
+		{
+			fprintf(out, "tick: %u\n", tick);
+		}
+	private:
+		DWORD tick;
+	};
+
+	static inline void sleep_us(unsigned int us)
+	{
+		Sleep(us/1000);
+	}
+}
+
 #endif
 
 #endif

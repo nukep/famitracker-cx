@@ -2,12 +2,13 @@
 #define _TRACKERCONTROLLER_HPP_
 
 #include "FamiTrackerTypes.h"
+#include "common.hpp"
 
 class FtmDocument;
 class CTrackerChannel;
 struct stChanNote;
 
-class TrackerController
+class FAMICOREAPI TrackerController
 {
 public:
 	TrackerController();

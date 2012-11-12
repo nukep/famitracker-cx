@@ -3,8 +3,12 @@
 #include "gui.hpp"
 #include "famitracker-core/App.hpp"
 #include "../parse_arguments.hpp"
+#include "../defaults.hpp"
+#ifdef WINDOWS
+#	include <Windows.h>
+#endif
 
-const char *default_sound="alsa";
+const char *default_sound=DEFAULT_SOUND;
 
 struct arguments_t
 {
@@ -32,13 +36,58 @@ static void print_help()
 "Usage: app [-sound ENGINE] [--help]\n\n"
 "    -sound ENGINE\n"
 "        Specify which sound engine to use. This will load a module\n"
-"        in your PATH named libcore-ENGINE-sound.so. Default is alsa.\n"
+"        in your PATH named " SOUNDSINKLIB_FORMAT ". Default is " DEFAULT_SOUND ".\n"
 "        (eg. -sound jack)\n"
 "    --help\n"
-"        Print this message\n"
+"        Print this message\n",
+
+				"ENGINE"
 	);
 }
 
+
+#ifdef WINDOWS
+
+int CALLBACK WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nShowCmd)
+{
+
+	int argc;
+	LPWSTR *wargv = CommandLineToArgvW(GetCommandLineW(), &argc);
+
+	char **argv = new char*[argc];
+
+	for (int i = 0; i < argc; i++)
+	{
+		int bsz = WideCharToMultiByte(CP_UTF8, 0, wargv[i],-1, 0,0,0,0);
+		char *s = new char[bsz];
+		argv[i] = s;
+
+		WideCharToMultiByte(CP_UTF8, 0, wargv[i],-1,s,bsz,0,0);
+		s[bsz-1] = 0;
+	}
+
+	LocalFree(wargv);
+
+	arguments_t args;
+
+	gui::init(argc, argv);
+
+	parse_arguments(argc, argv, args);
+
+	gui::init_2(args.sound.c_str());
+
+	gui::spin();
+
+	gui::destroy();
+
+	for (int i = 0; i < argc; i++)
+	{
+		delete[] argv[i];
+	}
+	delete[] argv;
+}
+
+#else
 
 int main(int argc, char *argv[])
 {
@@ -65,3 +114,5 @@ int main(int argc, char *argv[])
 
 	return 0;
 }
+
+#endif

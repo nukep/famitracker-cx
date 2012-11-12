@@ -98,6 +98,14 @@
 #		define UNLIKELY(expr) (expr)
 #	endif
 
+#	if defined(__GNUC__)
+#		define LIBIMPORT
+#		define LIBEXPORT
+#	elif defined(_MSC_VER)
+#		define LIBIMPORT __declspec(dllimport)
+#		define LIBEXPORT __declspec(dllexport)
+#	endif
+
 #	if GCC_VERSION >= 40500
 		// only gcc 4.5 and above supports this
 #		define ASSUME(truth) if (!(truth)) __builtin_unreachable()

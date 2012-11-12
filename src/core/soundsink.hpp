@@ -1,14 +1,14 @@
 #ifndef CORE_SOUNDSINK_HPP
 #define CORE_SOUNDSINK_HPP
 
-#include "types.hpp"
-#include "ringbuffer.hpp"
+#include "common.hpp"
 
 namespace core
 {
 	struct _soundsink_threading_t;
 	struct timestamp_t;
-	class SoundSink
+	class RingBuffer;
+	class COREAPI SoundSink
 	{
 	public:
 		static const int MAX_TIMEIDX=64;
@@ -45,17 +45,21 @@ namespace core
 		core::u32 m_timeidxsz;
 		_soundsink_threading_t *m_threading;
 		core::u32 m_timeidx[MAX_TIMEIDX];
-		core::RingBuffer m_timeidx_ringbuffer;
+		core::RingBuffer *m_timeidx_ringbuffer;
 	};
 
-	class SoundSinkPlayback : public SoundSink
+	class COREAPI SoundSinkPlayback : public SoundSink
 	{
 	public:
+		SoundSinkPlayback();
+		SoundSinkPlayback(const SoundSinkPlayback&);
+		SoundSinkPlayback & operator =(const SoundSinkPlayback&);
+		virtual ~SoundSinkPlayback();
 		virtual void initialize(unsigned int sampleRate, unsigned int channels, unsigned int latency_ms) = 0;
 		virtual void close() = 0;
 	};
 
-	core::SoundSink * loadSoundSink(const char *name);
+	COREAPI core::SoundSink * loadSoundSink(const char *name);
 }
 
 #endif
