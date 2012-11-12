@@ -544,23 +544,28 @@ namespace gui
 
 	static void func_threadpool_playing()
 	{
-		while (true)
+		bool terminate = false;
+		do
 		{
 			threadpool_playing_task t;
+
 			mtx_threadpool_playing.lock();
-		checkempty:
-			bool empty = threadpool_playing_queue.empty();
-			if (!empty)
+			bool empty;
+			do
 			{
-				t = threadpool_playing_queue.front();
-				threadpool_playing_queue.pop();
+				empty = threadpool_playing_queue.empty();
+				if (!empty)
+				{
+					t = threadpool_playing_queue.front();
+					threadpool_playing_queue.pop();
+				}
+				else
+				{
+					// wait until queue is filled
+					cond_threadpool_playing.wait(mtx_threadpool_playing);
+				}
 			}
-			if (empty)
-			{
-				// wait until queue is filled
-				cond_threadpool_playing.wait(mtx_threadpool_playing);
-				goto checkempty;
-			}
+			while (empty);
 			mtx_threadpool_playing.unlock();
 
 			// do what's on the queue
@@ -588,12 +593,14 @@ namespace gui
 				break;
 			// gracefully end the thread pool
 			case T_TERMINATE:
-				return;
+				terminate = true;
+				break;
 
 			default:	// ignore
 				break;
 			}
 		}
+		while (!terminate);
 	}
 
 	void playSongConcurrent(mainthread_callback_t cb, void *data)

@@ -724,30 +724,50 @@ namespace gui
 
 				unsigned int frame = dinfo->currentFrame();
 
+				bool hit_rowframe = true;
+
 				if (y < 0)
 				{
+					// mouse is above current frame
 					if (frame == 0)
-						goto norowframe;
-					frame--;
-					y += d->getFramePlayLength(frame);
-					if (y < 0)
-						goto norowframe;
+					{
+						hit_rowframe = false;
+					}
+					else
+					{
+						frame--;
+						y += d->getFramePlayLength(frame);
+						if (y < 0)
+						{
+							hit_rowframe = false;
+						}
+					}
 				}
 				else if (y >= (int)d->getFramePlayLength(frame))
 				{
+					// mouse is below current frame
 					frame++;
 					if (frame == dinfo->doc()->GetFrameCount())
-						goto norowframe;
-					y -= d->getFramePlayLength(frame-1);
-					if (y >= (int)d->getFramePlayLength(frame))
-						goto norowframe;
+					{
+						hit_rowframe = false;
+					}
+					else
+					{
+						y -= d->getFramePlayLength(frame-1);
+						if (y >= (int)d->getFramePlayLength(frame))
+						{
+							hit_rowframe = false;
+						}
+					}
 				}
 
-				dinfo->setCurrentRow(y);
-				dinfo->setCurrentFrame(frame);
+				if (hit_rowframe)
+				{
+					dinfo->setCurrentRow(y);
+					dinfo->setCurrentFrame(frame);
+				}
 			}
 
-		norowframe:
 			gui::updateFrameChannel();
 		}
 

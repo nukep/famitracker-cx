@@ -94,12 +94,14 @@ namespace core
 		return v * 1000 / sr;
 	}
 
-	// return true if the loop should end
-	bool SoundSink::_timeloop_read(timestamp_t &tgt, core::u32 &skip)
+	// return true if the worker thread should stay alive
+	bool SoundSink::_timeloop_readNextTimestamp(timestamp_t &tgt, core::u32 &skip)
 	{
+		bool sinkDestruction = false;
+
 		boost::mutex &mtx = m_threading->mtx_time_ringbuffer;
 		mtx.lock();
-		while (m_timeidx_ringbuffer->isEmpty())
+		while (!sinkDestruction && m_timeidx_ringbuffer->isEmpty())
 		{
 			// notify that the ringbuffer is empty
 			// (this shouldn't affect the wait we have shortly after)
@@ -115,57 +117,65 @@ namespace core
 			// SoundSink could be destructing. let's check
 			if (m_threading->destructing)
 			{
-				mtx.unlock();
 				// the thread has to finish
-				return true;
+				sinkDestruction = true;
 			}
-
-			// wait until the ring buffer is filled
-			m_threading->cond_time_ringbuffer.wait(mtx);
+			else
+			{
+				// wait until the ring buffer is filled
+				m_threading->cond_time_ringbuffer.wait(mtx);
+			}
 		}
-		m_timeidx_ringbuffer->read(&tgt, 1);
-		if (m_timeidx_ringbuffer->isEmpty())
+		if (!sinkDestruction)
 		{
-			m_threading->cond_time_ringbuffer.notify_all();
+			m_timeidx_ringbuffer->read(&tgt, 1);
+			if (m_timeidx_ringbuffer->isEmpty())
+			{
+				m_threading->cond_time_ringbuffer.notify_all();
+			}
 		}
 		mtx.unlock();
-		return false;
+		return !sinkDestruction;
+	}
+
+	void SoundSink::_timeloop_tryCallTimestamp(const timestamp_t &tgt, core::u32 &skip)
+	{
+		timestamp_t cur;
+		cur.gettime();
+
+		if (tgt.isLessThan(cur))
+		{
+			// the timestamp has already elapsed. skip it
+			skip++;
+		}
+		else
+		{
+			// we're ahead. spend the time we have performing callbacks
+			if (skip > 0)
+			{
+				// there are other skipped timestamps that need attention
+				(*m_timeCallback)(skip, m_callbackData);
+				skip = 0;
+
+				_timeloop_tryCallTimestamp(tgt, skip);
+			}
+			else
+			{
+				core::sleep_us(tgt.diff_us(cur));
+
+				(*m_timeCallback)(1, m_callbackData);
+			}
+		}
 	}
 
 	void SoundSink::_timeloop()
 	{
+		timestamp_t tgt;
 		core::u32 skip = 0;
 
-		while (true)
+		while (_timeloop_readNextTimestamp(tgt, skip))
 		{
-			timestamp_t tgt;
-
-			if (_timeloop_read(tgt, skip))
-			{
-				break;
-			}
-
-compare_time:
-
-			timestamp_t cur;
-			cur.gettime();
-
-			if (tgt.isLessThan(cur))
-			{
-				// the timestamp has already elapsed. skip it
-				skip++;
-				continue;
-			}
-			if (skip > 0)
-			{
-				(*m_timeCallback)(skip, m_callbackData);
-				skip = 0;
-				goto compare_time;
-			}
-
-			core::sleep_us(tgt.diff_us(cur));
-
-			(*m_timeCallback)(1, m_callbackData);
+			_timeloop_tryCallTimestamp(tgt, skip);
 		}
 
 		if (skip > 0)
@@ -224,42 +234,7 @@ compare_time:
 
 		m_timeidxsz = 0;
 	}
-/*
-	void SoundSink::performTimeCallback()
-	{
-		m_timeidxsz = 0;
-		if (m_timeidxsz == 0)
-			return;
 
-		// start a thread that waits the appropriate times and
-		// dispatches the callbacks
-
-		timestamp_t ts;
-		ts.gettime();
-
-		core::u32 sz = m_timeidxsz;
-		if (sz > MAX_TIMEIDX)
-			sz = MAX_TIMEIDX;
-
-		if (m_threading->running)
-		{
-			// probably still running from late timestamp
-			// we'll just have to wait, then
-			m_threading->t->join();
-		}
-		if (m_threading != NULL)
-		{
-			m_threading->delthread();
-		}
-
-		m_threading->running = true;
-		m_threading->t = new boost::thread(timesync, ts, m_timeidx[m_curtimeidxbuf], m_timeidxsz, sampleRate(), m_timeCallback, m_callbackData, m_threading);
-
-		// swap buffers
-		m_curtimeidxbuf = (m_curtimeidxbuf == 0) ? 1 : 0;
-		m_timeidxsz = 0;
-	}
-*/
 	void SoundSink::blockUntilStopped()
 	{
 		boost::unique_lock<boost::mutex> lock(m_threading->mtx_playing);
