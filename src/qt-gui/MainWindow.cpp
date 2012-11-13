@@ -1,6 +1,8 @@
 #include <QFileDialog>
 #include <QDebug>
 #include "MainWindow.hpp"
+#include "CreateWAV.hpp"
+#include "ui_createwav.h"
 #include "gui.hpp"
 #include "Settings.hpp"
 #include "styles.hpp"
@@ -13,7 +15,7 @@ namespace gui
 		: m_close_shutdown(false)
 	{
 		setupUi(this);
-		setWindowTitle(QApplication::applicationName());
+		setDocumentName("");
 		instruments->setIconSize(QSize(16,16));
 
 		speed->setRange(MIN_SPEED, MAX_SPEED);
@@ -33,6 +35,7 @@ namespace gui
 		QObject::connect(action_Save, SIGNAL(triggered()), this, SLOT(save()));
 		action_Save->setIcon(QIcon::fromTheme("document-save"));
 		QObject::connect(actionSave_As, SIGNAL(triggered()), this, SLOT(saveAs()));
+		QObject::connect(actionCreate_WAV, SIGNAL(triggered()), this, SLOT(createWAV()));
 		QObject::connect(actionE_xit, SIGNAL(triggered()), this, SLOT(quit()));
 
 		QObject::connect(action_ViewToolbar, SIGNAL(toggled(bool)), this, SLOT(viewToolbar(bool)));
@@ -124,9 +127,14 @@ namespace gui
 		actionAdd_instrument->setMenu(m);
 
 		m_instrumenteditor = new InstrumentEditor(this);
+
+		blockSignals(true);
+		restoreState(settings()->value("mw-state").toByteArray());
+		blockSignals(false);
 	}
 	MainWindow::~MainWindow()
 	{
+		settings()->setValue("mw-state", saveState());
 		delete m_instrumenteditor;
 	}
 	void MainWindow::selectDefaultStyle()
@@ -317,6 +325,17 @@ namespace gui
 		}
 		actionNo_recent_files->setVisible(!containsRecentFiles);
 	}
+	void MainWindow::setDocumentName(const QString &documentName)
+	{
+		if (documentName.isEmpty())
+		{
+			setWindowTitle(QApplication::applicationName());
+		}
+		else
+		{
+			setWindowTitle(QString("%1 - %2").arg(documentName).arg(QApplication::applicationName()));
+		}
+	}
 
 	void MainWindow::refreshInstruments()
 	{
@@ -377,6 +396,7 @@ namespace gui
 	{
 		mw->m_instrumenteditor->removedInstrument();
 		gui::newDocument(true);
+		mw->setDocumentName("");
 		mw->updateDocument();
 	}
 
@@ -422,6 +442,33 @@ namespace gui
 		gui::stopSongConcurrent(open_cb, io);
 		gui::addRecentFile(path);
 		reloadRecentFiles();
+
+		setDocumentName(QFileInfo(path).fileName());
+	}
+	QString MainWindow::saveFileDialog(const QString &settingspath, const QString &filter)
+	{
+		const QString allFilesFilter = tr("All files (*.*)");
+		QString selectedFilter;
+
+		QString filetypepath = settings()->value(settingspath).toString();
+		QString path = QFileDialog::getSaveFileName(this, tr("Save As"), filetypepath, filter + ";;" + allFilesFilter, &selectedFilter, 0);
+		if (path.isEmpty())
+			return path;
+
+		QFileInfo file(path);
+		if (selectedFilter.compare(allFilesFilter) != 0)
+		{
+			// horrible, lame fix for no default suffixes in Linux
+			if (file.suffix().isEmpty())
+			{
+				// (*.EXT)
+				// fixme, someday
+				QString ext = selectedFilter.right(5).left(4);
+				path += ext;
+			}
+		}
+		filetypepath = file.absoluteDir().absolutePath();
+		settings()->setValue(settingspath, filetypepath);
 	}
 
 	void MainWindow::save()
@@ -430,25 +477,55 @@ namespace gui
 	}
 	void MainWindow::saveAs()
 	{
-		QString ftmpath = settings()->value(SETTINGS_FTMPATH).toString();
-		QString path = QFileDialog::getSaveFileName(this, tr("Save As"), ftmpath, tr("FamiTracker files (*.ftm);;All files (*.*)"), 0, 0);
+		QString path = saveFileDialog(SETTINGS_FTMPATH, tr("FamiTracker files (*.ftm)"));
 		if (path.isEmpty())
 			return;
-
-		// lame fix for no default suffixes in Linux
-		QFileInfo file(path);
-		if (file.suffix().isEmpty())
-		{
-			path += ".ftm";
-		}
-		ftmpath = file.absoluteDir().absolutePath();
-		settings()->setValue(SETTINGS_FTMPATH, ftmpath);
 
 		core::FileIO *io = new core::FileIO(path.toLocal8Bit(), core::IO_WRITE);
 
 		gui::activeDocument()->write(io);
 
 		delete io;
+	}
+	void MainWindow::createwav_cb(MainWindow *mw, void *data)
+	{
+		core::FileIO *io = (core::FileIO*)data;
+
+		QDialog *dialog = new QDialog(mw);
+
+		dialog->exec();
+
+		delete io;
+	}
+
+	void MainWindow::createWAV()
+	{
+		CreateWAVDialog *d = new CreateWAVDialog(this);
+		if (d->exec() == QDialog::Accepted)
+		{
+			bool select_playCount = d->select_playCount->isChecked();
+			int playCount, playSeconds;
+			if (select_playCount)
+			{
+				// play the song a number of times
+				playCount = d->playCount->value();
+			}
+			else
+			{
+				// play the song for an amount of time
+				playSeconds = d->playForTime->time().minute()*60 + d->playForTime->time().second();
+			}
+
+			gui::stopSongTrackerConcurrent();
+
+			QString path = saveFileDialog(SETTINGS_WAVPATH, tr("WAV PCM files (*.wav)"));
+			if (path.isEmpty())
+				return;
+
+			core::FileIO *io = new core::FileIO(path.toLocal8Bit(), core::IO_WRITE);
+
+			gui::stopSongConcurrent(createwav_cb, io);
+		}
 	}
 
 	void MainWindow::quit()

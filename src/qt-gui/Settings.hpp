@@ -5,6 +5,7 @@
 
 #define SETTINGS_WINDOWGEOMETRY "window-geometry"
 #define SETTINGS_FTMPATH "ftm-path"
+#define SETTINGS_WAVPATH "wav-path"
 
 namespace gui
 {

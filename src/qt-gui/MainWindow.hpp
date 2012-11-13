@@ -55,10 +55,12 @@ namespace gui
 		void updateDocument();
 
 		void reloadRecentFiles();
+		void setDocumentName(const QString &documentName);
 	protected:
 		void closeEvent(QCloseEvent *);
 		bool event(QEvent *event);
 	private:
+		QString saveFileDialog(const QString &settingspath, const QString &filter);
 
 		void setSong_mw_cb();
 		static void setSong_cb(MainWindow*, void*);
@@ -67,6 +69,8 @@ namespace gui
 		static void open_cb(MainWindow*, void*);
 
 		static void close_cb(MainWindow*, void*);
+
+		static void createwav_cb(MainWindow*, void*);
 		bool m_close_shutdown;
 	public slots:
 		void newDoc();
@@ -75,6 +79,7 @@ namespace gui
 		void openFile(const QString &path);
 		void save();
 		void saveAs();
+		void createWAV();
 		void quit();
 		void viewToolbar(bool);
 		void viewStatusBar(bool);

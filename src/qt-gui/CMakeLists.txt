@@ -15,6 +15,7 @@ set(SRC
 	styles.hpp
 
 	MainWindow.cpp
+	CreateWAV.cpp
 	PatternView.cpp
 	FrameView.cpp
 	
@@ -37,6 +38,7 @@ endif()
 
 set(MOC_INC
 	MainWindow.hpp
+	CreateWAV.hpp
 	PatternView.hpp
 	FrameView.hpp
 
@@ -46,6 +48,8 @@ set(MOC_INC
 
 set(UI_FILES
 	mainwindow.ui
+	createwav.ui
+	moduleproperties.ui
 )
 
 find_package(Qt4 REQUIRED QtCore QtGui)
