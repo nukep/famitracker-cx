@@ -17,6 +17,7 @@
 #include "ChannelsVRC6.h"
 
 #include "App.hpp"
+#include "core/time.hpp"
 
 // The depth of each vibrato level
 static const double NEW_VIBRATO_DEPTH[] = {
@@ -494,6 +495,7 @@ core::u32 SoundGen::soundCallback(core::s16 *buf, core::u32 sz, void *data, core
 
 core::u32 SoundGen::requestSound(core::s16 *buf, core::u32 sz, core::u32 *idx)
 {
+	const core::u32 original_sz = sz;
 	core::u32 c = 0;
 	core::u32 off = 0;
 	// read remaining sound buffer data from the last callback
@@ -551,11 +553,11 @@ core::u32 SoundGen::requestSound(core::s16 *buf, core::u32 sz, core::u32 *idx)
 	}
 	m_pDocument->unlock();
 
-	if (m_sinkStopTick > 0)
+	if (m_sinkStopSamples > 0)
 	{
 		// stopping sink
-		m_sinkStopTick--;
-		bool stop_playing = m_sinkStopTick == 0;
+		bool stop_playing = m_sinkStopSamples <= original_sz;
+		m_sinkStopSamples = stop_playing ? 0 : (m_sinkStopSamples - original_sz);
 		m_threading->mtx_running.unlock();
 
 		if (stop_playing)
@@ -624,7 +626,7 @@ void SoundGen::timeCallback(core::u32 skip, void *data)
 
 void SoundGen::startPlayback()
 {
-	m_sinkStopTick = -1;
+	m_sinkStopSamples = -1;
 
 	m_lastRow = ~0;
 	m_lastFrame = ~0;
@@ -653,7 +655,7 @@ void SoundGen::stopPlayback()
 {
 	haltSounds();
 	m_trackerActive = false;
-	m_sinkStopTick = 60;
+	m_sinkStopSamples = m_sink->sampleRate() * 1/2;
 }
 
 void SoundGen::startTracker()

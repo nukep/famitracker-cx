@@ -4,10 +4,11 @@
 #include "Document.hpp"
 #include "core/soundsink.hpp"
 
-class WavOutput : public core::SoundSink
+class WavOutput : public core::SoundSinkExport
 {
 public:
 	WavOutput(core::IO *io, int channels, int sampleRate);
+
 	void flushBuffer(core::s16 *Buffer, core::u32 Size);
 	void flush(){}
 

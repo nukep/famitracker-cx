@@ -8,8 +8,8 @@ set(SRC
 	exceptions.cpp
 	exceptions.hpp
 
-	wavoutput.cpp
-	wavoutput.hpp
+#	wavoutput.cpp
+#	wavoutput.hpp
 	sound.cpp
 	sound.hpp
 

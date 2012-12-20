@@ -42,46 +42,43 @@ void AlsaSound::callback(void *data)
 	core::u64 latency = as->m_buffer_size;
 	latency = latency * 1000000 / sr;
 
+	bool running = true;
 
-	while (true)
+	while (running)
 	{
 		as->m_threading->mtx_running.lock();
-		bool running = as->m_running;
+		running = as->m_running;
 		as->m_threading->mtx_running.unlock();
-		if (!running)
+		if (running)
 		{
-			break;
-		}
+			snd_pcm_sframes_t delayp;
 
-		snd_pcm_sframes_t delayp;
+			core::u32 sz = as->m_period_size;
 
-		core::u32 sz = as->m_period_size;
+			as->performSoundCallback(buf, sz);
 
-		as->performSoundCallback(buf, sz);
+			snd_pcm_sframes_t frames = snd_pcm_writei(as->m_handle, buf, sz);
+			snd_pcm_delay(as->m_handle, &delayp);
 
-		snd_pcm_sframes_t frames = snd_pcm_writei(as->m_handle, buf, sz);
-		snd_pcm_delay(as->m_handle, &delayp);
+			core::s64 d = delayp * 1000000 / sr;
+			d -= latency;
 
-		core::s64 d = delayp * 1000000 / sr;
-		d -= latency;
+			as->applyTime(d);
 
-		as->applyTime(d);
-
-		if (frames < 0)
-		{
-			frames = snd_pcm_recover(as->m_handle, frames, 0);
-		}
-		if (frames < 0)
-		{
-			// error
-			fprintf(stderr, "snd_pcm_writei failed: %s\n", snd_strerror(frames));
-			continue;
-		}
-		if (frames > 0 && frames != (long)sz)
-		{
-			// error
-			fprintf(stderr, "Short write (expected %li, wrote %li)\n", (long)sz, frames);
-			continue;
+			if (frames < 0)
+			{
+				frames = snd_pcm_recover(as->m_handle, frames, 0);
+			}
+			if (frames < 0)
+			{
+				// error
+				fprintf(stderr, "snd_pcm_writei failed: %s\n", snd_strerror(frames));
+			}
+			if (frames > 0 && frames != (long)sz)
+			{
+				// error
+				fprintf(stderr, "Short write (expected %li, wrote %li)\n", (long)sz, frames);
+			}
 		}
 	}
 

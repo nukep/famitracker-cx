@@ -371,4 +371,9 @@ namespace core
 	SoundSinkPlayback::~SoundSinkPlayback()
 	{
 	}
+
+	void SoundSinkExport::render()
+	{
+
+	}
 }

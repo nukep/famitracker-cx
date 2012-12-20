@@ -81,6 +81,8 @@ private:
 	void stopPlayback();
 	void haltSounds();
 	bool requestFrame();
+	// requestSound is not guaranteed to be (and typically isn't) called at a constant rate.
+	// for example, just because the engine speed may be 60Hz doesn't mean this gets called at 60Hz.
 	core::u32 requestSound(core::s16 *buf, core::u32 sz, core::u32 *idx);
 
 	core::RingBuffer *m_queued_rowframes;
@@ -126,7 +128,7 @@ private:
 private:
 	_soundgen_threading_t * m_threading;
 	bool m_trackerActive;
-	int m_sinkStopTick;
+	int m_sinkStopSamples;
 	bool m_timer_trackerActive;
 
 	unsigned int		m_lastRow, m_lastFrame;

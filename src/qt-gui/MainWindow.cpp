@@ -129,7 +129,6 @@ namespace gui
 		m_instrumenteditor = new InstrumentEditor(this);
 
 		blockSignals(true);
-		restoreState(settings()->value("mw-state").toByteArray());
 		blockSignals(false);
 	}
 	MainWindow::~MainWindow()

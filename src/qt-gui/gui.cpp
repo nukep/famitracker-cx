@@ -331,7 +331,6 @@ namespace gui
 	void init_2(const char *sound_name)
 	{
 		init_settings();
-		qDebug() << QApplication::applicationDirPath();
 		thread_threadpool_playing = new boost::thread(func_threadpool_playing);
 
 		active_doc_index = -1;
