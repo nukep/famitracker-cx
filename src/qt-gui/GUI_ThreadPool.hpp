@@ -5,6 +5,7 @@
 #include <boost/thread/mutex.hpp>
 #include <boost/thread/condition.hpp>
 #include <queue>
+#include "GUI_App.hpp"
 
 namespace gui
 {
@@ -68,6 +69,12 @@ namespace gui
 
 		static void func_playing_bootstrap(ThreadPool *tp);
 		void func_playing();
+		void playsong_thread(mainthread_callback_t cb, void *data, const threadpool_playing_task::playing_t &p);
+		void stopsong_thread(mainthread_callback_t cb, void *data);
+		void stopsongtracker_thread(mainthread_callback_t cb, void *data);
+		void auditionnote_thread(const threadpool_playing_task::audition_t &a);
+		void auditionhalt_thread();
+		void deletesink_thread(mainthread_callback_t cb, void *data);
 	};
 }
 

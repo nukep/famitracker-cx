@@ -18,6 +18,7 @@ namespace gui
 
 	class App
 	{
+		friend class ThreadPool;
 	public:
 		App(QApplication *a);
 		void init2(const char *sndname);
@@ -75,11 +76,6 @@ namespace gui
 
 		QApplication * qtApp() const{ return app; }
 
-		SoundGen *sgen;
-		core::SoundSinkPlayback *sink;
-		MainWindow *mw;
-		bool is_playing;
-		boost::mutex mtx_is_playing;
 	private:
 		void setActiveDocument(int idx);
 		static void trackerUpdate_bootstrap(SoundGen::rowframe_t rf, FtmDocument *doc, void *data);
@@ -88,6 +84,12 @@ namespace gui
 		typedef std::vector<DocInfo> DocsList;
 		DocsList loaded_documents;
 		int active_doc_index;
+
+		SoundGen *sgen;
+		core::SoundSinkPlayback *sink;
+		MainWindow *mw;
+		bool is_playing;
+		boost::mutex mtx_is_playing;
 
 		QApplication *app;
 

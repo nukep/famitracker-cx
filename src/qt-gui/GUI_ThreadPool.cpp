@@ -29,7 +29,7 @@ namespace gui
 		tp->func_playing();
 	}
 
-	static void playsong_thread(App *app, mainthread_callback_t cb, void *data, const threadpool_playing_task::playing_t &p)
+	void ThreadPool::playsong_thread(mainthread_callback_t cb, void *data, const threadpool_playing_task::playing_t &p)
 	{
 		const DocInfo *dinfo = activeDocInfo();
 
@@ -37,84 +37,82 @@ namespace gui
 
 		int row = startatrow0?0:dinfo->currentRow();
 
-		app->sgen->trackerController()->startAt(dinfo->currentFrame(), row);
+		m_app->sgen->trackerController()->startAt(dinfo->currentFrame(), row);
 
-		app->sgen->startTracker();
+		m_app->sgen->startTracker();
 
-		app->mtx_is_playing.lock();
-		app->is_playing = true;
-		app->mtx_is_playing.unlock();
+		m_app->mtx_is_playing.lock();
+		m_app->is_playing = true;
+		m_app->mtx_is_playing.unlock();
 
-		if (app->mw != NULL)
+		if (m_app->mw != NULL)
 		{
-			app->mw->sendIsPlayingSongEvent(cb, data, true);
+			m_app->mw->sendIsPlayingSongEvent(cb, data, true);
 		}
 	}
 
-	static void stopsong_thread(App *app, mainthread_callback_t cb, void *data)
+	void ThreadPool::stopsong_thread(mainthread_callback_t cb, void *data)
 	{
-		app->sgen->stopTracker();
-		app->sink->blockUntilStopped();
-		app->sink->blockUntilTimerEmpty();
+		m_app->sgen->stopTracker();
+		m_app->sink->blockUntilStopped();
+		m_app->sink->blockUntilTimerEmpty();
 
-		app->mtx_is_playing.lock();
-		app->is_playing = false;
-		app->mtx_is_playing.unlock();
+		m_app->mtx_is_playing.lock();
+		m_app->is_playing = false;
+		m_app->mtx_is_playing.unlock();
 
-		if (app->mw != NULL)
+		if (m_app->mw != NULL)
 		{
-			app->mw->sendIsPlayingSongEvent(cb, data, false);
+			m_app->mw->sendIsPlayingSongEvent(cb, data, false);
 		}
 	}
 
-	static void stopsongtracker_thread(App *app, mainthread_callback_t cb, void *data)
+	void ThreadPool::stopsongtracker_thread(mainthread_callback_t cb, void *data)
 	{
-		app->sgen->stopTracker();
-		app->sgen->blockUntilTrackerStopped();
+		m_app->sgen->stopTracker();
+		m_app->sgen->blockUntilTrackerStopped();
 
-		app->mtx_is_playing.lock();
-		app->is_playing = false;
-		app->mtx_is_playing.unlock();
+		m_app->mtx_is_playing.lock();
+		m_app->is_playing = false;
+		m_app->mtx_is_playing.unlock();
 
-		if (app->mw != NULL)
+		if (m_app->mw != NULL)
 		{
-			app->mw->sendIsPlayingSongEvent(cb, data, false);
+			m_app->mw->sendIsPlayingSongEvent(cb, data, false);
 		}
 	}
 
-	static void auditionnote_thread(App *app, const threadpool_playing_task::audition_t &a)
+	void ThreadPool::auditionnote_thread(const threadpool_playing_task::audition_t &a)
 	{
 		if (a.playrow)
 		{
 			DocInfo *dinfo = activeDocInfo();
-			app->sgen->auditionRow(dinfo->currentFrame(), dinfo->currentRow());
+			m_app->sgen->auditionRow(dinfo->currentFrame(), dinfo->currentRow());
 		}
 		else
 		{
-			app->sgen->auditionNote(a.note, a.octave, a.inst, a.channel);
+			m_app->sgen->auditionNote(a.note, a.octave, a.inst, a.channel);
 		}
 	}
 
-	static void auditionhalt_thread(App *app)
+	void ThreadPool::auditionhalt_thread()
 	{
-		app->sgen->auditionHalt();
+		m_app->sgen->auditionHalt();
 	}
 
-	static void deletesink_thread(App *app, mainthread_callback_t cb, void *data)
+	void ThreadPool::deletesink_thread(mainthread_callback_t cb, void *data)
 	{
-		delete app->sink;
-		app->sink = NULL;
+		delete m_app->sink;
+		m_app->sink = NULL;
 
-		if (app->mw != NULL)
+		if (m_app->mw != NULL)
 		{
-			app->mw->sendIsPlayingSongEvent(cb, data, isPlaying());
+			m_app->mw->sendIsPlayingSongEvent(cb, data, isPlaying());
 		}
 	}
 
 	void ThreadPool::func_playing()
 	{
-		App *app = m_app;
-
 		bool terminate = false;
 		do
 		{
@@ -144,23 +142,23 @@ namespace gui
 			switch (t.m_task)
 			{
 			case T_PLAYSONG:
-				playsong_thread(app, t.m_cb, t.m_cb_data, t.m_playing);
+				playsong_thread(t.m_cb, t.m_cb_data, t.m_playing);
 				break;
 			case T_STOPSONG:
-				stopsong_thread(app, t.m_cb, t.m_cb_data);
+				stopsong_thread(t.m_cb, t.m_cb_data);
 				break;
 			case T_STOPSONGTRACKER:
-				stopsongtracker_thread(app, t.m_cb, t.m_cb_data);
+				stopsongtracker_thread(t.m_cb, t.m_cb_data);
 				break;
 			case T_AUDITION:
-				auditionnote_thread(app, t.m_audition);
+				auditionnote_thread(t.m_audition);
 				break;
 			case T_HALTAUDITION:
-				auditionhalt_thread(app);
+				auditionhalt_thread();
 				break;
 
 			case T_DELETESINK:
-				deletesink_thread(app, t.m_cb, t.m_cb_data);
+				deletesink_thread(t.m_cb, t.m_cb_data);
 				break;
 			// gracefully end the thread pool
 			case T_TERMINATE:
