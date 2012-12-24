@@ -1,7 +1,7 @@
 #include <QPainter>
 #include <QScrollBar>
 #include <QMouseEvent>
-#include "gui.hpp"
+#include "GUI.hpp"
 #include "styles.hpp"
 #include "FrameView.hpp"
 #include "famitracker-core/FtmDocument.hpp"

@@ -1,77 +1,17 @@
-#ifndef _GUI_HPP_
-#define _GUI_HPP_
+#ifndef _DOCINFO_HPP_
+#define _DOCINFO_HPP_
 
-#include "famitracker-core/Document.hpp"
+#include "core/common.hpp"
 #include "famitracker-core/FamiTrackerTypes.h"
-
-class QFile;
-class QString;
-class QEvent;
 class FtmDocument;
 
 namespace gui
 {
-	void init(int &argc, char **argv);
-	void init_2(const char *sound_name);
-	void destroy();
-	void spin();
-
-	void updateFrameChannel(bool modified=false);
-	void updateOctave();
-
-	class DocInfo;
-	class MainWindow;
-
-	unsigned int loadedDocuments();
-	FtmDocument * activeDocument();
-	DocInfo * activeDocInfo();
-	void closeActiveDocument();
-	void openDocument(core::IO *io, bool close_active);
-	void newDocument(bool close_active);
-
-	typedef void (*mainthread_callback_t)(MainWindow *, void*);
-
-	bool isPlaying();
-	bool isEditing();
-	static bool canEdit(){ return isEditing() && (!isPlaying()); }
-	void playSongConcurrent(mainthread_callback_t, void *data=NULL);
-	void playSongConcurrent();
-	void playSongAtRowConcurrent();
-	void stopSongConcurrent(mainthread_callback_t, void *data=NULL);
-	void stopSongConcurrent();
-	void stopSongTrackerConcurrent(mainthread_callback_t, void *data=NULL);
-	void stopSongTrackerConcurrent();
-	void deleteSinkConcurrent(mainthread_callback_t cb, void *data=NULL);
-	static inline void toggleSongPlaying()
-	{
-		if (isPlaying())
-		{
-			stopSongTrackerConcurrent();
-		}
-		else
-		{
-			playSongConcurrent();
-		}
-	}
-	void toggleEditMode();
-
-	void auditionNote(int channel, int octave, int note);
-	void auditionRow();
-	void auditionNoteHalt();
-	void auditionDPCM(const CDSample *sample);
-
-	void setMuted(int channel, bool muted);
-	bool isMuted(int channel);
-	static inline void toggleMuted(int channel)
-	{
-		setMuted(channel, !isMuted(channel));
-	}
-	void unmuteAll();
-	void toggleSolo(int channel);
-
+	class App;
 	class DocInfo
 	{
 		friend void gui::closeActiveDocument();
+		friend class gui::App;
 	public:
 		DocInfo(FtmDocument *d);
 		FtmDocument * doc() const{ return m_doc; }
@@ -124,3 +64,4 @@ namespace gui
 }
 
 #endif
+

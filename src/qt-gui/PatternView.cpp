@@ -8,7 +8,7 @@
 #include <stdio.h>
 #include <string.h>
 #include "PatternView.hpp"
-#include "gui.hpp"
+#include "GUI.hpp"
 #include "styles.hpp"
 #include "famitracker-core/FtmDocument.hpp"
 #include "famitracker-core/App.hpp"

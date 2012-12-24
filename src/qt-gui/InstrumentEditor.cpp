@@ -5,7 +5,7 @@
 #include <QLineEdit>
 #include <QPushButton>
 #include "famitracker-core/Instrument.h"
-#include "gui.hpp"
+#include "GUI.hpp"
 #include "famitracker-core/FtmDocument.hpp"
 #include "InstrumentEditor.hpp"
 #include "SequenceEditor.hpp"

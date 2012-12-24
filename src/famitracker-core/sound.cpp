@@ -614,7 +614,7 @@ void SoundGen::timeCallback(core::u32 skip, void *data)
 	sg->m_threading->mtx_rowframes.unlock();
 
 	if (sg->m_trackerUpdateCallback != NULL)
-		(*sg->m_trackerUpdateCallback)(rf, sg->trackerController()->document());
+		(*sg->m_trackerUpdateCallback)(rf, sg->trackerController()->document(), sg->m_trackerUpdateData);
 
 	boost::unique_lock<boost::mutex> lock(sg->m_threading->mtx_tracker);
 	if (sg->m_timer_trackerActive != rf.tracker_running)

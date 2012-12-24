@@ -40,7 +40,7 @@ public:
 		bool halt_signal;
 		const core::u8 * volumes;
 	};
-	typedef void (*trackerupdate_f)(rowframe_t rf, FtmDocument *doc);
+	typedef void (*trackerupdate_f)(rowframe_t rf, FtmDocument *doc, void *data);
 	SoundGen();
 	~SoundGen();
 
@@ -48,7 +48,7 @@ public:
 
 	void setDocument(FtmDocument *doc);
 	TrackerController * trackerController() const{ return m_trackerctlr; }
-	void setTrackerUpdate(trackerupdate_f f){ m_trackerUpdateCallback = f; }
+	void setTrackerUpdate(trackerupdate_f f, void *data=NULL){ m_trackerUpdateCallback = f; m_trackerUpdateData = data; }
 
 	// Multiple times initialization
 	void loadMachineSettings(int machine, int rate);
@@ -111,6 +111,7 @@ private:
 	FtmDocument *m_pDocument;
 	TrackerController *m_trackerctlr;
 	trackerupdate_f m_trackerUpdateCallback;
+	void *m_trackerUpdateData;
 	// Objects
 	CChannelHandler * m_pChannels[CHANNELS];
 	CTrackerChannel * m_pTrackerChannels[CHANNELS];

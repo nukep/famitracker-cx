@@ -7,7 +7,7 @@
 #include <QMouseEvent>
 #include <QDebug>
 #include "SequenceEditor.hpp"
-#include "gui.hpp"
+#include "GUI.hpp"
 #include "famitracker-core/FtmDocument.hpp"
 #include "famitracker-core/Sequence.h"
 #include "famitracker-core/Instrument.h"

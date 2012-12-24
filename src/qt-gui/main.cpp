@@ -1,6 +1,6 @@
 #include <stdio.h>
 #include <string.h>
-#include "gui.hpp"
+#include "GUI.hpp"
 #include "famitracker-core/App.hpp"
 #include "../parse_arguments.hpp"
 #include "../defaults.hpp"

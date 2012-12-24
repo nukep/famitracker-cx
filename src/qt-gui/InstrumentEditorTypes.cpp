@@ -11,7 +11,7 @@
 #include <QFileDialog>
 #include "InstrumentEditorTypes.hpp"
 #include "SequenceEditor.hpp"
-#include "gui.hpp"
+#include "GUI.hpp"
 #include "famitracker-core/Instrument.h"
 #include "famitracker-core/FtmDocument.hpp"
 #include <QDebug>

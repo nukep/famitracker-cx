@@ -56,7 +56,7 @@ static void print_help()
 	);
 }
 
-static void tracker_update(SoundGen::rowframe_t rf, FtmDocument *doc)
+static void tracker_update(SoundGen::rowframe_t rf, FtmDocument *doc, void *)
 {
 	if (!rf.rowframe_changed)
 		return;

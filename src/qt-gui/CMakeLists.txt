@@ -8,8 +8,14 @@ set(SRC
 
 	main.cpp
 
-	gui.cpp
-	gui.hpp
+	GUI.cpp
+	GUI.hpp
+	GUI_App.cpp
+	GUI_App.hpp
+	GUI_ThreadPool.cpp
+	GUI_ThreadPool.hpp
+	DocInfo.cpp
+	DocInfo.hpp
 
 	styles.cpp
 	styles.hpp

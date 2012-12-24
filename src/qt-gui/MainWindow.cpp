@@ -3,7 +3,7 @@
 #include "MainWindow.hpp"
 #include "CreateWAV.hpp"
 #include "ui_createwav.h"
-#include "gui.hpp"
+#include "GUI.hpp"
 #include "Settings.hpp"
 #include "styles.hpp"
 #include "famitracker-core/FtmDocument.hpp"
@@ -133,7 +133,6 @@ namespace gui
 	}
 	MainWindow::~MainWindow()
 	{
-		settings()->setValue("mw-state", saveState());
 		delete m_instrumenteditor;
 	}
 	void MainWindow::selectDefaultStyle()
