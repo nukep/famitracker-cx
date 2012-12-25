@@ -36,6 +36,19 @@ enum {
 	INST_COUNT
 };
 
+static inline bool fami_isInstrumentImplemented(int type)
+{
+	switch (type)
+	{
+	case INST_2A03:
+	case INST_VRC6:
+	case INST_FDS:
+		return true;
+	default:
+		return false;
+	}
+}
+
 const unsigned int MAX_INSTRUMENT_NAME_LENGTH = 127;	// not including null char
 
 // External classes

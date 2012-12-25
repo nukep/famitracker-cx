@@ -32,19 +32,24 @@ namespace gui
 		FtmDocument * activeDocument();
 		DocInfo * activeDocInfo();
 		void closeActiveDocument();
-		void openDocument(core::IO *io, bool close_active);
+		bool openDocument(core::IO *io, bool close_active);
 		void newDocument(bool close_active);
 
 		bool isPlaying();
 		bool isEditing();
 		bool canEdit(){ return isEditing() && (!isPlaying()); }
+
 		void playSongConcurrent(mainthread_callback_t, void *data=NULL);
-		void playSongConcurrent();
+		void playSongConcurrent(){ playSongConcurrent(NULL, NULL); }
+
 		void playSongAtRowConcurrent();
+
 		void stopSongConcurrent(mainthread_callback_t, void *data=NULL);
-		void stopSongConcurrent();
+		void stopSongConcurrent(){ stopSongConcurrent(NULL, NULL); }
+
 		void stopSongTrackerConcurrent(mainthread_callback_t, void *data=NULL);
-		void stopSongTrackerConcurrent();
+		void stopSongTrackerConcurrent(){ stopSongTrackerConcurrent(NULL, NULL); }
+
 		void deleteSinkConcurrent(mainthread_callback_t cb, void *data=NULL);
 
 		void toggleSongPlaying()

@@ -71,7 +71,7 @@ bool CInstrumentVRC6::Load(Document *doc)
 	int Index;
 	int SeqCnt = doc->getBlockInt();
 
-	ftm_Assert(SeqCnt < (SEQUENCE_COUNT + 1));
+	ftkr_Assert(SeqCnt < (SEQUENCE_COUNT + 1));
 
 	SeqCnt = SEQUENCE_COUNT;//SEQ_COUNT;
 
@@ -79,7 +79,7 @@ bool CInstrumentVRC6::Load(Document *doc)
 	{
 		SetSeqEnable(i, doc->getBlockChar());
 		Index = doc->getBlockChar();
-		ftm_Assert(Index < MAX_SEQUENCES);
+		ftkr_Assert(Index < MAX_SEQUENCES);
 		SetSeqIndex(i, Index);
 	}
 

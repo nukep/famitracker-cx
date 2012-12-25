@@ -5,6 +5,8 @@
 
 namespace gui
 {
+	class DocInfo;
+
 	class PatternView_Header;
 	class PatternView_Body;
 	class PatternView : public QAbstractScrollArea
@@ -13,6 +15,8 @@ namespace gui
 		friend class PatternView_Body;
 	public:
 		PatternView(QWidget *parent);
+
+		void setDocInfo(DocInfo *dinfo);
 
 		void update(bool modified=false);
 		void updateStyles();
@@ -33,6 +37,7 @@ namespace gui
 	private:
 		PatternView_Header * m_header;
 		PatternView_Body * m_body;
+		DocInfo * m_dinfo;
 		unsigned int m_currentFrame, m_currentRow, m_currentChannel;
 	};
 }

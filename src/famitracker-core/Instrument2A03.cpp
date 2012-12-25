@@ -101,13 +101,13 @@ bool CInstrument2A03::Load(Document *doc)
 	int Version = doc->getBlockVersion();
 
 	SeqCnt = doc->getBlockInt();
-	ftm_Assert(SeqCnt < (SEQUENCE_COUNT + 1));
+	ftkr_Assert(SeqCnt < (SEQUENCE_COUNT + 1));
 
 	for (int i = 0; i < SeqCnt; i++)
 	{
 		SetSeqEnable(i, doc->getBlockChar());
 		Index = doc->getBlockChar();
-		ftm_Assert(Index < MAX_SEQUENCES);
+		ftkr_Assert(Index < MAX_SEQUENCES);
 		SetSeqIndex(i, Index);
 	}
 
@@ -392,7 +392,7 @@ bool CInstrument2A03::LoadFile(core::IO *file, int iVersion, FtmDocument *pDoc)
 				}
 				else
 				{
-					ftm_Assert(0);
+					ftkr_Assert(0);
 				//	AfxMessageBox(IDS_OUT_OF_SAMPLEMEM, MB_ICONERROR);
 				//	SAFE_RELEASE_ARRAY(SampleData);
 					return false;
@@ -400,7 +400,7 @@ bool CInstrument2A03::LoadFile(core::IO *file, int iVersion, FtmDocument *pDoc)
 			}
 			else
 			{
-				ftm_Assert(0);
+				ftkr_Assert(0);
 			//	AfxMessageBox(IDS_OUT_OF_SLOTS, MB_ICONERROR);
 			//	SAFE_RELEASE_ARRAY(SampleData);
 				return false;
@@ -408,7 +408,7 @@ bool CInstrument2A03::LoadFile(core::IO *file, int iVersion, FtmDocument *pDoc)
 		}
 		else
 		{
-			ftm_Assert(0);
+			ftkr_Assert(0);
 		//	SAFE_RELEASE_ARRAY(SampleData);
 		}
 	}

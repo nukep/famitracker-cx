@@ -162,7 +162,7 @@ bool CInstrumentFDS::LoadSequence(Document *pDocFile, CSequence *pSeq)
 	ReleasePoint = pDocFile->getBlockInt();
 	Settings = pDocFile->getBlockInt();
 
-	ftm_Assert(SeqCount <= MAX_SEQUENCE_ITEMS);
+	ftkr_Assert(SeqCount <= MAX_SEQUENCE_ITEMS);
 
 	pSeq->Clear();
 	pSeq->SetItemCount(SeqCount);

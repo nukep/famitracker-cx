@@ -72,7 +72,7 @@ void CChannelMap::SetupSoundChips()
 
 void CChannelMap::AddChip(int Ident, CInstrument *pInst, const char *pName)
 {
-	ftm_Assert(m_iAddedChips < CHIP_COUNT);
+	ftkr_Assert(m_iAddedChips < CHIP_COUNT);
 
 	m_pChipNames[m_iAddedChips] = pName;
 	m_iChipIdents[m_iAddedChips] = Ident;

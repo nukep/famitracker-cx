@@ -41,13 +41,13 @@ void CSequence::Clear()
 
 void CSequence::SetItem(int Index, signed char Value)
 {
-	ftm_Assert(Index <= MAX_SEQUENCE_ITEMS);
+	ftkr_Assert(Index <= MAX_SEQUENCE_ITEMS);
 	m_cValues[Index] = Value;
 }
 
 void CSequence::SetItemCount(unsigned int Count)
 {
-	ftm_Assert(Count <= MAX_SEQUENCE_ITEMS);
+	ftkr_Assert(Count <= MAX_SEQUENCE_ITEMS);
 	m_iItemCount = Count;
 }
 
@@ -74,7 +74,7 @@ void CSequence::SetSetting(unsigned int Setting)
 
 signed char CSequence::GetItem(int Index) const
 {
-	ftm_Assert(Index <= MAX_SEQUENCE_ITEMS);
+	ftkr_Assert(Index <= MAX_SEQUENCE_ITEMS);
 	return m_cValues[Index];
 }
 

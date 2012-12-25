@@ -12,6 +12,7 @@ namespace gui
 #define UPDATEEVENT QEvent::User
 #define ISPLAYINGSONGEVENT (QEvent::Type)((int)QEvent::User+1)
 
+	class App;
 	class MainWindow;
 	class InstrumentEditor;
 
@@ -35,8 +36,10 @@ namespace gui
 	{
 		Q_OBJECT
 	public:
-		MainWindow();
+		MainWindow(App *a);
 		~MainWindow();
+
+		void setDocInfo(DocInfo *dinfo);
 
 		void updateFrameChannel(bool modified=false);
 		void updateOctave();
@@ -115,6 +118,8 @@ namespace gui
 		void selectDefaultStyle();
 		void selectMonochromeStyle();
 	private:
+		App * m_app;
+		DocInfo * m_dinfo;
 		boost::mutex m_mtx_updateEvent;
 		boost::condition m_cond_updateEvent;
 		InstrumentEditor *m_instrumenteditor;

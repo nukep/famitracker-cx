@@ -50,6 +50,50 @@ struct stSequence {
 	signed char Value[MAX_SEQUENCE_ITEMS];
 };
 
+class FtmDocumentException : public std::exception
+{
+public:
+	enum Type
+	{
+		INVALIDFILETYPE,
+		TOOOLD,
+		TOONEW,
+		GENERALREADFAILURE,
+		ASSERT,
+		UNIMPLEMENTED,
+		UNIMPLEMENTED_CX,	// not implemented in FamiTracker CX
+		UNIMPLEMENTED_CX_INSTRUMENT
+	};
+	explicit FtmDocumentException(Type t);
+	explicit FtmDocumentException(Type t, std::string msg);
+	~FtmDocumentException() throw(){}
+
+	const char * mainMessage() const throw();
+	const char * specialMessage() const throw();
+
+	const char * what() const throw();
+
+	Type type() const{ return m_t; }
+private:
+	Type m_t;
+	std::string m_msg;
+	std::string m_concatmsg;
+};
+
+class FtmDocumentExceptionAssert : public FtmDocumentException
+{
+public:
+	explicit FtmDocumentExceptionAssert(const char *file, int line, const char *func, const char *asrt);
+	virtual ~FtmDocumentExceptionAssert() throw();
+	const char * what() const throw();
+private:
+	const char * m_file;
+	int m_line;
+	const char * m_func;
+	const char * m_asrt;
+	char * m_msg;
+};
+
 class FAMICOREAPI FtmDocument
 {
 public:

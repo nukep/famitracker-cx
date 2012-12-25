@@ -86,7 +86,7 @@ void Document::getBlock(void *buf, unsigned int size)
 
 void Document::writeBlock(const void *data, unsigned int size)
 {
-	ftm_Assert(m_pBlockData != NULL);
+	ftkr_Assert(m_pBlockData != NULL);
 
 	unsigned int writeSize, writePtr = 0;
 
@@ -201,7 +201,7 @@ void Document::init_pBlockData(Quantity size)
 }
 void Document::reallocateBlock()
 {
-	ftm_Assert(m_pBlockData);
+	ftkr_Assert(m_pBlockData != NULL);
 
 	unsigned int oldSize = m_iMaxBlockSize;
 	m_iMaxBlockSize += BLOCK_SIZE;

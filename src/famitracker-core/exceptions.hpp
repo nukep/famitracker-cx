@@ -33,10 +33,9 @@ public:
 #	define FUNCTION_NAME __FUNCTION__
 #endif
 
-#define _ftm_Assert_msg(truth) throw Fatal("Assertion fail: %s on line %d, %s: \"%s\"", __FILE__, __LINE__, FUNCTION_NAME, #truth)
-#define ftm_Assert(truth) if ((! (truth) )) _ftm_Assert_msg(truth)
+#define _ftkr_Assert_msg(truth) throw Fatal("Assertion fail: %s on line %d, %s: \"%s\"", __FILE__, __LINE__, FUNCTION_NAME, #truth)
 
-#define ftkr_Assert(truth) ftm_Assert(truth)
+#define ftkr_Assert(truth) if ((! (truth) )) _ftkr_Assert_msg(truth)
 
 #endif
 

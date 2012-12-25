@@ -8,9 +8,14 @@
 #include "Instrument.h"
 #include "TrackerChannel.h"
 #include "Sequence.h"
+#include "version.hpp"
+
+#define ftm_Assert(truth) if ((! (truth) )) throw FtmDocumentExceptionAssert(__FILE__, __LINE__, FUNCTION_NAME, #truth)
 
 const unsigned int FILE_VER			= 0x0420;			// Current file version (4.20)
 const unsigned int COMPATIBLE_VER	= 0x0100;			// Compatible file version (1.0)
+
+#define FILE_VER_STR "4.20"
 
 // Defaults when creating new modules
 const char	DEFAULT_TRACK_NAME[] = "New song";
@@ -35,6 +40,69 @@ const char *FILE_BLOCK_SEQUENCES_VRC6 = "SEQUENCES_VRC6";
 // FTI instruments files
 const char INST_HEADER[] = "FTI";
 const char INST_VERSION[] = "2.3";
+
+FtmDocumentException::FtmDocumentException(Type t)
+	: m_t(t)
+{
+	m_concatmsg = mainMessage();
+}
+
+FtmDocumentException::FtmDocumentException(Type t, std::string msg)
+	: m_t(t), m_msg(msg)
+{
+	m_concatmsg = mainMessage();
+	m_concatmsg.append("\n");
+	m_concatmsg.append(msg);
+}
+
+const char * FtmDocumentException::mainMessage() const throw()
+{
+	// Simple exception messages when we need them (in English)
+	// Translated exception messages are handled elsewhere (eg. the gui)
+	switch (m_t)
+	{
+	case INVALIDFILETYPE: return "Invalid file type";
+	case TOOOLD: return "File version is too old (current version " FILE_VER_STR ", FT " VERSION_STRING ")";
+	case TOONEW: return "File version is too new (current version " FILE_VER_STR ", FT " VERSION_STRING ")";
+	case GENERALREADFAILURE: return "General read failure (corrupt file?)";
+	case ASSERT: return "Corrupt file assertion";
+	case UNIMPLEMENTED: return "Unimplemented feature";
+	case UNIMPLEMENTED_CX: return "Unimplemented feature (in FamiTracker CX)";
+
+
+	// no default - all enum values should be accounted for
+	}
+}
+
+const char * FtmDocumentException::specialMessage() const throw()
+{
+	return m_msg.c_str();
+}
+
+const char * FtmDocumentException::what() const throw()
+{
+	return m_concatmsg.c_str();
+}
+
+FtmDocumentExceptionAssert::FtmDocumentExceptionAssert(const char *file, int line, const char *func, const char *asrt)
+	: FtmDocumentException(FtmDocumentException::ASSERT),
+	  m_file(file), m_line(line), m_func(func), m_asrt(asrt)
+{
+	m_msg = new char[1024];
+	const char *fmt = "Corrupt file assertion: %s on line %d, %s: \"%s\"";
+
+	snprintf(m_msg, 1024, fmt, file, line, func, asrt);
+}
+
+FtmDocumentExceptionAssert::~FtmDocumentExceptionAssert() throw()
+{
+	delete[] m_msg;
+}
+
+const char * FtmDocumentExceptionAssert::what() const throw()
+{
+	return m_msg;
+}
 
 CDSample::CDSample()
 	: SampleSize(0), SampleData(NULL)
@@ -193,63 +261,71 @@ void FtmDocument::createEmpty()
 
 void FtmDocument::read(core::IO *io)
 {
-	FtmDocument_lock_guard lock(this);
-
-	Document doc;
-	doc.setIO(io);
-	bForceBackup = false;
-
-	if (!doc.checkValidity())
+	try
 	{
-		return;
+		FtmDocument_lock_guard lock(this);
+
+		Document doc;
+		doc.setIO(io);
+		bForceBackup = false;
+
+		if (!doc.checkValidity())
+		{
+			throw FtmDocumentException::INVALIDFILETYPE;
+		}
+
+		unsigned int ver = doc.getFileVersion();
+		m_iFileVersion = ver;
+
+		if (ver < 0x0200)
+		{
+			// Older file version
+			if (ver < COMPATIBLE_VER)
+			{
+				throw FtmDocumentException::TOOOLD;
+			}
+
+			if (!readOld(&doc))
+			{
+				throw FtmDocumentException::GENERALREADFAILURE;
+			}
+
+			// Create a backup of this file, since it's an old version
+			// and something might go wrong when converting
+			bForceBackup = true;
+
+			// Auto-select old style vibrato for old files
+			m_iVibratoStyle = VIBRATO_OLD;
+		}
+		else if (ver >= 0x0200)
+		{
+			// New file version
+
+			if (ver > FILE_VER)
+			{
+				// File version is too new
+				throw FtmDocumentException::TOONEW;
+			}
+
+			if (!readNew(&doc))
+			{
+				throw FtmDocumentException::GENERALREADFAILURE;
+			}
+
+			// Backup if files was of an older version
+			bForceBackup = ver < FILE_VER;
+		}
 	}
-
-	unsigned int ver = doc.getFileVersion();
-	m_iFileVersion = ver;
-
-	if (ver < 0x0200)
+	catch (FtmDocumentException::Type t)
 	{
-		// Older file version
-		if (ver < COMPATIBLE_VER)
-		{
-			return;
-		}
-
-		if (!readOld(&doc))
-		{
-			return;
-		}
-
-		// Create a backup of this file, since it's an old version
-		// and something might go wrong when converting
-		bForceBackup = true;
-
-		// Auto-select old style vibrato for old files
-		m_iVibratoStyle = VIBRATO_OLD;
-	}
-	else if (ver >= 0x0200)
-	{
-		// New file version
-
-		if (ver > FILE_VER)
-		{
-			// File version is too new
-			return;
-		}
-
-		if (!readNew(&doc))
-		{
-			return;
-		}
-
-		// Backup if files was of an older version
-		bForceBackup = ver < FILE_VER;
+		throw FtmDocumentException(t);
 	}
 }
 
 bool FtmDocument::readOld(Document *doc)
 {
 	// TODO
+	throw FtmDocumentException::UNIMPLEMENTED;
 	return false;
 }
 
@@ -307,7 +383,7 @@ bool FtmDocument::readNew(Document *doc)
 		}
 		else
 		{
-			ftm_Assert(0);
+			return false;
 		}
 	}
 
@@ -461,6 +537,9 @@ bool FtmDocument::readNew_instruments(Document *doc)
 		ftm_Assert(index <= MAX_INSTRUMENTS);
 
 		int type = doc->getBlockChar();
+
+		if (!fami_isInstrumentImplemented(type))
+			throw FtmDocumentException(FtmDocumentException::UNIMPLEMENTED_CX, "Instrument not supported");
 
 		CInstrument *inst = CreateInstrument(type);
 
@@ -1448,7 +1527,7 @@ bool FtmDocument::write_dsamples(Document *doc) const
 
 void FtmDocument::SetFrameCount(unsigned int Count)
 {
-	ftm_Assert(Count <= MAX_FRAMES);
+	ftkr_Assert(Count <= MAX_FRAMES);
 
 	if (m_pSelectedTune->GetFrameCount() != Count)
 	{
@@ -1460,7 +1539,7 @@ void FtmDocument::SetFrameCount(unsigned int Count)
 
 void FtmDocument::SetPatternLength(unsigned int Length)
 {
-	ftm_Assert(Length <= MAX_PATTERN_LENGTH);
+	ftkr_Assert(Length <= MAX_PATTERN_LENGTH);
 
 	if (m_pSelectedTune->GetPatternLength() != Length)
 	{
@@ -1472,7 +1551,7 @@ void FtmDocument::SetPatternLength(unsigned int Length)
 
 void FtmDocument::SetSongSpeed(unsigned int Speed)
 {
-	ftm_Assert(Speed <= MAX_SPEED);
+	ftkr_Assert(Speed <= MAX_SPEED);
 
 	if (m_pSelectedTune->GetSongSpeed() != Speed)
 	{
@@ -1483,7 +1562,7 @@ void FtmDocument::SetSongSpeed(unsigned int Speed)
 
 void FtmDocument::SetSongTempo(unsigned int Tempo)
 {
-	ftm_Assert(Tempo <= MAX_TEMPO);
+	ftkr_Assert(Tempo <= MAX_TEMPO);
 
 	if (m_pSelectedTune->GetSongTempo() != Tempo)
 	{
@@ -1494,27 +1573,27 @@ void FtmDocument::SetSongTempo(unsigned int Tempo)
 
 unsigned int FtmDocument::getFramePlayLength(unsigned int frame) const
 {
-	ftm_Assert(frame < GetFrameCount());
+	ftkr_Assert(frame < GetFrameCount());
 
 	return m_pSelectedTune->getFramePlayLength(frame, GetAvailableChannels());
 }
 
 unsigned int FtmDocument::GetEffColumns(int Track, unsigned int Channel) const
 {
-	ftm_Assert(Channel < MAX_CHANNELS);
+	ftkr_Assert(Channel < MAX_CHANNELS);
 	return m_pTunes[Track]->GetEffectColumnCount(Channel);
 }
 
 unsigned int FtmDocument::GetEffColumns(unsigned int Channel) const
 {
-	ftm_Assert(Channel < MAX_CHANNELS);
+	ftkr_Assert(Channel < MAX_CHANNELS);
 	return m_pSelectedTune->GetEffectColumnCount(Channel);
 }
 
 void FtmDocument::SetEffColumns(unsigned int Channel, unsigned int Columns)
 {
-	ftm_Assert(Channel < MAX_CHANNELS);
-	ftm_Assert(Columns < MAX_EFFECT_COLUMNS);
+	ftkr_Assert(Channel < MAX_CHANNELS);
+	ftkr_Assert(Columns < MAX_EFFECT_COLUMNS);
 
 //	GetChannel(Channel)->SetColumnCount(Columns);
 	m_pSelectedTune->SetEffectColumnCount(Channel, Columns);
@@ -1525,19 +1604,19 @@ void FtmDocument::SetEffColumns(unsigned int Channel, unsigned int Columns)
 
 unsigned int FtmDocument::GetPatternAtFrame(int Track, unsigned int Frame, unsigned int Channel) const
 {
-	ftm_Assert(Frame < MAX_FRAMES && Channel < MAX_CHANNELS);
+	ftkr_Assert(Frame < MAX_FRAMES && Channel < MAX_CHANNELS);
 	return m_pTunes[Track]->GetFramePattern(Frame, Channel);
 }
 
 unsigned int FtmDocument::GetPatternAtFrame(unsigned int Frame, unsigned int Channel) const
 {
-	ftm_Assert(Frame < MAX_FRAMES && Channel < MAX_CHANNELS);
+	ftkr_Assert(Frame < MAX_FRAMES && Channel < MAX_CHANNELS);
 	return m_pSelectedTune->GetFramePattern(Frame, Channel);
 }
 
 void FtmDocument::SetPatternAtFrame(unsigned int Frame, unsigned int Channel, unsigned int Pattern)
 {
-	ftm_Assert(Frame < MAX_FRAMES && Channel < MAX_CHANNELS && Pattern < MAX_PATTERN);
+	ftkr_Assert(Frame < MAX_FRAMES && Channel < MAX_CHANNELS && Pattern < MAX_PATTERN);
 	m_pSelectedTune->SetFramePattern(Frame, Channel, Pattern);
 //	SetModifiedFlag();
 }
@@ -1566,7 +1645,7 @@ void FtmDocument::ClearPatterns()
 
 void FtmDocument::IncreasePattern(unsigned int Frame, unsigned int Channel, int Count)
 {
-	ftm_Assert(Frame < MAX_FRAMES && Channel < MAX_CHANNELS);
+	ftkr_Assert(Frame < MAX_FRAMES && Channel < MAX_CHANNELS);
 
 	int Current = m_pSelectedTune->GetFramePattern(Frame, Channel);
 
@@ -1586,7 +1665,7 @@ void FtmDocument::IncreasePattern(unsigned int Frame, unsigned int Channel, int 
 
 void FtmDocument::DecreasePattern(unsigned int Frame, unsigned int Channel, int Count)
 {
-	ftm_Assert(Frame < MAX_FRAMES && Channel < MAX_CHANNELS);
+	ftkr_Assert(Frame < MAX_FRAMES && Channel < MAX_CHANNELS);
 
 	int Current = m_pSelectedTune->GetFramePattern(Frame, Channel);
 
@@ -1606,9 +1685,9 @@ void FtmDocument::DecreasePattern(unsigned int Frame, unsigned int Channel, int 
 
 void FtmDocument::IncreaseInstrument(unsigned int Frame, unsigned int Channel, unsigned int Row)
 {
-	ftm_Assert(Frame < MAX_FRAMES);
-	ftm_Assert(Channel < MAX_CHANNELS);
-	ftm_Assert(Row < MAX_PATTERN_LENGTH);
+	ftkr_Assert(Frame < MAX_FRAMES);
+	ftkr_Assert(Channel < MAX_CHANNELS);
+	ftkr_Assert(Row < MAX_PATTERN_LENGTH);
 
 	stChanNote note;
 
@@ -1625,9 +1704,9 @@ void FtmDocument::IncreaseInstrument(unsigned int Frame, unsigned int Channel, u
 
 void FtmDocument::DecreaseInstrument(unsigned int Frame, unsigned int Channel, unsigned int Row)
 {
-	ftm_Assert(Frame < MAX_FRAMES);
-	ftm_Assert(Channel < MAX_CHANNELS);
-	ftm_Assert(Row < MAX_PATTERN_LENGTH);
+	ftkr_Assert(Frame < MAX_FRAMES);
+	ftkr_Assert(Channel < MAX_CHANNELS);
+	ftkr_Assert(Row < MAX_PATTERN_LENGTH);
 
 	stChanNote note;
 
@@ -1644,9 +1723,9 @@ void FtmDocument::DecreaseInstrument(unsigned int Frame, unsigned int Channel, u
 
 void FtmDocument::IncreaseVolume(unsigned int Frame, unsigned int Channel, unsigned int Row)
 {
-	ftm_Assert(Frame < MAX_FRAMES);
-	ftm_Assert(Channel < MAX_CHANNELS);
-	ftm_Assert(Row < MAX_PATTERN_LENGTH);
+	ftkr_Assert(Frame < MAX_FRAMES);
+	ftkr_Assert(Channel < MAX_CHANNELS);
+	ftkr_Assert(Row < MAX_PATTERN_LENGTH);
 
 	stChanNote note;
 
@@ -1663,9 +1742,9 @@ void FtmDocument::IncreaseVolume(unsigned int Frame, unsigned int Channel, unsig
 
 void FtmDocument::DecreaseVolume(unsigned int Frame, unsigned int Channel, unsigned int Row)
 {
-	ftm_Assert(Frame < MAX_FRAMES);
-	ftm_Assert(Channel < MAX_CHANNELS);
-	ftm_Assert(Row < MAX_PATTERN_LENGTH);
+	ftkr_Assert(Frame < MAX_FRAMES);
+	ftkr_Assert(Channel < MAX_CHANNELS);
+	ftkr_Assert(Row < MAX_PATTERN_LENGTH);
 
 	stChanNote note;
 
@@ -1682,10 +1761,10 @@ void FtmDocument::DecreaseVolume(unsigned int Frame, unsigned int Channel, unsig
 
 void FtmDocument::IncreaseEffect(unsigned int Frame, unsigned int Channel, unsigned int Row, unsigned int Index)
 {
-	ftm_Assert(Frame < MAX_FRAMES);
-	ftm_Assert(Channel < MAX_CHANNELS);
-	ftm_Assert(Row < MAX_PATTERN_LENGTH);
-	ftm_Assert(Index < MAX_EFFECT_COLUMNS);
+	ftkr_Assert(Frame < MAX_FRAMES);
+	ftkr_Assert(Channel < MAX_CHANNELS);
+	ftkr_Assert(Row < MAX_PATTERN_LENGTH);
+	ftkr_Assert(Index < MAX_EFFECT_COLUMNS);
 
 	stChanNote note;
 
@@ -1702,10 +1781,10 @@ void FtmDocument::IncreaseEffect(unsigned int Frame, unsigned int Channel, unsig
 
 void FtmDocument::DecreaseEffect(unsigned int Frame, unsigned int Channel, unsigned int Row, unsigned int Index)
 {
-	ftm_Assert(Frame < MAX_FRAMES);
-	ftm_Assert(Channel < MAX_CHANNELS);
-	ftm_Assert(Row < MAX_PATTERN_LENGTH);
-	ftm_Assert(Index < MAX_EFFECT_COLUMNS);
+	ftkr_Assert(Frame < MAX_FRAMES);
+	ftkr_Assert(Channel < MAX_CHANNELS);
+	ftkr_Assert(Row < MAX_PATTERN_LENGTH);
+	ftkr_Assert(Index < MAX_EFFECT_COLUMNS);
 
 	stChanNote note;
 
@@ -1739,9 +1818,9 @@ void FtmDocument::decreaseEffColumns(unsigned int channel)
 
 void FtmDocument::SetNoteData(unsigned int Frame, unsigned int Channel, unsigned int Row, const stChanNote *Data)
 {
-	ftm_Assert(Frame < MAX_FRAMES);
-	ftm_Assert(Channel < MAX_CHANNELS);
-	ftm_Assert(Row < MAX_PATTERN_LENGTH);
+	ftkr_Assert(Frame < MAX_FRAMES);
+	ftkr_Assert(Channel < MAX_CHANNELS);
+	ftkr_Assert(Row < MAX_PATTERN_LENGTH);
 
 	// Get notes from the pattern
 	m_pSelectedTune->SetPatternData(Channel, GET_PATTERN(Frame, Channel), Row, Data);
@@ -1750,9 +1829,9 @@ void FtmDocument::SetNoteData(unsigned int Frame, unsigned int Channel, unsigned
 
 void FtmDocument::GetNoteData(unsigned int Frame, unsigned int Channel, unsigned int Row, stChanNote *Data) const
 {
-	ftm_Assert(Frame < MAX_FRAMES);
-	ftm_Assert(Channel < MAX_CHANNELS);
-	ftm_Assert(Row < MAX_PATTERN_LENGTH);
+	ftkr_Assert(Frame < MAX_FRAMES);
+	ftkr_Assert(Channel < MAX_CHANNELS);
+	ftkr_Assert(Row < MAX_PATTERN_LENGTH);
 
 	// Sets the notes of the pattern
 	m_pSelectedTune->GetPatternData(Channel, GET_PATTERN(Frame, Channel), Row, Data);
@@ -1760,10 +1839,10 @@ void FtmDocument::GetNoteData(unsigned int Frame, unsigned int Channel, unsigned
 
 void FtmDocument::SetDataAtPattern(unsigned int Track, unsigned int Pattern, unsigned int Channel, unsigned int Row, const stChanNote *Data)
 {
-	ftm_Assert(Track < MAX_TRACKS);
-	ftm_Assert(Pattern < MAX_PATTERN);
-	ftm_Assert(Channel < MAX_CHANNELS);
-	ftm_Assert(Row < MAX_PATTERN_LENGTH);
+	ftkr_Assert(Track < MAX_TRACKS);
+	ftkr_Assert(Pattern < MAX_PATTERN);
+	ftkr_Assert(Channel < MAX_CHANNELS);
+	ftkr_Assert(Row < MAX_PATTERN_LENGTH);
 
 	// Set a note to a direct pattern
 	m_pTunes[Track]->SetPatternData(Channel, Pattern, Row, Data);
@@ -1772,10 +1851,10 @@ void FtmDocument::SetDataAtPattern(unsigned int Track, unsigned int Pattern, uns
 
 void FtmDocument::GetDataAtPattern(unsigned int Track, unsigned int Pattern, unsigned int Channel, unsigned int Row, stChanNote *Data) const
 {
-	ftm_Assert(Track < MAX_TRACKS);
-	ftm_Assert(Pattern < MAX_PATTERN);
-	ftm_Assert(Channel < MAX_CHANNELS);
-	ftm_Assert(Row < MAX_PATTERN_LENGTH);
+	ftkr_Assert(Track < MAX_TRACKS);
+	ftkr_Assert(Pattern < MAX_PATTERN);
+	ftkr_Assert(Channel < MAX_CHANNELS);
+	ftkr_Assert(Row < MAX_PATTERN_LENGTH);
 
 	// Get note from a direct pattern
 	m_pTunes[Track]->GetPatternData(Channel,Pattern, Row, Data);
@@ -1783,10 +1862,10 @@ void FtmDocument::GetDataAtPattern(unsigned int Track, unsigned int Pattern, uns
 
 unsigned int FtmDocument::GetNoteEffectType(unsigned int Frame, unsigned int Channel, unsigned int Row, int Index) const
 {
-	ftm_Assert(Frame < MAX_FRAMES);
-	ftm_Assert(Channel < MAX_CHANNELS);
-	ftm_Assert(Row < MAX_PATTERN_LENGTH);
-	ftm_Assert(Index < MAX_EFFECT_COLUMNS);
+	ftkr_Assert(Frame < MAX_FRAMES);
+	ftkr_Assert(Channel < MAX_CHANNELS);
+	ftkr_Assert(Row < MAX_PATTERN_LENGTH);
+	ftkr_Assert(Index < MAX_EFFECT_COLUMNS);
 
 	stChanNote note;
 	GetNoteData(Frame, Channel, Row, &note);
@@ -1795,10 +1874,10 @@ unsigned int FtmDocument::GetNoteEffectType(unsigned int Frame, unsigned int Cha
 
 unsigned int FtmDocument::GetNoteEffectParam(unsigned int Frame, unsigned int Channel, unsigned int Row, int Index) const
 {
-	ftm_Assert(Frame < MAX_FRAMES);
-	ftm_Assert(Channel < MAX_CHANNELS);
-	ftm_Assert(Row < MAX_PATTERN_LENGTH);
-	ftm_Assert(Index < MAX_EFFECT_COLUMNS);
+	ftkr_Assert(Frame < MAX_FRAMES);
+	ftkr_Assert(Channel < MAX_CHANNELS);
+	ftkr_Assert(Row < MAX_PATTERN_LENGTH);
+	ftkr_Assert(Index < MAX_EFFECT_COLUMNS);
 
 	stChanNote note;
 	GetNoteData(Frame, Channel, Row, &note);
@@ -1807,9 +1886,9 @@ unsigned int FtmDocument::GetNoteEffectParam(unsigned int Frame, unsigned int Ch
 
 bool FtmDocument::InsertNote(unsigned int Frame, unsigned int Channel, unsigned int Row)
 {
-	ftm_Assert(Frame < MAX_FRAMES);
-	ftm_Assert(Channel < MAX_CHANNELS);
-	ftm_Assert(Row < MAX_PATTERN_LENGTH);
+	ftkr_Assert(Frame < MAX_FRAMES);
+	ftkr_Assert(Channel < MAX_CHANNELS);
+	ftkr_Assert(Row < MAX_PATTERN_LENGTH);
 
 	stChanNote Note;
 
@@ -1840,9 +1919,9 @@ bool FtmDocument::InsertNote(unsigned int Frame, unsigned int Channel, unsigned 
 
 bool FtmDocument::DeleteNote(unsigned int Frame, unsigned int Channel, unsigned int Row, unsigned int Column)
 {
-	ftm_Assert(Frame < MAX_FRAMES);
-	ftm_Assert(Channel < MAX_CHANNELS);
-	ftm_Assert(Row < MAX_PATTERN_LENGTH);
+	ftkr_Assert(Frame < MAX_FRAMES);
+	ftkr_Assert(Channel < MAX_CHANNELS);
+	ftkr_Assert(Row < MAX_PATTERN_LENGTH);
 
 	stChanNote note;
 
@@ -1882,9 +1961,9 @@ bool FtmDocument::DeleteNote(unsigned int Frame, unsigned int Channel, unsigned 
 
 bool FtmDocument::ClearRow(unsigned int Frame, unsigned int Channel, unsigned int Row)
 {
-	ftm_Assert(Frame < MAX_FRAMES);
-	ftm_Assert(Channel < MAX_CHANNELS);
-	ftm_Assert(Row < MAX_PATTERN_LENGTH);
+	ftkr_Assert(Frame < MAX_FRAMES);
+	ftkr_Assert(Channel < MAX_CHANNELS);
+	ftkr_Assert(Row < MAX_PATTERN_LENGTH);
 
 	stChanNote note;
 
@@ -1904,9 +1983,9 @@ bool FtmDocument::ClearRow(unsigned int Frame, unsigned int Channel, unsigned in
 
 bool FtmDocument::RemoveNote(unsigned int Frame, unsigned int Channel, unsigned int Row)
 {
-	ftm_Assert(Frame < MAX_FRAMES);
-	ftm_Assert(Channel < MAX_CHANNELS);
-	ftm_Assert(Row < MAX_PATTERN_LENGTH);
+	ftkr_Assert(Frame < MAX_FRAMES);
+	ftkr_Assert(Channel < MAX_CHANNELS);
+	ftkr_Assert(Row < MAX_PATTERN_LENGTH);
 
 	if (Row == 0)
 		return false;
@@ -2038,8 +2117,8 @@ bool FtmDocument::setColumnKey(int key, unsigned int frame, unsigned int channel
 
 void FtmDocument::SetEngineSpeed(unsigned int Speed)
 {
-	ftm_Assert(Speed <= 800); // hardcoded at the moment, TODO: fix this
-	ftm_Assert(Speed >= 10 || Speed == 0);
+	ftkr_Assert(Speed <= 800); // hardcoded at the moment, TODO: fix this
+	ftkr_Assert(Speed >= 10 || Speed == 0);
 
 	m_iEngineSpeed = Speed;
 	SetModifiedFlag();
@@ -2047,7 +2126,7 @@ void FtmDocument::SetEngineSpeed(unsigned int Speed)
 
 void FtmDocument::SetMachine(unsigned int Machine)
 {
-	ftm_Assert(Machine == PAL || Machine == NTSC);
+	ftkr_Assert(Machine == PAL || Machine == NTSC);
 	m_iMachine = Machine;
 	SetModifiedFlag();
 }
@@ -2080,7 +2159,7 @@ bool FtmDocument::ExpansionEnabled(int Chip) const
 
 void FtmDocument::SetSongInfo(const char *Name, const char *Artist, const char *Copyright)
 {
-	ftm_Assert(Name != NULL && Artist != NULL && Copyright != NULL);
+	ftkr_Assert(Name != NULL && Artist != NULL && Copyright != NULL);
 
 	// Check if strings actually changed
 	if (strcmp(Name, m_strName) || strcmp(Artist, m_strArtist) || strcmp(Copyright, m_strCopyright))
@@ -2109,7 +2188,7 @@ void FtmDocument::SetVibratoStyle(int Style)
 
 void FtmDocument::SelectTrack(unsigned int Track)
 {
-	ftm_Assert(Track < MAX_TRACKS);
+	ftkr_Assert(Track < MAX_TRACKS);
 	SwitchToTrack(Track);
 	UpdateViews();
 }
@@ -2143,8 +2222,8 @@ bool FtmDocument::AddTrack()
 
 void FtmDocument::RemoveTrack(unsigned int Track)
 {
-	ftm_Assert(m_iTracks > 0);
-	ftm_Assert(m_pTunes[Track] != NULL);
+	ftkr_Assert(m_iTracks > 0);
+	ftkr_Assert(m_pTunes[Track] != NULL);
 
 	delete m_pTunes[Track];
 
@@ -2210,7 +2289,7 @@ void FtmDocument::MoveTrackDown(unsigned int Track)
 CInstrument *FtmDocument::GetInstrument(int Index)
 {
 	// This may return a NULL pointer
-	ftm_Assert(Index >= 0 && Index < MAX_INSTRUMENTS);
+	ftkr_Assert(Index >= 0 && Index < MAX_INSTRUMENTS);
 	return m_pInstruments[Index];
 }
 
@@ -2226,7 +2305,7 @@ int FtmDocument::GetInstrumentCount() const
 
 bool FtmDocument::IsInstrumentUsed(int Index) const
 {
-	ftm_Assert(Index >= 0 && Index < MAX_INSTRUMENTS);
+	ftkr_Assert(Index >= 0 && Index < MAX_INSTRUMENTS);
 	return !(m_pInstruments[Index] == NULL);
 }
 
@@ -2257,7 +2336,7 @@ int FtmDocument::AddInstrument(const char *Name, int ChipType)
 
 	m_pInstruments[Slot] = app::channelMap()->GetChipInstrument(ChipType);
 
-	ftm_Assert(m_pInstruments[Slot] != NULL);
+	ftkr_Assert(m_pInstruments[Slot] != NULL);
 
 	// TODO: move this to instrument classes
 
@@ -2292,7 +2371,7 @@ void FtmDocument::RemoveInstrument(unsigned int Index)
 {
 	// Removes an instrument from the module
 
-	ftm_Assert(Index < MAX_INSTRUMENTS);
+	ftkr_Assert(Index < MAX_INSTRUMENTS);
 
 	if (m_pInstruments[Index] == NULL)
 		return;
@@ -2306,16 +2385,16 @@ void FtmDocument::RemoveInstrument(unsigned int Index)
 
 void FtmDocument::GetInstrumentName(unsigned int Index, char *Name, unsigned int sz) const
 {
-	ftm_Assert(Index < MAX_INSTRUMENTS);
-	ftm_Assert(m_pInstruments[Index] != NULL);
+	ftkr_Assert(Index < MAX_INSTRUMENTS);
+	ftkr_Assert(m_pInstruments[Index] != NULL);
 
 	m_pInstruments[Index]->GetName(Name, sz);
 }
 
 void FtmDocument::SetInstrumentName(unsigned int Index, const char *Name)
 {
-	ftm_Assert(Index < MAX_INSTRUMENTS);
-	ftm_Assert(m_pInstruments[Index] != NULL);
+	ftkr_Assert(Index < MAX_INSTRUMENTS);
+	ftkr_Assert(m_pInstruments[Index] != NULL);
 
 	if (m_pInstruments[Index] != NULL)
 	{
@@ -2329,7 +2408,7 @@ void FtmDocument::SetInstrumentName(unsigned int Index, const char *Name)
 
 int FtmDocument::CloneInstrument(unsigned int Index)
 {
-	ftm_Assert(Index < MAX_INSTRUMENTS);
+	ftkr_Assert(Index < MAX_INSTRUMENTS);
 
 	if (!IsInstrumentUsed(Index))
 		return -1;
@@ -2358,10 +2437,9 @@ CInstrument * FtmDocument::CreateInstrument(int type)
 /*		case INST_VRC7: return new CInstrumentVRC7();
 		case INST_N106:	return new CInstrumentN106();
 		case INST_S5B: return new CInstrumentS5B();*/
+	default:
+		ftkr_Assert(0);
 	}
-
-	ftm_Assert(0);
-	return NULL;
 }
 
 int FtmDocument::FindFreeInstrumentSlot()
@@ -2379,7 +2457,7 @@ void FtmDocument::SaveInstrument(unsigned int Instrument, core::IO *io)
 {
 	CInstrument *pInstrument = GetInstrument(Instrument);
 
-	ftm_Assert(pInstrument != NULL);
+	ftkr_Assert(pInstrument != NULL);
 
 	// Write
 	io->write_e(INST_HEADER, sizeof(INST_HEADER)-1);
@@ -2452,21 +2530,21 @@ int FtmDocument::LoadInstrument(core::IO *io)
 	unsigned int NameLen;
 	io->readInt(&NameLen);
 
-	ftm_Assert(NameLen < 256);
+	ftkr_Assert(NameLen < 256);
 
 	io->read(Text, NameLen);
 	Text[NameLen] = 0;
 
 	pInstrument->SetName(Text);
 
-	ftm_Assert(pInstrument->LoadFile(io, iInstVer, this));
+	ftkr_Assert(pInstrument->LoadFile(io, iInstVer, this));
 
 	return Slot;
 }
 
 int FtmDocument::GetInstrumentType(unsigned int Index) const
 {
-	ftm_Assert(Index < MAX_INSTRUMENTS);
+	ftkr_Assert(Index < MAX_INSTRUMENTS);
 
 	if (!IsInstrumentUsed(Index))
 		return INST_NONE;
@@ -2478,7 +2556,7 @@ int FtmDocument::GetInstrumentType(unsigned int Index) const
 
 CSequence *FtmDocument::GetSequence(int Chip, int Index, int Type)
 {
-	ftm_Assert(Index >= 0 && Index < MAX_SEQUENCES && Type >= 0 && Type < SEQ_COUNT);
+	ftkr_Assert(Index >= 0 && Index < MAX_SEQUENCES && Type >= 0 && Type < SEQ_COUNT);
 
 	switch (Chip)
 	{
@@ -2496,7 +2574,7 @@ CSequence *FtmDocument::GetSequence(int Chip, int Index, int Type)
 
 CSequence * FtmDocument::GetSequence_readonly(int Chip, int Index, int Type) const
 {
-	ftm_Assert(Index >= 0 && Index < MAX_SEQUENCES && Type >= 0 && Type < SEQ_COUNT);
+	ftkr_Assert(Index >= 0 && Index < MAX_SEQUENCES && Type >= 0 && Type < SEQ_COUNT);
 
 	switch (Chip)
 	{
@@ -2514,7 +2592,7 @@ CSequence * FtmDocument::GetSequence_readonly(int Chip, int Index, int Type) con
 
 CSequence * FtmDocument::GetSequence2A03(int Index, int Type)
 {
-	ftm_Assert(Index >= 0 && Index < MAX_SEQUENCES && Type >= 0 && Type < SEQ_COUNT);
+	ftkr_Assert(Index >= 0 && Index < MAX_SEQUENCES && Type >= 0 && Type < SEQ_COUNT);
 
 	if (m_pSequences2A03[Index][Type] == NULL)
 		m_pSequences2A03[Index][Type] = new CSequence();
@@ -2524,14 +2602,14 @@ CSequence * FtmDocument::GetSequence2A03(int Index, int Type)
 
 CSequence * FtmDocument::GetSequence2A03_readonly(int Index, int Type) const
 {
-	ftm_Assert(Index >= 0 && Index < MAX_SEQUENCES && Type >= 0 && Type < SEQ_COUNT);
+	ftkr_Assert(Index >= 0 && Index < MAX_SEQUENCES && Type >= 0 && Type < SEQ_COUNT);
 
 	return m_pSequences2A03[Index][Type];
 }
 
 int FtmDocument::GetSequenceItemCount(int Index, int Type) const
 {
-	ftm_Assert(Index >= 0 && Index < MAX_SEQUENCES && Type >= 0 && Type < SEQ_COUNT);
+	ftkr_Assert(Index >= 0 && Index < MAX_SEQUENCES && Type >= 0 && Type < SEQ_COUNT);
 
 	if (m_pSequences2A03[Index][Type] == NULL)
 		return 0;
@@ -2575,7 +2653,7 @@ int FtmDocument::GetSequenceCount(int Type) const
 
 CSequence *FtmDocument::GetSequenceVRC6(int Index, int Type)
 {
-	ftm_Assert(Index >= 0 && Index < MAX_SEQUENCES && Type >= 0 && Type < SEQ_COUNT);
+	ftkr_Assert(Index >= 0 && Index < MAX_SEQUENCES && Type >= 0 && Type < SEQ_COUNT);
 
 	if (m_pSequencesVRC6[Index][Type] == NULL)
 		m_pSequencesVRC6[Index][Type] = new CSequence();
@@ -2585,13 +2663,13 @@ CSequence *FtmDocument::GetSequenceVRC6(int Index, int Type)
 
 CSequence *FtmDocument::GetSequenceVRC6_readonly(int Index, int Type) const
 {
-	ftm_Assert(Index >= 0 && Index < MAX_SEQUENCES && Type >= 0 && Type < SEQ_COUNT);
+	ftkr_Assert(Index >= 0 && Index < MAX_SEQUENCES && Type >= 0 && Type < SEQ_COUNT);
 	return m_pSequencesVRC6[Index][Type];
 }
 
 int FtmDocument::GetSequenceItemCountVRC6(int Index, int Type) const
 {
-	ftm_Assert(Index >= 0 && Index < MAX_SEQUENCES && Type >= 0 && Type < SEQ_COUNT);
+	ftkr_Assert(Index >= 0 && Index < MAX_SEQUENCES && Type >= 0 && Type < SEQ_COUNT);
 
 	if (m_pSequencesVRC6[Index][Type] == NULL)
 		return 0;
@@ -2613,7 +2691,7 @@ int FtmDocument::GetFreeSequenceVRC6(int Type) const
 
 CDSample * FtmDocument::GetDSample(unsigned int Index)
 {
-	ftm_Assert(Index < MAX_DSAMPLES);
+	ftkr_Assert(Index < MAX_DSAMPLES);
 	return &m_DSamples[Index];
 }
 
@@ -2643,7 +2721,7 @@ int FtmDocument::GetFreeDSample() const
 
 void FtmDocument::RemoveDSample(unsigned int Index)
 {
-	ftm_Assert(Index < MAX_DSAMPLES);
+	ftkr_Assert(Index < MAX_DSAMPLES);
 
 	if (m_DSamples[Index].SampleSize != 0)
 	{
@@ -2660,20 +2738,20 @@ void FtmDocument::RemoveDSample(unsigned int Index)
 
 void FtmDocument::GetSampleName(unsigned int Index, char *Name, unsigned int sz) const
 {
-	ftm_Assert(Index < MAX_DSAMPLES);
-	ftm_Assert(m_DSamples[Index].SampleSize > 0);
+	ftkr_Assert(Index < MAX_DSAMPLES);
+	ftkr_Assert(m_DSamples[Index].SampleSize > 0);
 	safe_strcpy(Name, m_DSamples[Index].Name, sz);
 }
 
 int FtmDocument::GetSampleSize(unsigned int Sample)
 {
-	ftm_Assert(Sample < MAX_DSAMPLES);
+	ftkr_Assert(Sample < MAX_DSAMPLES);
 	return m_DSamples[Sample].SampleSize;
 }
 
 char FtmDocument::GetSampleData(unsigned int Sample, unsigned int Offset)
 {
-	ftm_Assert(Sample < MAX_DSAMPLES);
+	ftkr_Assert(Sample < MAX_DSAMPLES);
 
 	if (Offset >= m_DSamples[Sample].SampleSize)
 		return 0;

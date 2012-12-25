@@ -1,3 +1,4 @@
+#include <QMessageBox>
 #include "GUI_App.hpp"
 #include "GUI_ThreadPool.hpp"
 #include "MainWindow.hpp"
@@ -8,7 +9,7 @@
 namespace gui
 {
 	App::App(QApplication *a)
-		: app(a), edit_mode(false), is_playing(false)
+		: app(a), edit_mode(false), is_playing(false), mw(NULL)
 	{
 		init_settings();
 	}
@@ -27,7 +28,7 @@ namespace gui
 
 		newDocument(false);
 
-		mw = new MainWindow;
+		mw = new MainWindow(this);
 		mw->updateDocument();
 
 		QVariant geom = settings()->value(SETTINGS_WINDOWGEOMETRY);
@@ -106,6 +107,10 @@ namespace gui
 			return;
 
 		sgen->setDocument(activeDocument());
+		if (mw != NULL)
+		{
+			mw->setDocInfo(activeDocInfo());
+		}
 	}
 
 	unsigned int App::loadedDocuments()
@@ -138,21 +143,31 @@ namespace gui
 		setActiveDocument(active_doc_index-1);
 	}
 
-	void App::openDocument(core::IO *io, bool close_active)
+	bool App::openDocument(core::IO *io, bool close_active)
 	{
-		if (close_active)
-			closeActiveDocument();
+		try
+		{
+			FtmDocument *d = new FtmDocument;
+			d->read(io);
+			d->SelectTrack(0);
 
-		FtmDocument *d = new FtmDocument;
-		d->read(io);
-		d->SelectTrack(0);
+			if (close_active)
+				closeActiveDocument();
 
-		DocInfo a(d);
+			DocInfo a(d);
 
-		loaded_documents.push_back(a);
-		setActiveDocument(loaded_documents.size()-1);
+			loaded_documents.push_back(a);
+			setActiveDocument(loaded_documents.size()-1);
 
-		unmuteAll();
+			unmuteAll();
+		}
+		catch (const FtmDocumentException &e)
+		{
+			const QString msg = QString("Could not open file\n%1").arg(e.what());
+			QMessageBox::critical(mw, "Could not open file", msg);
+			return false;
+		}
+		return true;
 	}
 	void App::newDocument(bool close_active)
 	{
@@ -190,11 +205,6 @@ namespace gui
 		threadPool->threadpool_playing_post(t);
 	}
 
-	void App::playSongConcurrent()
-	{
-		playSongConcurrent(NULL, NULL);
-	}
-
 	void App::playSongAtRowConcurrent()
 	{
 		threadpool_playing_task t(T_PLAYSONG);
@@ -207,20 +217,13 @@ namespace gui
 		threadpool_playing_task t(T_STOPSONG, cb, data);
 		threadPool->threadpool_playing_post(t);
 	}
-	void App::stopSongConcurrent()
-	{
-		stopSongConcurrent(NULL, NULL);
-	}
 
 	void App::stopSongTrackerConcurrent(mainthread_callback_t cb, void *data)
 	{
 		threadpool_playing_task t(T_STOPSONGTRACKER, cb, data);
 		threadPool->threadpool_playing_post(t);
 	}
-	void App::stopSongTrackerConcurrent()
-	{
-		stopSongTrackerConcurrent(NULL, NULL);
-	}
+
 	void App::deleteSinkConcurrent(mainthread_callback_t cb, void *data)
 	{
 		threadpool_playing_task t(T_DELETESINK, cb, data);

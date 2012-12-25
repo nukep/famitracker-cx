@@ -1,5 +1,6 @@
 #include <QFileDialog>
 #include <QDebug>
+#include "GUI_App.hpp"
 #include "MainWindow.hpp"
 #include "CreateWAV.hpp"
 #include "ui_createwav.h"
@@ -11,8 +12,8 @@
 
 namespace gui
 {
-	MainWindow::MainWindow()
-		: m_close_shutdown(false)
+	MainWindow::MainWindow(App *a)
+		: m_close_shutdown(false), m_app(a)
 	{
 		setupUi(this);
 		setDocumentName("");
@@ -126,6 +127,8 @@ namespace gui
 
 		actionAdd_instrument->setMenu(m);
 
+		setDocInfo(m_app->activeDocInfo());
+
 		m_instrumenteditor = new InstrumentEditor(this);
 
 		blockSignals(true);
@@ -135,6 +138,12 @@ namespace gui
 	{
 		delete m_instrumenteditor;
 	}
+	void MainWindow::setDocInfo(DocInfo *dinfo)
+	{
+		m_dinfo = dinfo;
+		patternView->setDocInfo(dinfo);
+	}
+
 	void MainWindow::selectDefaultStyle()
 	{
 		styles::selectStyle("Default");
@@ -154,7 +163,7 @@ namespace gui
 	void MainWindow::updateOctave()
 	{
 		octave->blockSignals(true);
-		octave->setCurrentIndex(gui::activeDocInfo()->currentOctave());
+		octave->setCurrentIndex(m_dinfo->currentOctave());
 		octave->blockSignals(false);
 	}
 	void MainWindow::updateStyles()
@@ -264,8 +273,7 @@ namespace gui
 
 	void MainWindow::updateDocument()
 	{
-		DocInfo *dinfo = gui::activeDocInfo();
-		FtmDocument *d = gui::activeDocument();
+		FtmDocument *d = m_dinfo->doc();
 
 		title->blockSignals(true);
 		author->blockSignals(true);
@@ -299,11 +307,11 @@ namespace gui
 		updateOctave();
 
 		step->blockSignals(true);
-		step->setValue(dinfo->editStep());
+		step->setValue(m_dinfo->editStep());
 		step->blockSignals(false);
 
 		keyRepetition->blockSignals(true);
-		keyRepetition->setChecked(dinfo->keyRepetition());
+		keyRepetition->setChecked(m_dinfo->keyRepetition());
 		keyRepetition->blockSignals(false);
 	}
 	void MainWindow::reloadRecentFiles()
@@ -337,9 +345,9 @@ namespace gui
 
 	void MainWindow::refreshInstruments()
 	{
-		FtmDocument *d = gui::activeDocument();
+		FtmDocument *d = m_dinfo->doc();
 
-		int current = gui::activeDocInfo()->currentInstrument();
+		int current = m_dinfo->currentInstrument();
 
 		instruments->clear();
 		int instc = d->GetInstrumentCount();
@@ -402,8 +410,10 @@ namespace gui
 	{
 		mw->m_instrumenteditor->removedInstrument();
 		core::IO *io = (core::IO*)data;
-		gui::openDocument(io, true);
-		mw->updateDocument();
+		if (mw->m_app->openDocument(io, true))
+		{
+			mw->updateDocument();
+		}
 		delete io;
 	}
 
@@ -481,7 +491,7 @@ namespace gui
 
 		core::FileIO *io = new core::FileIO(path.toLocal8Bit(), core::IO_WRITE);
 
-		gui::activeDocument()->write(io);
+		m_dinfo->doc()->write(io);
 
 		delete io;
 	}
@@ -553,8 +563,7 @@ namespace gui
 
 	void MainWindow::setSong_mw_cb()
 	{
-		DocInfo *dinfo = gui::activeDocInfo();
-		FtmDocument *d = dinfo->doc();
+		FtmDocument *d = m_dinfo->doc();
 		int i = songs->currentIndex();
 
 		d->lock();
@@ -578,9 +587,9 @@ namespace gui
 
 		d->unlock();
 
-		dinfo->setCurrentChannel(0);
-		dinfo->setCurrentFrame(0);
-		dinfo->setCurrentRow(0);
+		m_dinfo->setCurrentChannel(0);
+		m_dinfo->setCurrentFrame(0);
+		m_dinfo->setCurrentRow(0);
 
 		updateFrameChannel(true);
 	}
@@ -592,8 +601,7 @@ namespace gui
 
 	void MainWindow::setSong(int i)
 	{
-		DocInfo *dinfo = gui::activeDocInfo();
-		FtmDocument *d = dinfo->doc();
+		FtmDocument *d = m_dinfo->doc();
 
 		if (d->GetSelectedTrack() == i)
 			return;
@@ -603,13 +611,12 @@ namespace gui
 
 	void MainWindow::incrementPattern()
 	{
-		DocInfo *info = gui::activeDocInfo();
-		FtmDocument *doc = info->doc();
+		FtmDocument *doc = m_dinfo->doc();
 
 		doc->lock();
 
-		int current_frame = info->currentFrame();
-		int current_channel = info->currentChannel();
+		int current_frame = m_dinfo->currentFrame();
+		int current_channel = m_dinfo->currentChannel();
 		if (changeAll->checkState() == Qt::Checked)
 		{
 			for (int i = 0; i < doc->GetAvailableChannels(); i++)
@@ -628,13 +635,12 @@ namespace gui
 	}
 	void MainWindow::decrementPattern()
 	{
-		DocInfo *info = gui::activeDocInfo();
-		FtmDocument *doc = info->doc();
+		FtmDocument *doc = m_dinfo->doc();
 
 		doc->lock();
 
-		int current_frame = info->currentFrame();
-		int current_channel = info->currentChannel();
+		int current_frame = m_dinfo->currentFrame();
+		int current_channel = m_dinfo->currentChannel();
 		if (changeAll->checkState() == Qt::Checked)
 		{
 			for (int i = 0; i < doc->GetAvailableChannels(); i++)
@@ -658,7 +664,7 @@ namespace gui
 
 		CInstrument *inst;
 
-		FtmDocument *doc = gui::activeDocument();
+		FtmDocument *doc = m_dinfo->doc();
 		{
 			FtmDocument_lock_guard lock(doc);
 
@@ -668,7 +674,7 @@ namespace gui
 			instrumentName->setText(inst->GetName());
 		}
 
-		gui::activeDocInfo()->setCurrentInstrument(i);
+		m_dinfo->setCurrentInstrument(i);
 
 		m_instrumenteditor->setInstrument(doc, inst);
 	}
@@ -680,7 +686,7 @@ namespace gui
 
 		int i = idx.data(Qt::UserRole).value<int>();
 
-		FtmDocument *doc = gui::activeDocument();
+		FtmDocument *doc = m_dinfo->doc();
 		doc->lock();
 
 		CInstrument *inst = doc->GetInstrument(i);
@@ -697,7 +703,7 @@ namespace gui
 
 	void MainWindow::speedTempoChange(int i)
 	{
-		FtmDocument *d = gui::activeDocument();
+		FtmDocument *d = m_dinfo->doc();
 		d->lock();
 
 		d->SetSongSpeed(speed->value());
@@ -707,7 +713,7 @@ namespace gui
 	}
 	void MainWindow::rowsChange(int i)
 	{
-		FtmDocument *d = gui::activeDocument();
+		FtmDocument *d = m_dinfo->doc();
 		d->lock();
 
 		d->SetPatternLength(i);
@@ -718,7 +724,7 @@ namespace gui
 	}
 	void MainWindow::framesChange(int i)
 	{
-		FtmDocument *d = gui::activeDocument();
+		FtmDocument *d = m_dinfo->doc();
 		d->lock();
 
 		d->SetFrameCount(i);
@@ -730,24 +736,24 @@ namespace gui
 
 	void MainWindow::octaveChange()
 	{
-		gui::activeDocInfo()->setCurrentOctave(octave->currentIndex());
+		m_dinfo->setCurrentOctave(octave->currentIndex());
 	}
 
 	void MainWindow::changeSongTitle()
 	{
-		FtmDocument *doc = gui::activeDocument();
+		FtmDocument *doc = m_dinfo->doc();
 		FtmDocument_lock_guard lock(doc);
 		doc->SetSongInfo(title->text().toAscii(), doc->GetSongArtist(), doc->GetSongCopyright());
 	}
 	void MainWindow::changeSongAuthor()
 	{
-		FtmDocument *doc = gui::activeDocument();
+		FtmDocument *doc = m_dinfo->doc();
 		FtmDocument_lock_guard lock(doc);
 		doc->SetSongInfo(doc->GetSongName(), author->text().toAscii(), doc->GetSongCopyright());
 	}
 	void MainWindow::changeSongCopyright()
 	{
-		FtmDocument *doc = gui::activeDocument();
+		FtmDocument *doc = m_dinfo->doc();
 		FtmDocument_lock_guard lock(doc);
 		doc->SetSongInfo(doc->GetSongName(), doc->GetSongArtist(), copyright->text().toAscii());
 	}
@@ -767,21 +773,21 @@ namespace gui
 
 	void MainWindow::addInstrument()
 	{
-		FtmDocument *d = gui::activeDocument();
+		FtmDocument *d = m_dinfo->doc();
 		d->lock();
 		int inst = d->AddInstrument("New instrument", SNDCHIP_NONE);
 		d->unlock();
 
-		gui::activeDocInfo()->setCurrentInstrument(inst);
+		m_dinfo->setCurrentInstrument(inst);
 
 		refreshInstruments();
 		patternView->update(true);
 	}
 	void MainWindow::removeInstrument()
 	{
-		FtmDocument *d = gui::activeDocument();
+		FtmDocument *d = m_dinfo->doc();
 
-		int inst = gui::activeDocInfo()->currentInstrument();
+		int inst = m_dinfo->currentInstrument();
 
 		m_instrumenteditor->removedInstrument();
 
@@ -817,7 +823,7 @@ namespace gui
 
 		d->unlock();
 
-		gui::activeDocInfo()->setCurrentInstrument(ni);
+		m_dinfo->setCurrentInstrument(ni);
 
 		refreshInstruments();
 		patternView->update(true);
@@ -828,8 +834,7 @@ namespace gui
 	}
 	void MainWindow::changeEditSettings()
 	{
-		DocInfo *dinfo = gui::activeDocInfo();
-		dinfo->setEditStep(step->value());
-		dinfo->setKeyRepetition(keyRepetition->checkState() == Qt::Checked);
+		m_dinfo->setEditStep(step->value());
+		m_dinfo->setKeyRepetition(keyRepetition->checkState() == Qt::Checked);
 	}
 }

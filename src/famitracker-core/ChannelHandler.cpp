@@ -206,7 +206,7 @@ void CChannelHandler::ResetChannel()
 // Handle common things before letting the channels play the notes
 void CChannelHandler::PlayNote(stChanNote *noteData, int effColumns)
 {
-	ftm_Assert(noteData != NULL);
+	ftkr_Assert(noteData != NULL);
 
 	// Handle delay commands
 	if (HandleDelay(noteData, effColumns))
