@@ -124,18 +124,18 @@ const char * CChannelMap::GetChannelName(int channel) const
 {
 	switch (channel)
 	{
-	case CHANID_SQUARE1: return "Square 1";
-	case CHANID_SQUARE2: return "Square 2";
+	case CHANID_SQUARE1: return "Pulse 1";
+	case CHANID_SQUARE2: return "Pulse 2";
 	case CHANID_TRIANGLE: return "Triangle";
 	case CHANID_NOISE: return "Noise";
 	case CHANID_DPCM: return "DPCM";
 
-	case CHANID_VRC6_PULSE1: return "Square 1";
-	case CHANID_VRC6_PULSE2: return "Square 2";
+	case CHANID_VRC6_PULSE1: return "Pulse 1";
+	case CHANID_VRC6_PULSE2: return "Pulse 2";
 	case CHANID_VRC6_SAWTOOTH: return "Sawtooth";
 
-	case CHANID_MMC5_SQUARE1: return "Square 1";
-	case CHANID_MMC5_SQUARE2: return "Square 2";
+	case CHANID_MMC5_SQUARE1: return "Pulse 1";
+	case CHANID_MMC5_SQUARE2: return "Pulse 2";
 	case CHANID_MMC5_VOICE: return "Voice";
 
 	case CHANID_N106_CHAN1: return "Namco 1";
