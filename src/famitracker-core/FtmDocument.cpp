@@ -340,7 +340,7 @@ void FtmDocument::read(core::IO *io)
 bool FtmDocument::readOld(Document *doc)
 {
 	// TODO
-	throw FtmDocumentException::UNIMPLEMENTED;
+	throw FtmDocumentException(FtmDocumentException::TOOOLD, "File versions below 1.00 are currently unimplemented in FamiTracker CX");
 	return false;
 }
 
@@ -2321,7 +2321,10 @@ void FtmDocument::SetTrackTitle(unsigned int Track, std::string Title)
 
 void FtmDocument::MoveTrackUp(unsigned int Track)
 {
-	const std::string &Temp = m_sTrackNames[Track];
+	if (Track == 0)
+		return;
+
+	const std::string Temp = m_sTrackNames[Track];
 	m_sTrackNames[Track] = m_sTrackNames[Track - 1];
 	m_sTrackNames[Track - 1] = Temp;
 
@@ -2335,7 +2338,10 @@ void FtmDocument::MoveTrackUp(unsigned int Track)
 
 void FtmDocument::MoveTrackDown(unsigned int Track)
 {
-	const std::string &Temp = m_sTrackNames[Track];
+	if (Track >= m_iTracks)
+		return;
+
+	const std::string Temp = m_sTrackNames[Track];
 	m_sTrackNames[Track] = m_sTrackNames[Track + 1];
 	m_sTrackNames[Track + 1] = Temp;
 

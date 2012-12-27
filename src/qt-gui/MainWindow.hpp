@@ -84,6 +84,9 @@ namespace gui
 		void saveAs();
 		void createWAV();
 		void quit();
+
+		void moduleProperties();
+
 		void viewToolbar(bool);
 		void viewStatusBar(bool);
 		void viewControlpanel(bool);

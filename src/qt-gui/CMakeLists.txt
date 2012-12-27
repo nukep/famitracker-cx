@@ -22,6 +22,7 @@ set(SRC
 
 	MainWindow.cpp
 	CreateWAV.cpp
+	ModuleProperties.cpp
 	PatternView.cpp
 	FrameView.cpp
 	
@@ -45,6 +46,7 @@ endif()
 set(MOC_INC
 	MainWindow.hpp
 	CreateWAV.hpp
+	ModuleProperties.hpp
 	PatternView.hpp
 	FrameView.hpp
 

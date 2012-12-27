@@ -5,6 +5,7 @@
 #include "famitracker-core/FamiTrackerTypes.h"
 #include "DocInfo.hpp"
 
+class QWidget;
 class QFile;
 class QString;
 class QEvent;
@@ -55,6 +56,8 @@ namespace gui
 	void toggleMuted(int channel);
 	void unmuteAll();
 	void toggleSolo(int channel);
+
+	void promptUnimplemented(QWidget *parent);
 }
 
 #endif

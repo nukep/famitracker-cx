@@ -3,7 +3,7 @@
 #include "GUI_App.hpp"
 #include "MainWindow.hpp"
 #include "CreateWAV.hpp"
-#include "ui_createwav.h"
+#include "ModuleProperties.hpp"
 #include "GUI.hpp"
 #include "Settings.hpp"
 #include "styles.hpp"
@@ -39,6 +39,8 @@ namespace gui
 		QObject::connect(actionCreate_WAV, SIGNAL(triggered()), this, SLOT(createWAV()));
 		QObject::connect(actionE_xit, SIGNAL(triggered()), this, SLOT(quit()));
 
+		QObject::connect(actionModule_Properties, SIGNAL(triggered()), this, SLOT(moduleProperties()));
+
 		QObject::connect(action_ViewToolbar, SIGNAL(toggled(bool)), this, SLOT(viewToolbar(bool)));
 		QObject::connect(action_ViewStatusBar, SIGNAL(toggled(bool)), this, SLOT(viewStatusBar(bool)));
 		QObject::connect(action_ViewControlpanel, SIGNAL(toggled(bool)), this, SLOT(viewControlpanel(bool)));
@@ -69,11 +71,28 @@ namespace gui
 		QObject::connect(actionToggle_edit_mode, SIGNAL(triggered()), this, SLOT(toggleEditMode()));
 		actionToggle_edit_mode->setIcon(QIcon::fromTheme("media-record"));
 
-		QObject::connect(actionAdd_instrument, SIGNAL(triggered()), this, SLOT(addInstrument()));
-		actionAdd_instrument->setIcon(QIcon::fromTheme("list-add"));
-		QObject::connect(actionRemove_instrument, SIGNAL(triggered()), this, SLOT(removeInstrument()));
-		actionRemove_instrument->setIcon(QIcon::fromTheme("list-remove"));
-		QObject::connect(actionEdit_instrument, SIGNAL(triggered()), this, SLOT(editInstrument()));
+		QObject::connect(addInstrument_button, SIGNAL(clicked()), this, SLOT(addInstrument()));
+		addInstrument_button->setIcon(QIcon::fromTheme("list-add"));
+		addInstrument_button->setText(tr("Add Instrument"));
+		QObject::connect(removeInstrument_button, SIGNAL(clicked()), this, SLOT(removeInstrument()));
+		removeInstrument_button->setIcon(QIcon::fromTheme("list-remove"));
+		removeInstrument_button->setText(tr("Remove Instrument"));
+		QObject::connect(editInstrument_button, SIGNAL(clicked()), this, SLOT(editInstrument()));
+		editInstrument_button->setText(tr("Edit Instrument"));
+
+		{
+			QMenu *m = new QMenu(this);
+			QAction *add2a03 = m->addAction(tr("New 2A03 Instrument"));
+			QAction *addmmc5 = m->addAction(tr("New MMC5 Instrument"));
+			QAction *addvrc6 = m->addAction(tr("New VRC6 Instrument"));
+			QAction *addfds  = m->addAction(tr("New FDS Instrument"));
+
+			QObject::connect(add2a03, SIGNAL(triggered()), this, SLOT(addInstrument()));
+			QObject::connect(addmmc5, SIGNAL(triggered()), this, SLOT(addInstrument()));
+
+			m->setDefaultAction(add2a03);
+			addInstrument_button->setMenu(m);
+		}
 
 		QObject::connect(step, SIGNAL(valueChanged(int)), this, SLOT(changeEditSettings()));
 		QObject::connect(keyRepetition, SIGNAL(stateChanged(int)), this, SLOT(changeEditSettings()));
@@ -298,7 +317,7 @@ namespace gui
 			songs->addItem(s);
 		}
 
-		songs->setCurrentIndex(0);
+		songs->setCurrentIndex(d->GetSelectedTrack());
 		setSong(-1);
 		frameView->update();
 
@@ -539,6 +558,18 @@ namespace gui
 	void MainWindow::quit()
 	{
 		close();
+	}
+
+	void MainWindow::moduleProperties()
+	{
+		ModulePropertiesDialog *d = new ModulePropertiesDialog(this, m_app);
+		if (d->exec() == QDialog::Accepted)
+		{
+
+		}
+		delete d;
+
+		updateDocument();
 	}
 
 	void MainWindow::viewToolbar(bool v)

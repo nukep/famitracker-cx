@@ -1,6 +1,7 @@
 #include <QApplication>
 #include <QFile>
 #include <QIcon>
+#include <QMessageBox>
 #include <QDebug>
 #include "GUI.hpp"
 #include "GUI_App.hpp"
@@ -167,5 +168,10 @@ namespace gui
 	void toggleSolo(int channel)
 	{
 		app->toggleSolo(channel);
+	}
+
+	void promptUnimplemented(QWidget *parent)
+	{
+		QMessageBox::warning(parent, QObject::tr("Unimplemented"), QObject::tr("This feature is currently unimplemented"));
 	}
 }
