@@ -456,6 +456,9 @@ bool FtmDocument::readNew_params(Document *doc)
 	else
 		m_iVibratoStyle = VIBRATO_OLD;
 
+	// TODO read m_bLinearPitch
+	m_bLinearPitch = false;
+
 	if (block_ver > 3)
 	{
 		m_highlight = doc->getBlockInt();
