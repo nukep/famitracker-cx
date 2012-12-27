@@ -574,7 +574,8 @@ bool FtmDocument::readNew_instruments(Document *doc)
 		int type = doc->getBlockChar();
 
 		if (!fami_isInstrumentImplemented(type))
-			throw FtmDocumentException(FtmDocumentException::UNIMPLEMENTED_CX, "Instrument not supported");
+			throw FtmDocumentException(FtmDocumentException::UNIMPLEMENTED_CX, "Instrument not supported\n"
+									   "Supported: 2A03/2A07, MMC5, VRC6, FDS");
 
 		CInstrument *inst = CreateInstrument(type);
 

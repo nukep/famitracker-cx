@@ -107,7 +107,16 @@ int main(int argc, char *argv[])
 			printf("Cannot open file\n");
 			return 1;
 		}
-		doc.read(&ftm_io);
+
+		try
+		{
+			doc.read(&ftm_io);
+		}
+		catch (const FtmDocumentException &e)
+		{
+			fprintf(stderr, "Could not open file: %s\n%s\n", song, e.what());
+			exit(1);
+		}
 
 		doc.SelectTrack(track-1);
 	}

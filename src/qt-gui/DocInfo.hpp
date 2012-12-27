@@ -10,7 +10,6 @@ namespace gui
 	class App;
 	class DocInfo
 	{
-		friend void gui::closeActiveDocument();
 		friend class gui::App;
 	public:
 		DocInfo(FtmDocument *d);

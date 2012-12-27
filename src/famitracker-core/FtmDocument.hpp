@@ -66,8 +66,7 @@ public:
 		GENERALREADFAILURE,
 		ASSERT,
 		UNIMPLEMENTED,
-		UNIMPLEMENTED_CX,	// not implemented in FamiTracker CX
-		UNIMPLEMENTED_CX_INSTRUMENT
+		UNIMPLEMENTED_CX	// not implemented in FamiTracker CX
 	};
 	explicit FtmDocumentException(Type t);
 	explicit FtmDocumentException(Type t, std::string msg);
