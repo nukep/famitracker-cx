@@ -48,15 +48,23 @@ void CChannelHandlerVRC6::PlayChannelNote(stChanNote *pNoteData, int EffColumns)
 	Volume	= pNoteData->Vol;
 
 	if (Note != 0)
+	{
 		m_bRelease = false;
-
-	if (Note == RELEASE) {
-		m_bRelease = true;
 	}
-	else if (Note == HALT) {
+	else
+	{
+		if (pNoteData->Instrument != MAX_INSTRUMENTS)
+			m_iInstrument = pNoteData->Instrument;
+	}
+
+	if (Note == RELEASE)
+	{
+		m_bRelease = true;
+		m_iInstrument = LastInstrument;
+	}
+	else if (Note == HALT)
+	{
 		m_iInstrument	= LastInstrument;
-		Volume			= 0x10;
-		Octave			= 0;
 	}
 
 	// Evaluate effects
@@ -87,7 +95,8 @@ void CChannelHandlerVRC6::PlayChannelNote(stChanNote *pNoteData, int EffColumns)
 	if ((LastInstrument != m_iInstrument) || (Note > 0 && Note != HALT && Note != RELEASE))
 	{
 		// Setup instrument
-		for (int i = 0; i < CInstrumentVRC6::SEQUENCE_COUNT; ++i) {
+		for (int i = 0; i < CInstrumentVRC6::SEQUENCE_COUNT; i++)
+		{
 			m_iSeqEnabled[i] = pInstrument->GetSeqEnable(i);
 			m_iSeqIndex[i]	 = pInstrument->GetSeqIndex(i);
 			m_iSeqPointer[i] = 0;
@@ -98,7 +107,8 @@ void CChannelHandlerVRC6::PlayChannelNote(stChanNote *pNoteData, int EffColumns)
 	if (Volume < 0x10)
 		m_iVolume = Volume << VOL_SHIFT;
 
-	if (Note == HALT) {
+	if (Note == HALT)
+	{
 		KillChannel();
 		return;
 	}
@@ -107,7 +117,8 @@ void CChannelHandlerVRC6::PlayChannelNote(stChanNote *pNoteData, int EffColumns)
 	if (!Note)
 		return;
 
-	if (!m_bRelease) {
+	if (!m_bRelease)
+	{
 		// Get the note
 		m_iNote				= RunNote(Octave, Note);
 		m_iSeqVolume		= 0xF;
@@ -115,16 +126,16 @@ void CChannelHandlerVRC6::PlayChannelNote(stChanNote *pNoteData, int EffColumns)
 		m_bEnabled			= true;
 		m_iLastInstrument	= m_iInstrument;
 	}
-	else {
+	else
+	{
 		ReleaseNote();
 		ReleaseSequences(SNDCHIP_VRC6);
 	}
 
-	if (m_iEffect == EF_SLIDE_DOWN || m_iEffect == EF_SLIDE_UP)
-		m_iEffect = EF_NONE;
-
-	if (PostEffect)
+	if (PostEffect && (m_iEffect == EF_SLIDE_UP || m_iEffect == EF_SLIDE_DOWN))
 		SetupSlide(PostEffect, PostEffectParam);
+	else if (m_iEffect == EF_SLIDE_DOWN || m_iEffect == EF_SLIDE_UP)
+		m_iEffect = EF_NONE;
 }
 
 void CChannelHandlerVRC6::ProcessChannel()
@@ -154,7 +165,7 @@ void CVRC6Square1::RefreshChannel()
 	if (!m_bEnabled)
 		return;
 
-	unsigned int Period = CalculatePeriod();
+	unsigned int Period = CalculatePeriod(false);
 	unsigned int Volume = CalculateVolume(15);
 	unsigned char DutyCycle = m_iDutyPeriod << 4;
 
@@ -182,7 +193,7 @@ void CVRC6Square2::RefreshChannel()
 	if (!m_bEnabled)
 		return;
 
-	unsigned int Period = CalculatePeriod();
+	unsigned int Period = CalculatePeriod(false);
 	unsigned int Volume = CalculateVolume(15);
 	unsigned char DutyCycle = m_iDutyPeriod << 4;
 
@@ -210,7 +221,7 @@ void CVRC6Sawtooth::RefreshChannel()
 	if (!m_bEnabled)
 		return;
 
-	unsigned int Period = CalculatePeriod();
+	unsigned int Period = CalculatePeriod(false);
 
 	unsigned char HiFreq = (Period & 0xFF);
 	unsigned char LoFreq = (Period >> 8);

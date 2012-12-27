@@ -40,7 +40,7 @@ CInstrumentVRC6::CInstrumentVRC6()
 	}	
 }
 
-CInstrument *CInstrumentVRC6::Clone()
+CInstrument *CInstrumentVRC6::Clone() const
 {
 	CInstrumentVRC6 *pNew = new CInstrumentVRC6();
 
@@ -261,10 +261,16 @@ int	CInstrumentVRC6::GetSeqIndex(int Index) const
 
 void CInstrumentVRC6::SetSeqEnable(int Index, int Value)
 {
+	if (m_iSeqEnable[Index] != Value)
+		InstrumentChanged();
+
 	m_iSeqEnable[Index] = Value;
 }
 
 void CInstrumentVRC6::SetSeqIndex(int Index, int Value)
 {
+	if (m_iSeqIndex[Index] != Value)
+		InstrumentChanged();
+
 	m_iSeqIndex[Index] = Value;
 }

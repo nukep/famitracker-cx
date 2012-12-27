@@ -12,16 +12,22 @@
 
 #define ftm_Assert(truth) if ((! (truth) )) throw FtmDocumentExceptionAssert(__FILE__, __LINE__, FUNCTION_NAME, #truth)
 
-const unsigned int FILE_VER			= 0x0420;			// Current file version (4.20)
+const unsigned int FILE_VER			= 0x0430;			// Current file version (4.30)
 const unsigned int COMPATIBLE_VER	= 0x0100;			// Compatible file version (1.0)
 
-#define FILE_VER_STR "4.20"
+#define FILE_VER_STR "4.30"
 
 // Defaults when creating new modules
 const char	DEFAULT_TRACK_NAME[] = "New song";
 const int	DEFAULT_ROW_COUNT = 64;
 
 const char	NEW_INST_NAME[] = "New instrument";
+
+// Make 1 channel default since 8 sounds bad
+const int	DEFAULT_NAMCO_CHANS = 1;
+
+const int	DEFAULT_FIRST_HIGHLIGHT = 4;
+const int	DEFAULT_SECOND_HIGHLIGHT = 16;
 
 const char FILE_HEADER_ID[] = "FamiTracker Module";
 
@@ -36,6 +42,12 @@ const char FILE_BLOCK_HEADER[]		= "HEADER";
 
 // VRC6
 const char *FILE_BLOCK_SEQUENCES_VRC6 = "SEQUENCES_VRC6";
+
+// N163
+const char *FILE_BLOCK_SEQUENCES_N163 = "SEQUENCES_N163";
+
+// Sunsoft
+const char *FILE_BLOCK_SEQUENCES_S5B = "SEQUENCES_S5B";
 
 // FTI instruments files
 const char INST_HEADER[] = "FTI";
@@ -252,9 +264,11 @@ void FtmDocument::createEmpty()
 
 	// Auto-select new style vibrato for new modules
 	m_iVibratoStyle = VIBRATO_NEW;
+	m_bLinearPitch = false;
+	m_iSpeedSplitPoint = DEFAULT_SPEED_SPLIT_POINT;
 
-	m_highlight = 4;
-	m_secondHighlight = 16;
+	m_highlight = DEFAULT_FIRST_HIGHLIGHT;
+	m_secondHighlight = DEFAULT_SECOND_HIGHLIGHT;
 
 	SetModifiedFlag(0);
 }
@@ -296,6 +310,7 @@ void FtmDocument::read(core::IO *io)
 
 			// Auto-select old style vibrato for old files
 			m_iVibratoStyle = VIBRATO_OLD;
+			m_bLinearPitch = false;
 		}
 		else if (ver >= 0x0200)
 		{
@@ -420,6 +435,8 @@ bool FtmDocument::readNew_params(Document *doc)
 	m_iMachine = doc->getBlockInt();
 	m_iEngineSpeed = doc->getBlockInt();
 
+	ftm_Assert(m_iChannelsAvailable < MAX_CHANNELS);
+
 	if (m_iMachine != NTSC && m_iMachine != PAL)
 		m_iMachine = NTSC;
 
@@ -446,8 +463,8 @@ bool FtmDocument::readNew_params(Document *doc)
 	}
 	else
 	{
-		m_highlight = 4;
-		m_secondHighlight = 16;
+		m_highlight = DEFAULT_FIRST_HIGHLIGHT;
+		m_secondHighlight = DEFAULT_SECOND_HIGHLIGHT;
 	}
 
 	// remark: porting bug fix over
@@ -474,6 +491,17 @@ bool FtmDocument::readNew_params(Document *doc)
 			m_pSelectedTune->SetSongTempo(m_iMachine == NTSC ? DEFAULT_TEMPO_NTSC : DEFAULT_TEMPO_PAL);
 		}
 	}
+
+	if (block_ver >= 6)
+	{
+		m_iSpeedSplitPoint = doc->getBlockInt();
+	}
+	else
+	{
+		// Determine if new or old speed point is preferred
+		m_iSpeedSplitPoint = OLD_SPEED_SPLIT_POINT;
+	}
+
 	return true;
 }
 
@@ -528,6 +556,13 @@ bool FtmDocument::readNew_header(Document *doc)
 
 bool FtmDocument::readNew_instruments(Document *doc)
 {
+	/*
+	 * Version changes
+	 *
+	 *  2 - Extended DPCM octave range
+	 *  3 - Added settings to the arpeggio sequence
+	 *
+	 */
 	int count = doc->getBlockInt();
 	ftm_Assert(count <= MAX_INSTRUMENTS);
 
@@ -721,19 +756,25 @@ bool FtmDocument::readNew_frames(Document *doc)
 
 			if (block_ver == 3)
 			{
-				unsigned int Tempo = doc->getBlockInt();
-				m_pTunes[y]->SetSongTempo(Tempo);
+				unsigned int tempo = doc->getBlockInt();
+				ftm_Assert(speed >= 0);
+				ftm_Assert(tempo >= 0);
+				m_pTunes[y]->SetSongTempo(tempo);
 				m_pTunes[y]->SetSongSpeed(speed);
 			}
 			else
 			{
 				if (speed < 20)
 				{
-					unsigned int Tempo = (m_iMachine == NTSC) ? DEFAULT_TEMPO_NTSC : DEFAULT_TEMPO_PAL;
-					m_pTunes[y]->SetSongTempo(Tempo);
+					unsigned int tempo = (m_iMachine == NTSC) ? DEFAULT_TEMPO_NTSC : DEFAULT_TEMPO_PAL;
+					ftm_Assert(tempo >= 0 && tempo <= MAX_TEMPO);
+					ftm_Assert(speed >= 0);
+					m_pTunes[y]->SetSongTempo(tempo);
 					m_pTunes[y]->SetSongSpeed(speed);
 				}
-				else {
+				else
+				{
+					ftm_Assert(speed >= 0 && speed <= MAX_TEMPO);
 					m_pTunes[y]->SetSongTempo(speed);
 					m_pTunes[y]->SetSongSpeed(DEFAULT_SPEED);
 				}
@@ -1125,8 +1166,8 @@ bool FtmDocument::writeBlocks(Document *doc) const
 
 bool FtmDocument::write_params(Document *doc) const
 {
-	// Song parameters
-	doc->createBlock(FILE_BLOCK_PARAMS, 4);
+	// Module parameters
+	doc->createBlock(FILE_BLOCK_PARAMS, 6);
 
 	doc->writeBlockChar(m_iExpansionChip);		// ver 2 change
 	doc->writeBlockInt(m_iChannelsAvailable);
@@ -1135,6 +1176,7 @@ bool FtmDocument::write_params(Document *doc) const
 	doc->writeBlockInt(m_iVibratoStyle);		// ver 3 change
 	doc->writeBlockInt(m_highlight);			// ver 4 change
 	doc->writeBlockInt(m_secondHighlight);
+	doc->writeBlockInt(m_iSpeedSplitPoint);		// ver 6 change
 
 	return doc->flushBlock();
 }
@@ -1193,22 +1235,9 @@ bool FtmDocument::write_header(Document *doc) const
 bool FtmDocument::write_instruments(Document *doc) const
 {
 	// A bug in v0.3.0 causes a crash if this is not 2, so change only when that ver is obsolete!
-	const int BLOCK_VERSION = 2;
+	const int BLOCK_VERSION = 5;
 	// If FDS is used then version must be at least 4 or recent files won't load
 	int Version = BLOCK_VERSION;
-
-	// Fix for FDS instruments
-	if (m_iExpansionChip & SNDCHIP_FDS)
-		Version = 4;
-
-	for (int i = 0; i < MAX_INSTRUMENTS; i++)
-	{
-		if (m_pInstruments[i] != NULL)
-		{
-			if (m_pInstruments[i]->GetType() == INST_FDS)
-				Version = 4;
-		}
-	}
 
 	int Count = 0;
 	char Type;
@@ -1387,8 +1416,6 @@ bool FtmDocument::write_sequencesVRC6(Document *doc) const
 
 bool FtmDocument::write_frames(Document *doc) const
 {
-//	unsigned int i, x, y;
-
 	/* Store frame count
 	 *
 	 * 1. Number of channels (5 for 2A03 only)
@@ -2182,6 +2209,36 @@ void FtmDocument::SetVibratoStyle(int Style)
 	m_iVibratoStyle = Style;
 	// TODO - dan
 //	theApp.GetSoundGenerator()->GenerateVibratoTable(Style);
+}
+
+bool FtmDocument::GetLinearPitch() const
+{
+	return m_bLinearPitch;
+}
+
+void FtmDocument::SetLinearPitch(bool enable)
+{
+	m_bLinearPitch = enable;
+}
+
+const std::string & FtmDocument::GetComment() const
+{
+	return m_strComment;
+}
+
+void FtmDocument::SetComment(const std::string &comment)
+{
+	m_strComment = comment;
+}
+
+int FtmDocument::GetSpeedSplitPoint() const
+{
+	return m_iSpeedSplitPoint;
+}
+
+void FtmDocument::SetSpeedSplitPoint(int splitPoint)
+{
+	m_iSpeedSplitPoint = splitPoint;
 }
 
 // Track functions

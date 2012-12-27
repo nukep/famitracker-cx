@@ -64,3 +64,15 @@ private:
 	// Used by instrument editor
 	int			 m_iPlaying;
 };
+
+// Settings
+enum
+{
+	ARP_SETTING_ABSOLUTE = 0,
+	ARP_SETTING_FIXED = 1,
+	ARP_SETTING_RELATIVE = 2
+};
+
+// Sunsoft modes
+const int S5B_MODE_SQUARE = 64;
+const int S5B_MODE_NOISE = 128;

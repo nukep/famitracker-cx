@@ -70,11 +70,11 @@ public:
 	virtual ~CInstrument();
 	void SetName(const char *Name);
 	void GetName(char *Name, unsigned int sz) const;
-	const char* GetName();
+	const char* GetName() const;
 public:
 	virtual int GetType() const = 0;												// Returns instrument type
-	virtual CInstrument* CreateNew() = 0;											// Creates a new object
-	virtual CInstrument* Clone() = 0;												// Creates a copy
+	virtual CInstrument* CreateNew() const = 0;										// Creates a new object
+	virtual CInstrument* Clone() const = 0;											// Creates a copy
 	virtual void Store(Document *doc) = 0;											// Saves the instrument to the module
 	virtual bool Load(Document *doc) = 0;											// Loads the instrument from a module
 	virtual void SaveFile(core::IO *file, FtmDocument *pDoc) = 0;							// Saves to an FTI file
@@ -82,6 +82,8 @@ public:
 //	virtual int CompileSize(CCompiler *pCompiler) = 0;								// Gets the compiled size
 //	virtual int Compile(CCompiler *pCompiler, int Index) = 0;						// Compiles the instrument for NSF generation
 	virtual bool CanRelease(FtmDocument *doc) const = 0;
+protected:
+	void InstrumentChanged() const;
 private:
 	char m_cName[MAX_INSTRUMENT_NAME_LENGTH+1];
 	int	 m_iType;
@@ -91,8 +93,8 @@ class FAMICOREAPI CInstrument2A03 : public CInstrument, public CInstrument2A03In
 public:
 	CInstrument2A03();
 	virtual int	GetType() const { return INST_2A03; }
-	virtual CInstrument* CreateNew() { return new CInstrument2A03; }
-	virtual CInstrument* Clone();
+	virtual CInstrument* CreateNew() const { return new CInstrument2A03; }
+	virtual CInstrument* Clone() const;
 	virtual void Store(Document *doc);
 	virtual bool Load(Document *doc);
 	virtual void SaveFile(core::IO *file, FtmDocument *pDoc);
@@ -141,8 +143,8 @@ class FAMICOREAPI CInstrumentVRC6 : public CInstrument {
 public:
 	CInstrumentVRC6();
 	virtual int	GetType() const { return INST_VRC6; }
-	virtual CInstrument* CreateNew() { return new CInstrumentVRC6; }
-	virtual CInstrument* Clone();
+	virtual CInstrument* CreateNew() const { return new CInstrumentVRC6; }
+	virtual CInstrument* Clone() const;
 	virtual void Store(Document *pDocFile);
 	virtual bool Load(Document *pDocFile);
 	virtual void SaveFile(core::IO *file, FtmDocument *doc);
@@ -170,8 +172,8 @@ class CInstrumentVRC7 : public CInstrument {
 public:
 	CInstrumentVRC7();
 	virtual int	GetType() const { return INST_VRC7; }
-	virtual CInstrument* CreateNew() { return new CInstrumentVRC7; }
-	virtual CInstrument* Clone();
+	virtual CInstrument* CreateNew() const { return new CInstrumentVRC7; }
+	virtual CInstrument* Clone() const;
 	virtual void Store(Document *pDocFile);
 	virtual bool Load(Document *pDocFile);
 	virtual void SaveFile(core::IO *pFile, FtmDocument *pDoc);
@@ -196,8 +198,8 @@ public:
 	CInstrumentFDS();
 	virtual ~CInstrumentFDS();
 	virtual int GetType() const { return INST_FDS; }
-	virtual CInstrument* CreateNew() { return new CInstrumentFDS; }
-	virtual CInstrument* Clone();
+	virtual CInstrument* CreateNew() const { return new CInstrumentFDS; }
+	virtual CInstrument* Clone() const;
 	virtual void Store(Document *pDocFile);
 	virtual bool Load(Document *pDocFile);
 	virtual void SaveFile(core::IO *file, FtmDocument *pDoc);
@@ -218,7 +220,6 @@ public:
 	void	SetModulationDelay(int Delay);
 	bool	GetModulationEnable() const;
 	void	SetModulationEnable(bool Enable);
-	bool	HasChanged();
 	CSequence* GetVolumeSeq() const;
 	CSequence* GetArpSeq() const;
 	CSequence* GetPitchSeq() const;
@@ -231,9 +232,6 @@ public:
 	static const int WAVE_SIZE = 64;
 	static const int MOD_SIZE = 32;
 private:
-	// Used to update instrument when changed in instrument editor
-	bool m_bChanged;
-
 	// Instrument data
 	unsigned char m_iSamples[64];
 	unsigned char m_iModulation[32];
@@ -253,8 +251,8 @@ class CInstrumentN106 : public CInstrument {
 public:
 	CInstrumentN106();
 	virtual int GetType() const { return INST_N106; }
-	virtual CInstrument* CreateNew() { return new CInstrumentN106(); }
-	virtual CInstrument* Clone();
+	virtual CInstrument* CreateNew() const { return new CInstrumentN106(); }
+	virtual CInstrument* Clone() const;
 	virtual void Store(Document *pDocFile);
 	virtual bool Load(Document *pDocFile);
 	virtual void SaveFile(core::IO *pFile, FtmDocument *pDoc);
@@ -290,8 +288,8 @@ class CInstrumentS5B : public CInstrument {
 public:
 	CInstrumentS5B();
 	virtual int GetType() const { return INST_S5B; };
-	virtual CInstrument* CreateNew() { return new CInstrumentS5B(); };
-	virtual CInstrument* Clone();
+	virtual CInstrument* CreateNew() const { return new CInstrumentS5B(); };
+	virtual CInstrument* Clone() const;
 	virtual void Store(Document *pDocFile);
 	virtual bool Load(Document *pDocFile);
 	virtual void SaveFile(core::IO *pFile, FtmDocument *pDoc);

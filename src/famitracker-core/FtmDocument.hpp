@@ -30,6 +30,11 @@ const unsigned int DEFAULT_TEMPO_PAL    = 125;
 const unsigned int DEFAULT_SPEED	    = 6;
 const unsigned int DEFAULT_MACHINE_TYPE = NTSC;
 
+const unsigned int DEFAULT_SPEED_SPLIT_POINT = 32;
+const unsigned int OLD_SPEED_SPLIT_POINT = 21;
+
+const unsigned int VOLUME_EMPTY = 0x10;		// Value of cleared volume column field
+
 const unsigned int MAX_SONGINFO_LENGTH = 31;	// not including null char
 
 // Columns
@@ -200,6 +205,15 @@ public:
 	int				GetVibratoStyle() const;
 	void			SetVibratoStyle(int Style);
 
+	bool			GetLinearPitch() const;
+	void			SetLinearPitch(bool enable);
+
+	const std::string & GetComment() const;
+	void			SetComment(const std::string &comment);
+
+	void			SetSpeedSplitPoint(int splitPoint);
+	int				GetSpeedSplitPoint() const;
+
 	// Track management functions
 	void			SelectTrack(unsigned int Track);
 //	void			SelectTrackFast(unsigned int Track);	//	TODO: should be removed
@@ -318,6 +332,7 @@ private:
 	// Module properties
 	unsigned char	m_iExpansionChip;	// Expansion chip
 	int				m_iVibratoStyle;	// 0 = old style, 1 = new style
+	bool			m_bLinearPitch;
 
 	// Instruments, samples and sequences
 	CInstrument		*m_pInstruments[MAX_INSTRUMENTS];
@@ -333,6 +348,9 @@ private:
 
 	unsigned int	m_iMachine;					// NTSC / PAL
 	unsigned int	m_iEngineSpeed;				// Refresh rate
+	unsigned int	m_iSpeedSplitPoint;			// Speed/tempo split-point
+
+	std::string		m_strComment;
 
 	// Things below are for compability with older files
 	stSequence		m_Sequences[MAX_SEQUENCES][SEQ_COUNT];		// Allocate one sequence-list for each effect

@@ -46,7 +46,12 @@ void CInstrument::GetName(char *Name, unsigned int sz) const
 	safe_strcpy(Name, m_cName, sz);
 }
 
-const char *CInstrument::GetName()
+const char *CInstrument::GetName() const
 {
 	return m_cName;
+}
+
+void CInstrument::InstrumentChanged() const
+{
+	// TODO - dan
 }

@@ -46,7 +46,7 @@
 
  ---
 
- N106 & 5B are still unknown
+ N163 & 5B are still unknown
 
 */
 
@@ -72,6 +72,11 @@ CMixer::CMixer()
 	memset(m_iChannels, 0, sizeof(int32) * CHANNELS);
 	memset(m_fChannelLevels, 0, sizeof(float) * CHANNELS);
 	memset(m_iChanLevelFallOff, 0, sizeof(uint32) * CHANNELS);
+
+	m_fLevel2A03 = 1.0f;
+	m_fLevelVRC6 = 1.0f;
+	m_fLevelMMC5 = 1.0f;
+	m_fLevelFDS = 1.0f;
 }
 
 CMixer::~CMixer()
@@ -106,15 +111,41 @@ void CMixer::ExternalSound(int Chip)
 	UpdateSettings(m_iLowCut, m_iHighCut, m_iHighDamp, m_iOverallVol);
 }
 
+void CMixer::SetChipLevel(int Chip, float Level)
+{
+	switch (Chip) {
+		case SNDCHIP_NONE:
+			m_fLevel2A03 = Level;
+			break;
+		case SNDCHIP_VRC6:
+			m_fLevelVRC6 = Level;
+			break;
+		case SNDCHIP_MMC5:
+			m_fLevelMMC5 = Level;
+			break;
+		case SNDCHIP_FDS:
+			m_fLevelFDS = Level;
+			break;
+	}
+}
+
 void CMixer::UpdateSettings(int LowCut,	int HighCut, int HighDamp, int OverallVol)
 {
 	float fVolume = float(OverallVol) / 100.0f;
 
+	m_fDamping = 1.0f;
+
 	if (/*m_iExternalChip & SNDCHIP_VRC7*/ false)
+	{
 		// Decrease the internal audio when VRC7 is enabled to increase the headroom
-		m_fDamping = 0.34f;
+		m_fDamping *= 0.34f;
+	}
 	else
-		m_fDamping = 1.0f;
+	{
+		//m_fDamping *= 1.0f;
+	}
+
+	fVolume *= m_fDamping;
 
 	// Blip-buffer filtering
 	BlipBuffer.bass_freq(LowCut);
@@ -130,11 +161,11 @@ void CMixer::UpdateSettings(int LowCut,	int HighCut, int HighDamp, int OverallVo
 	SynthS5B.treble_eq(eq);
 
 	// Checked against hardware
-	Synth2A03SS.volume(fVolume * m_fDamping);
-	Synth2A03TND.volume(fVolume * m_fDamping);
-	SynthVRC6.volume(fVolume * 3.98333f);
-	SynthFDS.volume(fVolume * 1.00f);
-	SynthMMC5.volume(fVolume * 1.18421f);
+	Synth2A03SS.volume(fVolume * m_fLevel2A03);
+	Synth2A03TND.volume(fVolume * m_fLevel2A03);
+	SynthVRC6.volume(fVolume * 3.98333f * m_fLevelVRC6);
+	SynthFDS.volume(fVolume * 1.00f * m_fLevelFDS);
+	SynthMMC5.volume(fVolume * 1.18421f * m_fLevelMMC5);
 	
 	// Not checked
 	SynthN106.volume(fVolume * 1.0f);
@@ -186,11 +217,11 @@ int CMixer::FinishBuffer(int t)
 /*
 	// Get channel levels for VRC7
 	for (int i = 0; i < 6; i++)
-		StoreChannelLevel(CHANID_VRC7_CH1 + i, OPLL_getchanvol(i) >> 6);
+		StoreChannelLevel(CHANID_VRC7_CH1 + i, OPLL_getchanvol(i));
 
 	// Get channel levels for Sunsoft
 	for (int i = 0; i < 3; i++)
-		StoreChannelLevel(CHANID_S5B_CH1 + i, PSG_getchanvol(i) >> 4);
+		StoreChannelLevel(CHANID_S5B_CH1 + i, PSG_getchanvol(i));
 */
 	for (int i = 0; i < CHANNELS; i++)
 	{
@@ -338,7 +369,10 @@ void CMixer::StoreChannelLevel(int Channel, int Value)
 		AbsVol = AbsVol / 38;
 
 	if (Channel >= CHANID_N106_CHAN1 && Channel <= CHANID_N106_CHAN8)
+	{
 		AbsVol /= 15;
+		Channel = (7 - (Channel - CHANID_N106_CHAN1)) + CHANID_N106_CHAN1;
+	}
 
 	if (float(AbsVol) >= m_fChannelLevels[Channel])
 	{

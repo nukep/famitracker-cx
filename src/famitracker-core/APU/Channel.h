@@ -39,7 +39,7 @@ public:
 	}
 
 	// Begin a new audio frame
-	inline void EndFrame()
+	virtual inline void EndFrame()
 	{
 		m_iTime = 0;
 	}
@@ -56,7 +56,7 @@ protected:
 			m_pMixer->AddValue(m_iChanId, m_iChip, Value, Value, m_iTime);
 			m_iLastValue = Value;
 		}
-	};
+	}
 
 protected:
 	CMixer	*m_pMixer;			// The mixer
@@ -93,7 +93,7 @@ public:
 protected:
 	inline void Mix(int32 Value)
 	{
-		int32 Delta = m_iLastValue - Value;
+		int32 Delta = Value - m_iLastValue;
 		if (Delta)
 			m_pMixer->AddValue(m_iChanId, m_iChip, Delta, Value, m_iTime);
 		m_iLastValue = Value;

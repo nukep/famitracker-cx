@@ -35,6 +35,8 @@ CChannelHandlerFDS::CChannelHandlerFDS(SoundGen *gen) : CChannelHandler(gen)
 	m_iSeqEnabled[SEQ_PITCH] = 0;
 
 	memset(m_iModTable, 0, 32);
+
+	m_bResetMod = false;
 }
 
 void CChannelHandlerFDS::PlayChannelNote(stChanNote *pNoteData, int EffColumns)
@@ -60,7 +62,7 @@ void CChannelHandlerFDS::PlayChannelNote(stChanNote *pNoteData, int EffColumns)
 	if (m_iInstrument != MAX_INSTRUMENTS)
 	{
 		// Get instrument
-		pInstrument = (CInstrumentFDS*)m_pDocument->GetInstrument(m_iInstrument);
+		pInstrument = dynamic_cast<CInstrumentFDS*>(m_pDocument->GetInstrument(m_iInstrument));
 	}
 
 	if (pNoteData->Note == RELEASE)
@@ -109,7 +111,7 @@ void CChannelHandlerFDS::PlayChannelNote(stChanNote *pNoteData, int EffColumns)
 	}
 
 	// Load the instrument, only when a new instrument is loaded?
-	if (!m_bRelease && m_iLastInstrument != m_iInstrument && pInstrument)
+	if (Note != HALT && Note != RELEASE && m_iLastInstrument != m_iInstrument && pInstrument)
 	{
 		// TODO: check this in nsf
 		FillWaveRAM(pInstrument);
@@ -120,11 +122,16 @@ void CChannelHandlerFDS::PlayChannelNote(stChanNote *pNoteData, int EffColumns)
 	if (Note == HALT)
 	{
 		CutNote();
-		m_iNote = 0x80;
+		m_bEnabled = false;
+//		m_iNote = 0x80;
 	}
 	else if (Note == RELEASE)
 	{
 		ReleaseNote();
+
+		CChannelHandler::ReleaseSequence(SEQ_VOLUME, m_pVolumeSeq);
+		CChannelHandler::ReleaseSequence(SEQ_ARPEGGIO, m_pArpeggioSeq);
+		CChannelHandler::ReleaseSequence(SEQ_PITCH, m_pPitchSeq);
 	}
 	else if (Note != NONE)
 	{
@@ -139,6 +146,7 @@ void CChannelHandlerFDS::PlayChannelNote(stChanNote *pNoteData, int EffColumns)
 		// Trigger a new note
 		m_iNote	= RunNote(Octave, Note);
 		m_bEnabled = true;
+		m_bResetMod = true;
 		m_iLastInstrument = m_iInstrument;
 
 		m_iSeqVolume = 0x1F;
@@ -166,13 +174,11 @@ void CChannelHandlerFDS::PlayChannelNote(stChanNote *pNoteData, int EffColumns)
 //			}
 		}
 
-		if ((m_iEffect == EF_SLIDE_DOWN || m_iEffect == EF_SLIDE_UP))
+		if (PostEffect && (m_iEffect == EF_SLIDE_UP || m_iEffect == EF_SLIDE_DOWN))
+			SetupSlide(PostEffect, PostEffectParam);
+		else if (m_iEffect == EF_SLIDE_DOWN || m_iEffect == EF_SLIDE_UP)
 			m_iEffect = EF_NONE;
 	}
-
-
-	if (PostEffect)
-		SetupSlide(PostEffect, PostEffectParam);
 
 	if (EffModDepth != -1)
 		m_iModulationDepth = EffModDepth;
@@ -202,27 +208,9 @@ void CChannelHandlerFDS::ProcessChannel()
 
 void CChannelHandlerFDS::RefreshChannel()
 {
-	/*****/
+	CheckWaveUpdate();
 
-	if (m_iInstrument != MAX_INSTRUMENTS)
-	{
-		CInstrumentFDS *pInst = (CInstrumentFDS*)m_pDocument->GetInstrument(m_iInstrument);
-		if (pInst && pInst->GetType() == INST_FDS)
-		{
-			if (pInst->HasChanged())
-			{
-				// Realtime update
-				m_iModulationSpeed = pInst->GetModulationSpeed();
-				m_iModulationDepth = pInst->GetModulationDepth();
-				FillWaveRAM(pInst);
-				FillModulationTable(pInst);
-			}
-		}
-	}
-
-	/*****/
-
-	int Frequency = CalculatePeriod();
+	int Frequency = CalculatePeriod(true);
 	unsigned char LoFreq = Frequency & 0xFF;
 	unsigned char HiFreq = (Frequency >> 8) & 0x0F;
 
@@ -231,7 +219,8 @@ void CChannelHandlerFDS::RefreshChannel()
 
 	unsigned char Volume = CalculateVolume(32);
 
-	if (m_iNote == 0x80)
+//	if (m_iNote == 0x80)
+	if (!m_bEnabled)
 		Volume = 0;
 
 	// Write frequency
@@ -240,6 +229,11 @@ void CChannelHandlerFDS::RefreshChannel()
 
 	// Write volume, disable envelope
 	m_pAPU->ExternalWrite(0x4080, 0x80 | Volume);
+
+	if (m_bResetMod)
+		m_pAPU->ExternalWrite(0x4085, 0);
+
+	m_bResetMod = false;
 
 	// Update modulation unit
 	if (m_iModulationDelay == 0)
@@ -279,7 +273,8 @@ void CChannelHandlerFDS::ClearRegisters()
 
 	m_iSeqVolume = 0x20;
 
-	m_iNote = 0x80;
+//	m_iNote = 0x80;
+	m_bEnabled = false;
 
 //	m_iLastInstrument = MAX_INSTRUMENTS;
 //	m_iInstrument = 0;
@@ -331,5 +326,23 @@ void CChannelHandlerFDS::FillModulationTable(CInstrumentFDS *pInst)
 		// Fill the table
 		for (int i = 0; i < 32; i++)
 			m_pAPU->ExternalWrite(0x4088, m_iModTable[i]);
+	}
+}
+
+void CChannelHandlerFDS::CheckWaveUpdate()
+{
+	// Check wave changes
+	// TODO - dan: HasWaveChanged
+	if (m_iInstrument != MAX_INSTRUMENTS && false/*&& theApp.GetSoundGenerator()->HasWaveChanged()*/)
+	{
+		CInstrumentFDS *pInst = dynamic_cast<CInstrumentFDS*>(m_pDocument->GetInstrument(m_iInstrument));
+		if (pInst != NULL && pInst->GetType() == INST_FDS)
+		{
+			// Realtime update
+			m_iModulationSpeed = pInst->GetModulationSpeed();
+			m_iModulationDepth = pInst->GetModulationDepth();
+			FillWaveRAM(pInst);
+			FillModulationTable(pInst);
+		}
 	}
 }

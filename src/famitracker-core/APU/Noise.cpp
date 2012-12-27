@@ -26,7 +26,7 @@ const uint16 CNoise::NOISE_PERIODS_NTSC[] = {
 };
 
 const uint16 CNoise::NOISE_PERIODS_PAL[] = {
-	4, 7, 14, 30, 60, 88, 118, 148, 188, 236, 354, 472, 708,  944, 1890, 3778
+	4, 8, 14, 30, 60, 88, 118, 148, 188, 236, 354, 472, 708,  944, 1890, 3778
 };
 
 CNoise::CNoise(CMixer *pMixer, int ID) : CChannel(pMixer, ID, SNDCHIP_NONE)

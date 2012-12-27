@@ -34,6 +34,8 @@ protected:
 	// FDS functions
 	void FillWaveRAM(CInstrumentFDS *pInst);
 	void FillModulationTable(CInstrumentFDS *pInst);
+private:
+	void CheckWaveUpdate();
 protected:
 	// FDS control variables
 	int m_iModulationSpeed;
@@ -45,4 +47,6 @@ protected:
 	CSequence *m_pPitchSeq;
 	// Modulation table
 	char m_iModTable[32];
+	// Modulation
+	bool m_bResetMod;
 };

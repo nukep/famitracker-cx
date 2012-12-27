@@ -89,6 +89,8 @@ class CMixer
 
 		int32	GetChanOutput(uint8 Chan) const;
 
+		void	SetChipLevel(int Chip, float Level);
+
 		uint32	getFramesToFalloff() const;
 
 	private:
@@ -134,6 +136,11 @@ class CMixer
 		int			m_iOverallVol;
 
 		float		m_fDamping;
+
+		float		m_fLevel2A03;
+		float		m_fLevelVRC6;
+		float		m_fLevelMMC5;
+		float		m_fLevelFDS;
 };
 
 #endif /* _MIXER_H_ */

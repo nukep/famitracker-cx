@@ -18,15 +18,13 @@
 ** must bear this legend.
 */
 
-// This code comes from nintendulator
-
 #include <cmath>
 #include <memory>
 #include "APU.h"
 #include "FDS.h"
 #include "FDSSound.h"
 
-// FDS interface 
+// FDS interface, actual FDS emulation is in FDSSound.cpp
 
 CFDS::CFDS(CMixer *pMixer) : CExChannel(pMixer, SNDCHIP_FDS, CHANID_FDS)
 {

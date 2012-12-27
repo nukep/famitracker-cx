@@ -40,6 +40,7 @@
 #include "../types.hpp"
 #include <cstdio>
 #include <memory>
+#include <cmath>
 #include "APU.h"
 #include "core/soundsink.hpp"
 
@@ -511,6 +512,8 @@ void CAPU::ExternalWrite(uint16 Address, uint8 Value)
 	{
 		(*iter)->Write(Address, Value);
 	}
+
+	LogExternalWrite(Address, Value);
 }
 
 uint8 CAPU::ExternalRead(uint16 Address)
@@ -568,3 +571,49 @@ void CAPU::Log()
 	m_pLog->Write(str, str.GetLength());
 }
 #endif
+
+void CAPU::SetChipLevel(int Chip, int Level)
+{
+	float fLevel = expf(float(Level) / 20.0f);	// dB -> gain
+
+	switch (Chip)
+	{
+	/*	case SNDCHIP_VRC7:
+			m_fLevelVRC7 = fLevel;
+			break;
+		case SNDCHIP_S5B:
+			m_fLevelS5B = fLevel;
+			break;*/
+		default:
+			m_pMixer->SetChipLevel(Chip, fLevel);
+	}
+}
+
+void CAPU::LogExternalWrite(uint16 Address, uint8 Value)
+{
+	if (Address >= 0x9000 && Address <= 0x9003)
+		m_iRegsVRC6[Address - 0x9000] = Value;
+	else if (Address >= 0xA000 && Address <= 0xA003)
+		m_iRegsVRC6[Address - 0xA000 + 3] = Value;
+	else if (Address >= 0xB000 && Address <= 0xB003)
+		m_iRegsVRC6[Address - 0xB000 + 6] = Value;
+	else if (Address >= 0x4080 && Address <= 0x408F)
+		m_iRegsFDS[Address - 0x4080] = Value;
+}
+
+uint8 CAPU::GetReg(int Chip, int Reg) const
+{
+	switch (Chip)
+	{
+	case SNDCHIP_NONE:
+		return m_iRegs[Reg & 0x1F];
+	case SNDCHIP_VRC6:
+		return m_iRegsVRC6[Reg & 0x1F];
+//	case SNDCHIP_N163:
+//		return m_pN163->ReadMem(Reg);
+	case SNDCHIP_FDS:
+		return m_iRegsFDS[Reg & 0x1F];
+	default:
+		return 0;
+	}
+}

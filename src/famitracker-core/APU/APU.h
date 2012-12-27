@@ -90,7 +90,9 @@ public:
 	uint8	GetSamplePos() const;
 	uint8	GetDeltaCounter() const;
 	bool	DPCMPlaying() const;
-	uint8	GetReg(int Reg) const { return m_iRegs[Reg & 0x1F]; }
+	uint8	GetReg(int Chip, int Reg) const;
+
+	void	SetChipLevel(int Chip, int Level);
 
 #ifdef LOGGING
 	void	Log();
@@ -113,6 +115,8 @@ private:
 	inline void	ClockSequence();
 
 	void EndFrame();
+
+	void LogExternalWrite(uint16 Address, uint8 Value);
 		
 private:
 	CMixer		*m_pMixer;
@@ -155,6 +159,8 @@ private:
 	int16		*m_pSoundBuffer;					// Sound transfer buffer
 
 	uint8		m_iRegs[0x20];
+	uint8		m_iRegsVRC6[0x10];
+	uint8		m_iRegsFDS[0x10];
 
 #ifdef LOGGING
 	CFile		  *m_pLog;

@@ -116,7 +116,7 @@ void CVRC6_Sawtooth::Process(int Time)
 	{
 		Time 	-= Counter;
 		m_iTime	+= Counter;
-		Counter	 = Frequency;
+		Counter	 = Frequency + 1;
 
 		if (ResetReg & 1)
 			PhaseAccumulator = (PhaseAccumulator + PhaseInput) & 0xFF;

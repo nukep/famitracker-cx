@@ -44,7 +44,8 @@ SoundGen::SoundGen()
 	  m_trackerUpdateCallback(NULL), m_sink(NULL),
 	  m_volumes_ring(NULL),
 	  m_trackerActive(false),
-	  m_timer_trackerActive(false)
+	  m_timer_trackerActive(false),
+	  m_iMachineType(NTSC)
 {
 	m_samplemem = new CSampleMem;
 	m_apu = new CAPU(m_samplemem);

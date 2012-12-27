@@ -36,7 +36,7 @@ const char TEST_WAVE[] = {
 
 const int FIXED_FDS_INST_SIZE = 1 + 16 + 4 + 1;
 
-CInstrumentFDS::CInstrumentFDS() : CInstrument(), m_bChanged(false)
+CInstrumentFDS::CInstrumentFDS() : CInstrument()
 {
 	memcpy(m_iSamples, TEST_WAVE, WAVE_SIZE);	
 	memset(m_iModulation, 0, MOD_SIZE);
@@ -58,7 +58,7 @@ CInstrumentFDS::~CInstrumentFDS()
 	SAFE_RELEASE(m_pPitch);
 }
 
-CInstrument *CInstrumentFDS::Clone()
+CInstrument *CInstrumentFDS::Clone() const
 {
 	CInstrumentFDS *pNewInst = new CInstrumentFDS();
 
@@ -381,25 +381,25 @@ int CInstrumentFDS::Compile(CCompiler *pCompiler, int Index)
 */
 bool CInstrumentFDS::CanRelease(FtmDocument *doc) const
 {
-	return false; // TODO
-}
-
-bool CInstrumentFDS::HasChanged()
-{
-	bool Val = m_bChanged;
-	m_bChanged = false;
-	return Val;
+	if (m_pVolume->GetItemCount() > 0)
+	{
+		if (m_pVolume->GetReleasePoint() != -1)
+			return true;
+	}
+	return false;
 }
 
 unsigned char CInstrumentFDS::GetSample(int Index) const
 {
+	ftkr_Assert(Index < WAVE_SIZE);
 	return m_iSamples[Index];
 }
 
 void CInstrumentFDS::SetSample(int Index, int Sample)
 {
+	ftkr_Assert(Index < WAVE_SIZE);
 	m_iSamples[Index] = Sample;
-	m_bChanged = true;
+	InstrumentChanged();
 }
 
 int CInstrumentFDS::GetModulation(int Index) const
@@ -410,7 +410,7 @@ int CInstrumentFDS::GetModulation(int Index) const
 void CInstrumentFDS::SetModulation(int Index, int Value)
 {
 	m_iModulation[Index] = Value;
-	m_bChanged = true;
+	InstrumentChanged();
 }
 
 int CInstrumentFDS::GetModulationSpeed() const
@@ -421,7 +421,7 @@ int CInstrumentFDS::GetModulationSpeed() const
 void CInstrumentFDS::SetModulationSpeed(int Speed)
 {
 	m_iModulationSpeed = Speed;
-	m_bChanged = true;
+	InstrumentChanged();
 }
 
 int CInstrumentFDS::GetModulationDepth() const
@@ -432,7 +432,7 @@ int CInstrumentFDS::GetModulationDepth() const
 void CInstrumentFDS::SetModulationDepth(int Depth)
 {
 	m_iModulationDepth = Depth;
-	m_bChanged = true;
+	InstrumentChanged();
 }
 
 int CInstrumentFDS::GetModulationDelay() const
@@ -443,7 +443,7 @@ int CInstrumentFDS::GetModulationDelay() const
 void CInstrumentFDS::SetModulationDelay(int Delay)
 {
 	m_iModulationDelay = Delay;
-	m_bChanged = true;
+	InstrumentChanged();
 }
 
 CSequence* CInstrumentFDS::GetVolumeSeq() const
@@ -469,4 +469,5 @@ bool CInstrumentFDS::GetModulationEnable() const
 void CInstrumentFDS::SetModulationEnable(bool Enable)
 {
 	m_bModulationEnable = Enable;
+	InstrumentChanged();
 }

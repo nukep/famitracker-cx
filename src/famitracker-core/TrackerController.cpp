@@ -129,7 +129,7 @@ void TrackerController::evaluateGlobalEffects(const stChanNote *noteData, int ef
 		case EF_SPEED:
 			if (effParam == 0)
 				effParam++;
-			if (effParam > MIN_TEMPO)
+			if (effParam > m_document->GetSpeedSplitPoint())
 				m_tempo = effParam;
 			else
 				m_speed = effParam;
