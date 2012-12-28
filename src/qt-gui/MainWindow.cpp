@@ -36,7 +36,10 @@ namespace gui
 		QObject::connect(action_Save, SIGNAL(triggered()), this, SLOT(save()));
 		action_Save->setIcon(QIcon::fromTheme("document-save"));
 		QObject::connect(actionSave_As, SIGNAL(triggered()), this, SLOT(saveAs()));
+		QObject::connect(action_Create_NSF, SIGNAL(triggered()), this, SLOT(unimplemented()));
 		QObject::connect(actionCreate_WAV, SIGNAL(triggered()), this, SLOT(createWAV()));
+		QObject::connect(actionImport_MIDI, SIGNAL(triggered()), this, SLOT(unimplemented()));
+		QObject::connect(action_Configuration, SIGNAL(triggered()), this, SLOT(unimplemented()));
 		QObject::connect(actionE_xit, SIGNAL(triggered()), this, SLOT(quit()));
 
 		QObject::connect(actionModule_Properties, SIGNAL(triggered()), this, SLOT(moduleProperties()));
@@ -71,7 +74,7 @@ namespace gui
 		QObject::connect(actionToggle_edit_mode, SIGNAL(triggered()), this, SLOT(toggleEditMode()));
 		actionToggle_edit_mode->setIcon(QIcon::fromTheme("media-record"));
 
-		QObject::connect(addInstrument_button, SIGNAL(clicked()), this, SLOT(addInstrument()));
+		QObject::connect(addInstrument_button, SIGNAL(clicked()), this, SLOT(addInstrument_2A03()));
 		addInstrument_button->setIcon(QIcon::fromTheme("list-add"));
 		addInstrument_button->setText(tr("Add Instrument"));
 		QObject::connect(removeInstrument_button, SIGNAL(clicked()), this, SLOT(removeInstrument()));
@@ -87,8 +90,10 @@ namespace gui
 			QAction *addvrc6 = m->addAction(tr("New VRC6 Instrument"));
 			QAction *addfds  = m->addAction(tr("New FDS Instrument"));
 
-			QObject::connect(add2a03, SIGNAL(triggered()), this, SLOT(addInstrument()));
-			QObject::connect(addmmc5, SIGNAL(triggered()), this, SLOT(addInstrument()));
+			QObject::connect(add2a03, SIGNAL(triggered()), this, SLOT(addInstrument_2A03()));
+			QObject::connect(addvrc6, SIGNAL(triggered()), this, SLOT(addInstrument_VRC6()));
+			QObject::connect(addmmc5, SIGNAL(triggered()), this, SLOT(addInstrument_MMC5()));
+			QObject::connect(addfds , SIGNAL(triggered()), this, SLOT(addInstrument_FDS()));
 
 			m->setDefaultAction(add2a03);
 			addInstrument_button->setMenu(m);
@@ -417,6 +422,11 @@ namespace gui
 		}
 	}
 
+	void MainWindow::unimplemented()
+	{
+		gui::promptUnimplemented(this);
+	}
+
 	void MainWindow::newDoc_cb(MainWindow *mw, void*)
 	{
 		mw->m_instrumenteditor->removedInstrument();
@@ -570,6 +580,7 @@ namespace gui
 		delete d;
 
 		updateDocument();
+		m_app->reloadAudio();
 	}
 
 	void MainWindow::viewToolbar(bool v)
@@ -802,17 +813,33 @@ namespace gui
 		gui::toggleEditMode();
 	}
 
-	void MainWindow::addInstrument()
+	void MainWindow::addInstrument(int chip)
 	{
 		FtmDocument *d = m_dinfo->doc();
 		d->lock();
-		int inst = d->AddInstrument("New instrument", SNDCHIP_NONE);
+		int inst = d->AddInstrument("New instrument", chip);
 		d->unlock();
 
 		m_dinfo->setCurrentInstrument(inst);
 
 		refreshInstruments();
 		patternView->update(true);
+	}
+	void MainWindow::addInstrument_2A03()
+	{
+		addInstrument(SNDCHIP_NONE);
+	}
+	void MainWindow::addInstrument_VRC6()
+	{
+		addInstrument(SNDCHIP_VRC6);
+	}
+	void MainWindow::addInstrument_MMC5()
+	{
+		addInstrument(SNDCHIP_MMC5);
+	}
+	void MainWindow::addInstrument_FDS()
+	{
+		addInstrument(SNDCHIP_FDS);
 	}
 	void MainWindow::removeInstrument()
 	{

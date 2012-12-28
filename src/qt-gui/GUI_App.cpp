@@ -185,6 +185,11 @@ namespace gui
 		unmuteAll();
 	}
 
+	void App::reloadAudio()
+	{
+		sgen->setDocument(activeDocument());
+	}
+
 	bool App::isPlaying()
 	{
 		// is the tracker active? does not include auditioning.

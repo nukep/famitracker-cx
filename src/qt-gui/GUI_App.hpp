@@ -34,6 +34,7 @@ namespace gui
 		void closeActiveDocument();
 		bool openDocument(core::IO *io, bool close_active);
 		void newDocument(bool close_active);
+		void reloadAudio();
 
 		bool isPlaying();
 		bool isEditing();

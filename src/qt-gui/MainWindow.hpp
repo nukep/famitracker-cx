@@ -76,6 +76,8 @@ namespace gui
 		static void createwav_cb(MainWindow*, void*);
 		bool m_close_shutdown;
 	public slots:
+		void unimplemented();
+
 		void newDoc();
 		void open();
 		void openRecentFile();
@@ -111,7 +113,10 @@ namespace gui
 		void stop();
 		void toggleEditMode();
 
-		void addInstrument();
+		void addInstrument_2A03();
+		void addInstrument_VRC6();
+		void addInstrument_MMC5();
+		void addInstrument_FDS();
 		void removeInstrument();
 		void editInstrument();
 
@@ -128,6 +133,8 @@ namespace gui
 		InstrumentEditor *m_instrumenteditor;
 		QComboBox *octave;
 		QAction ** m_recentFiles;
+
+		void addInstrument(int chip);
 	};
 }
 
