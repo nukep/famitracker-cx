@@ -53,7 +53,7 @@
 #include "MMC5.h"
 #include "FDS.h"
 #include "N106.h"
-//#include "VRC7.h"
+#include "VRC7.h"
 //#include "S5B.h"
 
 using std::min;
@@ -91,10 +91,13 @@ CAPU::CAPU(CSampleMem *pSampleMem) :
 
 	m_pMMC5 = new CMMC5(m_pMixer);
 	m_pVRC6 = new CVRC6(m_pMixer);
-//	m_pVRC7 = new CVRC7(m_pMixer);
+	m_pVRC7 = new CVRC7(m_pMixer);
 	m_pFDS = new CFDS(m_pMixer);
 	m_pN106 = new CN106(m_pMixer);
 //	m_pS5B = new CS5B(m_pMixer);
+
+	m_fLevelVRC7 = 1.0f;
+	m_fLevelS5B = 1.0f;
 
 #ifdef LOGGING
 	m_pLog = new CFile("apu_log.txt", CFile::modeCreate | CFile::modeWrite);
@@ -111,7 +114,7 @@ CAPU::~CAPU()
 
 	SAFE_RELEASE(m_pMMC5);
 	SAFE_RELEASE(m_pVRC6);
-//	SAFE_RELEASE(m_pVRC7);
+	SAFE_RELEASE(m_pVRC7);
 	SAFE_RELEASE(m_pFDS);
 	SAFE_RELEASE(m_pN106);
 //	SAFE_RELEASE(m_pS5B);
@@ -311,7 +314,7 @@ void CAPU::SetupMixer(int LowCut, int HighCut, int HighDamp, int Volume) const
 {
 	// New settings
 	m_pMixer->UpdateSettings(LowCut, HighCut, HighDamp, Volume);
-//	m_pVRC7->SetVolume(Volume);
+	m_pVRC7->SetVolume((float(Volume) / 100.0f) * m_fLevelVRC7);
 }
 
 void CAPU::SetExternalSound(uint8 Chip)
@@ -324,8 +327,8 @@ void CAPU::SetExternalSound(uint8 Chip)
 
 	if (Chip & SNDCHIP_VRC6)
 		ExChips.push_back(m_pVRC6);
-//	if (Chip & SNDCHIP_VRC7)
-//		ExChips.push_back(m_pVRC7);
+	if (Chip & SNDCHIP_VRC7)
+		ExChips.push_back(m_pVRC7);
 	if (Chip & SNDCHIP_FDS)
 		ExChips.push_back(m_pFDS);
 	if (Chip & SNDCHIP_MMC5)
@@ -389,7 +392,7 @@ bool CAPU::SetupSound(int SampleRate, int NrChannels, int Machine)
 	ChangeMachine(Machine);
 
 	// VRC7 generates samples on it's own
-//	m_pVRC7->SetSampleSpeed(SampleRate, BaseFreq, FrameRate);
+	m_pVRC7->SetSampleSpeed(SampleRate, BaseFreq, FrameRate);
 
 	// Same for sunsoft
 //	m_pS5B->SetSampleSpeed(SampleRate, BaseFreq, FrameRate);
@@ -578,10 +581,10 @@ void CAPU::SetChipLevel(int Chip, int Level)
 
 	switch (Chip)
 	{
-	/*	case SNDCHIP_VRC7:
+		case SNDCHIP_VRC7:
 			m_fLevelVRC7 = fLevel;
 			break;
-		case SNDCHIP_S5B:
+	/*	case SNDCHIP_S5B:
 			m_fLevelS5B = fLevel;
 			break;*/
 		default:

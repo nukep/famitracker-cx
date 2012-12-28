@@ -162,6 +162,9 @@ private:
 	uint8		m_iRegsVRC6[0x10];
 	uint8		m_iRegsFDS[0x10];
 
+	float		m_fLevelVRC7;
+	float		m_fLevelS5B;
+
 #ifdef LOGGING
 	CFile		  *m_pLog;
 	int			  m_iFrame = 0;

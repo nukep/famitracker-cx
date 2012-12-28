@@ -578,7 +578,7 @@ bool FtmDocument::readNew_instruments(Document *doc)
 
 		if (!fami_isInstrumentImplemented(type))
 			throw FtmDocumentException(FtmDocumentException::UNIMPLEMENTED_CX, "Instrument not supported\n"
-									   "Supported: 2A03/2A07, MMC5, VRC6, FDS");
+									   "Supported: 2A03/2A07, MMC5, VRC6, VRC7, FDS");
 
 		CInstrument *inst = CreateInstrument(type);
 
@@ -2500,10 +2500,10 @@ CInstrument * FtmDocument::CreateInstrument(int type)
 		case INST_2A03: return new CInstrument2A03;
 		case INST_VRC6: return new CInstrumentVRC6;
 		case INST_FDS: return new CInstrumentFDS;
-	// TODO - dan
-/*		case INST_VRC7: return new CInstrumentVRC7();
-		case INST_N106:	return new CInstrumentN106();
-		case INST_S5B: return new CInstrumentS5B();*/
+		case INST_VRC7: return new CInstrumentVRC7;
+		// TODO - dan
+/*		case INST_N106:	return new CInstrumentN106;
+		case INST_S5B: return new CInstrumentS5B;*/
 	default:
 		ftkr_Assert(0);
 	}

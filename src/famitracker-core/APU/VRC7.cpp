@@ -18,14 +18,13 @@
 ** must bear this legend.
 */
 
-#include "../stdafx.h"
 #include <memory>
 #include <stdlib.h>
 #include <string.h>
 #include "APU.h"
 #include "VRC7.h"
 
-const float  CVRC7::AMPLIFY	  = 2.44f;		// Mixing amplification, VRC7 patch 14 is 4,88 times stronger than a 50% square @ v=15
+const float  CVRC7::AMPLIFY	  = 2.88f;		// Mixing amplification, VRC7 patch 14 is 4,88 times stronger than a 50% square @ v=15
 const uint32 CVRC7::OPL_CLOCK = 3579545;	// Clock frequency
 
 CVRC7::CVRC7(CMixer *pMixer) : CExternal(pMixer), m_pBuffer(NULL), m_pOPLLInt(NULL), m_fVolume(1.0f)
@@ -40,7 +39,10 @@ CVRC7::~CVRC7()
 		m_pOPLLInt = NULL;
 	}
 
-	SAFE_RELEASE_ARRAY(m_pBuffer);
+	if (m_pBuffer != NULL)
+	{
+		delete[] m_pBuffer;
+	}
 }
 
 void CVRC7::Reset()
@@ -51,27 +53,30 @@ void CVRC7::Reset()
 
 void CVRC7::SetSampleSpeed(uint32 SampleRate, double ClockRate, uint32 FrameRate)
 {
-	if (m_pOPLLInt == NULL) {
-		OPLL_init(OPL_CLOCK, SampleRate);
-		m_pOPLLInt = OPLL_new();
-		OPLL_reset(m_pOPLLInt);
-		OPLL_reset_patch(m_pOPLLInt, 1);
+	if (m_pOPLLInt != NULL)
+	{
+		OPLL_delete(m_pOPLLInt);
+		m_pOPLLInt = NULL;
 	}
-	else {
-		OPLL_setClock(OPL_CLOCK, SampleRate);
-	}
+
+	m_pOPLLInt = OPLL_new(OPL_CLOCK, SampleRate);
+
+	OPLL_reset(m_pOPLLInt);
+	OPLL_reset_patch(m_pOPLLInt, 1);
 
 	m_iMaxSamples = (SampleRate / FrameRate) * 2;	// Allow some overflow
 
-	SAFE_RELEASE_ARRAY(m_pBuffer);
+	if (m_pBuffer != NULL)
+	{
+		delete[] m_pBuffer;
+	}
 	m_pBuffer = new int16[m_iMaxSamples];
 	memset(m_pBuffer, 0, sizeof(int16) * m_iMaxSamples);
 }
 
-void CVRC7::SetVolume(int Volume)
+void CVRC7::SetVolume(float Volume)
 {
-	// Volume = 100-0
-	m_fVolume = (float(Volume) / 100.0f) * AMPLIFY;
+	m_fVolume = Volume * AMPLIFY;
 }
 
 void CVRC7::Write(uint16 Address, uint8 Value)

@@ -115,6 +115,7 @@ namespace gui
 
 		void addInstrument_2A03();
 		void addInstrument_VRC6();
+		void addInstrument_VRC7();
 		void addInstrument_MMC5();
 		void addInstrument_FDS();
 		void removeInstrument();

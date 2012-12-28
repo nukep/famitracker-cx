@@ -15,6 +15,7 @@
 #include "ChannelsFDS.h"
 #include "ChannelsMMC5.h"
 #include "ChannelsVRC6.h"
+#include "ChannelsVRC7.h"
 
 #include "App.hpp"
 #include "core/time.hpp"
@@ -307,6 +308,14 @@ void SoundGen::createChannels()
 	// Nintendo FDS
 	assignChannel(CHANID_FDS, new CChannelHandlerFDS(this));
 
+	// Konami VRC7
+	assignChannel(CHANID_VRC7_CH1, new CVRC7Channel(this));
+	assignChannel(CHANID_VRC7_CH2, new CVRC7Channel(this));
+	assignChannel(CHANID_VRC7_CH3, new CVRC7Channel(this));
+	assignChannel(CHANID_VRC7_CH4, new CVRC7Channel(this));
+	assignChannel(CHANID_VRC7_CH5, new CVRC7Channel(this));
+	assignChannel(CHANID_VRC7_CH6, new CVRC7Channel(this));
+
 	// TODO - dan
 /*
 	// Namco N106
@@ -318,14 +327,6 @@ void SoundGen::createChannels()
 	assignChannel(new CTrackerChannel("Namco 6", SNDCHIP_N106, CHANID_N106_CHAN6), new CChannelHandlerN106(this));
 	assignChannel(new CTrackerChannel("Namco 7", SNDCHIP_N106, CHANID_N106_CHAN7), new CChannelHandlerN106(this));
 	assignChannel(new CTrackerChannel("Namco 8", SNDCHIP_N106, CHANID_N106_CHAN8), new CChannelHandlerN106(this));
-
-	// Konami VRC7
-	assignChannel(new CTrackerChannel("FM Channel 1", SNDCHIP_VRC7, CHANID_VRC7_CH1), new CVRC7Channel(this));
-	assignChannel(new CTrackerChannel("FM Channel 2", SNDCHIP_VRC7, CHANID_VRC7_CH2), new CVRC7Channel(this));
-	assignChannel(new CTrackerChannel("FM Channel 3", SNDCHIP_VRC7, CHANID_VRC7_CH3), new CVRC7Channel(this));
-	assignChannel(new CTrackerChannel("FM Channel 4", SNDCHIP_VRC7, CHANID_VRC7_CH4), new CVRC7Channel(this));
-	assignChannel(new CTrackerChannel("FM Channel 5", SNDCHIP_VRC7, CHANID_VRC7_CH5), new CVRC7Channel(this));
-	assignChannel(new CTrackerChannel("FM Channel 6", SNDCHIP_VRC7, CHANID_VRC7_CH6), new CVRC7Channel(this));
 
 	// Sunsoft 5B
 	assignChannel(new CTrackerChannel("Square 1", SNDCHIP_S5B, CHANID_S5B_CH1), new CS5BChannel1(this));

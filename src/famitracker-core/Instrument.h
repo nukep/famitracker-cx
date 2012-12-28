@@ -42,6 +42,7 @@ static inline bool fami_isInstrumentImplemented(int type)
 	{
 	case INST_2A03:
 	case INST_VRC6:
+	case INST_VRC7:
 	case INST_FDS:
 		return true;
 	default:
@@ -165,21 +166,18 @@ private:
 	int		m_iSeqIndex[SEQ_COUNT];
 };
 
-// TODO - dan
-#if 0
-
-class CInstrumentVRC7 : public CInstrument {
+class FAMICOREAPI CInstrumentVRC7 : public CInstrument {
 public:
 	CInstrumentVRC7();
 	virtual int	GetType() const { return INST_VRC7; }
 	virtual CInstrument* CreateNew() const { return new CInstrumentVRC7; }
 	virtual CInstrument* Clone() const;
-	virtual void Store(Document *pDocFile);
-	virtual bool Load(Document *pDocFile);
-	virtual void SaveFile(core::IO *pFile, FtmDocument *pDoc);
-	virtual bool LoadFile(core::IO *pFile, int iVersion, FtmDocument *pDoc);
-	virtual int CompileSize(CCompiler *pCompiler);
-	virtual int Compile(CCompiler *pCompiler, int Index);
+	virtual void Store(Document *doc);
+	virtual bool Load(Document *doc);
+	virtual void SaveFile(core::IO *file, FtmDocument *doc);
+	virtual bool LoadFile(core::IO *file, int iVersion, FtmDocument *doc);
+//	virtual int CompileSize(CCompiler *pCompiler);
+//	virtual int Compile(CCompiler *pCompiler, int Index);
 	virtual bool CanRelease(FtmDocument *doc) const;
 public:
 	void		 SetPatch(unsigned int Patch);
@@ -190,8 +188,6 @@ private:
 	unsigned int m_iPatch;
 	unsigned int m_iRegs[8];		// Custom patch settings
 };
-
-#endif
 
 class FAMICOREAPI CInstrumentFDS : public CInstrument {
 public:

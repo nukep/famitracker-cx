@@ -26,6 +26,8 @@ set(SRC
 	ChannelsMMC5.h
 	ChannelsVRC6.cpp
 	ChannelsVRC6.h
+	ChannelsVRC7.cpp
+	ChannelsVRC7.h
 	ChannelMap.cpp
 	ChannelMap.h
 
@@ -40,6 +42,7 @@ set(SRC
 	Instrument2A03.cpp
 	InstrumentFDS.cpp
 	InstrumentVRC6.cpp
+	InstrumentVRC7.cpp
 	PatternData.cpp
 	PatternData.h
 	Sequence.cpp

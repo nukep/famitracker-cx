@@ -188,6 +188,7 @@ void TrackerController::setMuted(int channel_offset, bool mute)
 	if (mute && !m_muted[channel_offset])
 	{
 		stChanNote halt;
+		halt.Instrument = MAX_INSTRUMENTS;
 		halt.Note = HALT;
 		m_trackerChannels[channel_offset]->SetNote(halt);
 	}

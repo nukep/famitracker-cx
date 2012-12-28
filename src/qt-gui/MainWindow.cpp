@@ -88,10 +88,12 @@ namespace gui
 			QAction *add2a03 = m->addAction(tr("New 2A03 Instrument"));
 			QAction *addmmc5 = m->addAction(tr("New MMC5 Instrument"));
 			QAction *addvrc6 = m->addAction(tr("New VRC6 Instrument"));
+			QAction *addvrc7 = m->addAction(tr("New VRC7 Instrument"));
 			QAction *addfds  = m->addAction(tr("New FDS Instrument"));
 
 			QObject::connect(add2a03, SIGNAL(triggered()), this, SLOT(addInstrument_2A03()));
 			QObject::connect(addvrc6, SIGNAL(triggered()), this, SLOT(addInstrument_VRC6()));
+			QObject::connect(addvrc7, SIGNAL(triggered()), this, SLOT(addInstrument_VRC7()));
 			QObject::connect(addmmc5, SIGNAL(triggered()), this, SLOT(addInstrument_MMC5()));
 			QObject::connect(addfds , SIGNAL(triggered()), this, SLOT(addInstrument_FDS()));
 
@@ -832,6 +834,10 @@ namespace gui
 	void MainWindow::addInstrument_VRC6()
 	{
 		addInstrument(SNDCHIP_VRC6);
+	}
+	void MainWindow::addInstrument_VRC7()
+	{
+		addInstrument(SNDCHIP_VRC7);
 	}
 	void MainWindow::addInstrument_MMC5()
 	{

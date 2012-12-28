@@ -31,7 +31,7 @@ namespace gui
 
 	void ThreadPool::playsong_thread(mainthread_callback_t cb, void *data, const threadpool_playing_task::playing_t &p)
 	{
-		const DocInfo *dinfo = activeDocInfo();
+		const DocInfo *dinfo = m_app->activeDocInfo();
 
 		bool startatrow0 = p.startatrow0;
 
@@ -86,7 +86,7 @@ namespace gui
 	{
 		if (a.playrow)
 		{
-			DocInfo *dinfo = activeDocInfo();
+			const DocInfo *dinfo = m_app->activeDocInfo();
 			m_app->sgen->auditionRow(dinfo->currentFrame(), dinfo->currentRow());
 		}
 		else
@@ -125,8 +125,9 @@ namespace gui
 				empty = threadpool_playing_queue.empty();
 				if (!empty)
 				{
+					// FIFO
 					t = threadpool_playing_queue.front();
-					threadpool_playing_queue.pop();
+					threadpool_playing_queue.pop();			// pop from front
 				}
 				else
 				{

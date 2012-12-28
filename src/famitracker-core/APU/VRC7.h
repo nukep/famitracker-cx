@@ -31,7 +31,7 @@ public:
 
 	void Reset();
 	void SetSampleSpeed(uint32 SampleRate, double ClockRate, uint32 FrameRate);
-	void SetVolume(int Volume);
+	void SetVolume(float Volume);
 	void Write(uint16 Address, uint8 Value);
 	uint8 Read(uint16 Address, bool &Mapped);
 	void EndFrame();
