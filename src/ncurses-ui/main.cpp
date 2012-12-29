@@ -339,19 +339,73 @@ static void paintrow(WINDOW *w, Session &s, int channels, int frame, int row, in
 	s.setColorPair(w, Session::S_NONE, Session::C_ROW);
 	wprintw(w, "%02X", row);
 	waddch(w, ACS_VLINE);
+	int leftoverWidth = s.m_patwidth;
+	leftoverWidth -= 2
+			+ 1		// extra |
+			+ 3		// "more channels" indicator
+			;
+
 	for (int chan = 0; chan < channels; chan++)
 	{
-		int effColumns = s.doc->GetEffColumns(chan);
-		stChanNote note;
-		s.doc->GetNoteData(frame, chan, row, &note);
-		paintNote(w, s, note, effColumns, scheme);
-
-		if (chan < channels-1)
+		if (chan != 0)
 		{
 			s.setColorPair(w, scheme, Session::C_ROW);
 			waddch(w, ACS_VLINE);
 		}
+		int effColumns = s.doc->GetEffColumns(chan);
+		int width = channelWidth(effColumns+1)+1;
+		leftoverWidth -= width;
+		if (leftoverWidth < 0)
+		{
+			break;
+		}
+		stChanNote note;
+		s.doc->GetNoteData(frame, chan, row, &note);
+		paintNote(w, s, note, effColumns, scheme);
 	}
+	if (leftoverWidth < 0)
+	{
+		// the "more channels" indicator
+		wprintw(w, ">>");
+	}
+	wprintw(w, "\n");
+}
+
+static void paintChannelNames(WINDOW *w, Session &s)
+{
+	int channels = s.doc->GetAvailableChannels();
+
+	s.setSpecialColorPair(w, Session::SC_CHANNELS);
+
+	int leftoverWidth = s.m_patwidth;
+	leftoverWidth -= 2
+			+ 1		// extra |
+			+ 3		// "more channels" indicator
+			;
+	int nx = 3;
+	char buf[64];
+	for (int i = 0; i < channels; i++)
+	{
+		int effColumns = s.doc->GetEffColumns(i);
+		int width = channelWidth(effColumns+1)+1;
+		leftoverWidth -= width;
+		if (leftoverWidth < 0)
+		{
+			break;
+		}
+
+		wmove(w, 0, nx);
+		int colw = width - 1;
+		int sz = sizeof(buf)-1;
+		if (colw < sz)
+		{
+			sz = colw;
+		}
+		snprintf(buf, sz+1, "%s", app::channelMap()->GetChannelName(s.doc->getChannelsFromChip()[i]));
+		wprintw(w, "%s", buf);
+		nx += colw+1;
+	}
+
 	wprintw(w, "\n");
 }
 
@@ -366,26 +420,7 @@ static void paintpattern(WINDOW *w, Session &s)
 	int currentRow = s.m_rowCurrent;
 	int topRow = s.m_rowTop;
 
-	s.setSpecialColorPair(w, Session::SC_CHANNELS);
-
-	int nx = 3;
-	char buf[64];
-	for (int i = 0; i < channels; i++)
-	{
-		wmove(w, 0, nx);
-		int colw = channelWidth(s.doc->GetEffColumns(i)+1);
-		int sz = sizeof(buf)-1;
-		if (colw < sz)
-		{
-			sz = colw;
-		}
-		snprintf(buf, sz+1, "%s", app::channelMap()->GetChannelName(s.doc->getChannelsFromChip()[i]));
-		wprintw(w, "%s", buf);
-		nx += colw+1;
-	}
-
-	wprintw(w, "\n");
-
+	paintChannelNames(w, s);
 	y--;
 
 	int rowCount = s.doc->getFramePlayLength(frame);
