@@ -242,10 +242,13 @@ static void printBlank(WINDOW *w, Session &s, int scheme, int spaces, bool leadi
 	wattron(w, A_BOLD);
 }
 
-void paintNote(WINDOW *w, Session &s, const stChanNote &note, int effColumns, int scheme)
+void paintNote(WINDOW *w, Session &s, const stChanNote &note, int channel, int effColumns, int scheme)
 {
 	wattron(w, A_BOLD);
 	char buf[5];
+
+	// todo: use enumerator constant
+	bool noiseChannel = channel == 3;
 
 	// Note
 	s.setColorPair(w, scheme, Session::C_NOTE);
@@ -267,10 +270,19 @@ void paintNote(WINDOW *w, Session &s, const stChanNote &note, int effColumns, in
 	}
 	else
 	{
+		int ni = note.Note - C;
 		buf[2] = 0;
-		noteNotation(note.Note - C, buf);
-		replaceCharWith(buf, ' ', '-');
-		wprintw(w, "%s%d", buf, note.Octave);
+		if (!noiseChannel)
+		{
+			noteNotation(ni, buf);
+			replaceCharWith(buf, ' ', '-');
+			wprintw(w, "%s%d", buf, note.Octave);
+		}
+		else
+		{
+			ni = (ni + note.Octave*12) % 16;
+			wprintw(w, "%X-#", ni);
+		}
 	}
 
 	// Instrument
@@ -361,7 +373,7 @@ static void paintrow(WINDOW *w, Session &s, int channels, int frame, int row, in
 		}
 		stChanNote note;
 		s.doc->GetNoteData(frame, chan, row, &note);
-		paintNote(w, s, note, effColumns, scheme);
+		paintNote(w, s, note, chan, effColumns, scheme);
 	}
 	if (leftoverWidth < 0)
 	{
