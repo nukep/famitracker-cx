@@ -97,6 +97,11 @@ public:
 			m_rowTop = row;
 			m_updateScreen = true;
 		}
+		if (row < m_rowTop)
+		{
+			m_rowTop = row;
+			m_updateScreen = true;
+		}
 	}
 
 	void resetUpdateFlags()
