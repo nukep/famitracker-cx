@@ -80,7 +80,7 @@ private:
 	void startPlayback();
 	void stopPlayback();
 	void haltSounds();
-	bool requestFrame();
+	void requestFrame();
 	// requestSound is not guaranteed to be (and typically isn't) called at a constant rate.
 	// for example, just because the engine speed may be 60Hz doesn't mean this gets called at 60Hz.
 	core::u32 requestSound(core::s16 *buf, core::u32 sz, core::u32 *idx);

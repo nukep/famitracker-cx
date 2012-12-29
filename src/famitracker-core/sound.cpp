@@ -418,8 +418,7 @@ void SoundGen::haltSounds()
 	}
 }
 
-// return true if row changed
-bool SoundGen::requestFrame()
+void SoundGen::requestFrame()
 {
 	runFrame();
 
@@ -471,16 +470,6 @@ bool SoundGen::requestFrame()
 	// Finish the audio frame
 	m_apu->AddTime(m_iUpdateCycles - m_iConsumedCycles);
 	m_apu->Process();
-
-	unsigned int row = m_trackerctlr->row();
-	unsigned int frame = m_trackerctlr->frame();
-
-	bool updated = (m_lastRow != row) || (m_lastFrame != frame);
-
-	m_lastRow = row;
-	m_lastFrame = frame;
-
-	return updated;
 }
 
 void SoundGen::apuCallback(const int16 *buf, uint32 sz, void *data)
@@ -518,14 +507,14 @@ core::u32 SoundGen::requestSound(core::s16 *buf, core::u32 sz, core::u32 *idx)
 			// silence the rest of the buffer
 			memset(buf, 0, sz*sizeof(core::s16));
 		}*/
-		bool rowchange = requestFrame();
+		requestFrame();
 		bool haltsignal = m_bPlayerHalted && m_trackerActive;
 		{
 			idx[c++] = off;
 			rowframe_t rf;
 			rf.row = trackerController()->row();
 			rf.frame = trackerController()->frame();
-			rf.rowframe_changed = rowchange;
+			rf.rowframe_changed = false;	// to be set when read from ringbuffer later
 			rf.tracker_running = m_trackerActive;
 			rf.halt_signal = haltsignal;
 
@@ -614,6 +603,14 @@ void SoundGen::timeCallback(core::u32 skip, void *data)
 		return;
 	}
 	sg->m_threading->mtx_rowframes.unlock();
+
+	unsigned int row = rf.row;
+	unsigned int frame = rf.frame;
+
+	rf.rowframe_changed = (sg->m_lastRow != row) || (sg->m_lastFrame != frame);
+
+	sg->m_lastRow = row;
+	sg->m_lastFrame = frame;
 
 	if (sg->m_trackerUpdateCallback != NULL)
 		(*sg->m_trackerUpdateCallback)(rf, sg->trackerController()->document(), sg->m_trackerUpdateData);
