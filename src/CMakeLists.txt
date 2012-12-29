@@ -4,6 +4,10 @@ add_subdirectory("sound")
 
 add_subdirectory("console-play-ui")
 
+if (UNIX)
+	add_subdirectory("ncurses-ui")
+endif()
+
 if (UI_QT)
 	add_subdirectory("qt-gui")
 endif()
