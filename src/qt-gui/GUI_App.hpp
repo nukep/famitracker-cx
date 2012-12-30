@@ -4,7 +4,7 @@
 #include <boost/thread/mutex.hpp>
 #include <vector>
 #include "DocInfo.hpp"
-#include "famitracker-core/sound.hpp"
+#include "famitracker-core/SoundGen.hpp"
 #include "core/soundsink.hpp"
 
 class QApplication;

@@ -24,7 +24,7 @@
 //
 
 #include "FtmDocument.hpp"
-#include "sound.hpp"
+#include "SoundGen.hpp"
 #include "ChannelHandler.h"
 #include "Sequence.h"
 

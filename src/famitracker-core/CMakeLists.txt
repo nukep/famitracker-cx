@@ -10,8 +10,8 @@ set(SRC
 
 #	wavoutput.cpp
 #	wavoutput.hpp
-	sound.cpp
-	sound.hpp
+	SoundGen.cpp
+	SoundGen.hpp
 
 	App.cpp
 	App.hpp

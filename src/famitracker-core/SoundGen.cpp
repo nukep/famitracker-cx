@@ -3,7 +3,7 @@
 #include <cmath>
 #include <boost/thread/mutex.hpp>
 #include <boost/thread/condition.hpp>
-#include "sound.hpp"
+#include "SoundGen.hpp"
 #include "core/ringbuffer.hpp"
 #include "FtmDocument.hpp"
 #include "FamiTrackerTypes.h"

@@ -4,7 +4,7 @@
 #include "famitracker-core/App.hpp"
 #include "famitracker-core/Document.hpp"
 #include "famitracker-core/FtmDocument.hpp"
-#include "famitracker-core/sound.hpp"
+#include "famitracker-core/SoundGen.hpp"
 #include "famitracker-core/TrackerController.hpp"
 #include "../parse_arguments.hpp"
 #include "../defaults.hpp"

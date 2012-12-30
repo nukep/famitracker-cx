@@ -20,7 +20,7 @@
 
 #pragma once
 
-#include "sound.hpp"
+#include "SoundGen.hpp"
 #include "PatternData.h"
 
 const int MAX_VOL = 0x7F;
