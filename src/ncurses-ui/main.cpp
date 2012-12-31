@@ -1,6 +1,12 @@
 #include <ncurses.h>
 #include <signal.h>
 #include <string.h>
+
+#include <queue>
+#include <boost/thread.hpp>
+#include <boost/thread/mutex.hpp>
+#include <boost/thread/condition.hpp>
+
 #include "famitracker-core/App.hpp"
 #include "famitracker-core/Document.hpp"
 #include "famitracker-core/FtmDocument.hpp"
@@ -8,6 +14,11 @@
 #include "famitracker-core/TrackerController.hpp"
 #include "../parse_arguments.hpp"
 #include "../defaults.hpp"
+
+namespace ThreadPool
+{
+	class Queue;
+}
 
 class Session
 {
@@ -27,6 +38,7 @@ public:
 		SC_CHANNELS=0,
 		SC_COUNT
 	};
+	ThreadPool::Queue *tpq;
 	FtmDocument *doc;
 	SoundGen *sgen;
 	int m_lastFrame;
@@ -43,20 +55,8 @@ public:
 	bool m_updateScreen;
 	bool m_updatePattern;
 
-	Session()
-	{
-		m_colorPairCount = 0;
-		m_lastFrame = 0;
-		m_lastRowTop = 0;
-		m_lastRowCurrent = 0;
-		m_frame = 0;
-		m_rowTop = 0;
-		m_rowCurrent = 0;
-		m_width = 0;
-		m_height = 0;
-		m_patwidth = 0;
-		m_patheight = 0;
-	}
+	Session();
+	~Session();
 
 	void setWidthHeight(int w, int h)
 	{
@@ -154,6 +154,175 @@ private:
 	int m_colorPairs[S_COUNT][C_COUNT];
 	int m_specialColorPairs[SC_COUNT];
 };
+
+namespace ThreadPool
+{
+	class BlockHandle
+	{
+		friend class Event;
+		friend class Queue;
+	public:
+		BlockHandle() : m_isDone(false){}
+		void block()
+		{
+			m_mtx.lock();
+			while (!m_isDone)
+			{
+				m_cond.wait(m_mtx);
+			}
+			m_mtx.unlock();
+
+			delete this;
+		}
+	private:
+		boost::mutex m_mtx;
+		boost::condition m_cond;
+		bool m_isDone;
+
+		void setDone(bool yes)
+		{
+			m_mtx.lock();
+			m_isDone = yes;
+			m_cond.notify_all();
+			m_mtx.unlock();
+		}
+	};
+
+	class Event
+	{
+		friend class Queue;
+	public:
+		Event() : m_blockHandle(NULL){}
+		virtual ~Event(){}
+		virtual void run(Session &s) const = 0;
+	private:
+		BlockHandle *m_blockHandle;
+		void setBlockHandleDone()
+		{
+			if (m_blockHandle != NULL)
+			{
+				m_blockHandle->setDone(true);
+			}
+		}
+	};
+
+	class Queue
+	{
+	public:
+		Queue()
+			: m_doKeepRunning(true)
+		{}
+
+		void postEvent(Event *e)
+		{
+			m_mtx.lock();
+			if (m_doKeepRunning)
+			{
+				m_events.push(e);
+				m_cond.notify_all();
+			}
+			m_mtx.unlock();
+		}
+		BlockHandle * postEventWithBlockHandle(Event *e)
+		{
+			BlockHandle *h = new BlockHandle;
+
+			m_mtx.lock();
+			if (m_doKeepRunning)
+			{
+				e->m_blockHandle = h;
+				m_events.push(e);
+				m_cond.notify_all();
+			}
+			else
+			{
+				// block handle is functionally pointless, but we return one anyway
+				h->setDone(true);
+			}
+			m_mtx.unlock();
+
+			return h;
+		}
+
+		bool doKeepRunning()
+		{
+			m_mtx.lock();
+			bool r = m_doKeepRunning;
+			m_mtx.unlock();
+			return r;
+		}
+		void setDoKeepRunning(bool yes)
+		{
+			m_mtx.lock();
+			m_doKeepRunning = yes;
+			m_mtx.unlock();
+		}
+
+		void run(Session &s)
+		{
+			Event *e;
+
+			while (doKeepRunning())
+			{
+				e = pullEvent();
+				e->run(s);
+				e->setBlockHandleDone();
+				delete e;
+			}
+			// not running anymore
+			// dispose all events
+			m_mtx.lock();
+			while (!m_events.empty())
+			{
+				e = m_events.front();
+				m_events.pop();
+				e->setBlockHandleDone();
+				delete e;
+			}
+			m_mtx.unlock();
+		}
+
+	private:
+		std::queue<Event*> m_events;
+		boost::mutex m_mtx;
+		boost::condition m_cond;
+		bool m_doKeepRunning;
+
+		Event * pullEvent()
+		{
+			m_mtx.lock();
+
+			while (m_events.empty())
+			{
+				m_cond.wait(m_mtx);
+			}
+			Event *e = m_events.front();
+			m_events.pop();
+			m_mtx.unlock();
+			return e;
+		}
+	};
+}
+
+Session::Session()
+{
+	tpq = new ThreadPool::Queue;
+	m_colorPairCount = 0;
+	m_lastFrame = 0;
+	m_lastRowTop = 0;
+	m_lastRowCurrent = 0;
+	m_frame = 0;
+	m_rowTop = 0;
+	m_rowCurrent = 0;
+	m_width = 0;
+	m_height = 0;
+	m_patwidth = 0;
+	m_patheight = 0;
+}
+Session::~Session()
+{
+	delete tpq;
+}
 
 const char *default_sound=DEFAULT_SOUND;
 static Session *tracker_session;
@@ -499,6 +668,50 @@ void update(Session &s)
 	s.resetUpdateFlags();
 }
 
+class TerminateEvent : public ThreadPool::Event
+{
+public:
+	void run(Session &s) const
+	{
+		s.sgen->stopTracker();
+		s.tpq->setDoKeepRunning(false);
+	}
+};
+
+class UpdateEvent : public ThreadPool::Event
+{
+public:
+	UpdateEvent(SoundGen::rowframe_t rf) : m_rf(rf){}
+	void run(Session &s) const
+	{
+		int y, x;
+		getmaxyx(stdscr, y, x);
+
+		s.setWidthHeight(x, y);
+		s.setRowFrame(m_rf.row, m_rf.frame);
+
+		update(s);
+	}
+private:
+	SoundGen::rowframe_t m_rf;
+};
+
+class KeyEvent : public ThreadPool::Event
+{
+public:
+	KeyEvent(int k) : m_key(k){}
+	void run(Session &s) const
+	{
+		if (m_key == 27 || m_key == 'q')
+		{
+			// quit the program
+			s.tpq->postEvent(new TerminateEvent);
+		}
+	}
+private:
+	int m_key;
+};
+
 void handle_winch(int sig)
 {
 	signal(SIGWINCH, SIG_IGN);
@@ -518,13 +731,22 @@ static void tracker_update(SoundGen::rowframe_t rf, FtmDocument *doc, void *data
 
 	Session &s = *((Session*)data);
 
-	int y, x;
-	getmaxyx(stdscr, y, x);
+	ThreadPool::BlockHandle *bh;
+	bh = s.tpq->postEventWithBlockHandle(new UpdateEvent(rf));
 
-	s.setWidthHeight(x, y);
-	s.setRowFrame(rf.row, rf.frame);
+	// Wait until the UI finishes printing before resuming
+	bh->block();
+}
 
-	update(s);
+static void input_thread(Session *s)
+{
+	WINDOW *w = stdscr;
+	int c;
+	while (c = wgetch(w))
+	{
+		// post to main thread-pool
+		s->tpq->postEvent(new KeyEvent(c));
+	}
 }
 
 int runSong(Session &s, const char *sound)
@@ -546,6 +768,13 @@ int runSong(Session &s, const char *sound)
 
 	sg->trackerController()->startAt(0, 0);
 	sg->startTracker();
+
+	boost::thread *t = new boost::thread(input_thread, &s);
+
+	// Run the thread pool
+	s.tpq->run(s);
+
+	// Program is ending
 	sink->blockUntilStopped();
 	sink->blockUntilTimerEmpty();
 
@@ -612,19 +841,8 @@ int main(int argc, char *argv[])
 	initscr();
 	noecho();
 
-//	drawwindow(s);
-
-//	signal(SIGWINCH, handle_winch);
-
 	runSong(s, sound);
-/*
-	char c;
-	do
-	{
-		c = getch();
-	}
-	while (c != 27 && c != 'q');
-*/
+
 	endwin();			/* End curses mode		  */
 	return 0;
 }
