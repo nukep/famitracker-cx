@@ -29,45 +29,49 @@ AlsaSound::~AlsaSound()
 
 #define ALSA_TRY(x) if ( (err = (x)) < 0){ fprintf(stderr, "ERROR: %s\n", snd_strerror(err)); }
 
-void AlsaSound::callback(void *data)
+void AlsaSound::callback_bootstrap(void *data)
 {
 	AlsaSound *as = (AlsaSound*)data;
+	as->callback();
+}
 
+void AlsaSound::callback()
+{
 	int err;
-	core::u32 bufsz = as->m_buffer_size;
+	core::u32 bufsz = m_buffer_size;
 	core::s16 *buf = new core::s16[bufsz];
 
-	core::u32 sr = as->sampleRate();
+	core::u32 sr = sampleRate();
 
-	core::u64 latency = as->m_buffer_size;
+	core::u64 latency = m_buffer_size;
 	latency = latency * 1000000 / sr;
 
 	bool running = true;
 
 	while (running)
 	{
-		as->m_threading->mtx_running.lock();
-		running = as->m_running;
-		as->m_threading->mtx_running.unlock();
+		m_threading->mtx_running.lock();
+		running = m_running;
+		m_threading->mtx_running.unlock();
 		if (running)
 		{
 			snd_pcm_sframes_t delayp;
 
-			core::u32 sz = as->m_period_size;
+			core::u32 sz = m_period_size;
 
-			as->performSoundCallback(buf, sz);
+			performSoundCallback(buf, sz);
 
-			snd_pcm_sframes_t frames = snd_pcm_writei(as->m_handle, buf, sz);
-			snd_pcm_delay(as->m_handle, &delayp);
+			snd_pcm_sframes_t frames = snd_pcm_writei(m_handle, buf, sz);
+			snd_pcm_delay(m_handle, &delayp);
 
 			core::s64 d = delayp * 1000000 / sr;
 			d -= latency;
 
-			as->applyTime(d);
+			applyTime(d);
 
 			if (frames < 0)
 			{
-				frames = snd_pcm_recover(as->m_handle, frames, 0);
+				frames = snd_pcm_recover(m_handle, frames, 0);
 			}
 			if (frames < 0)
 			{
@@ -84,8 +88,8 @@ void AlsaSound::callback(void *data)
 
 	delete[] buf;
 
-	ALSA_TRY(snd_pcm_drain(as->m_handle));
-	ALSA_TRY(snd_pcm_prepare(as->m_handle));
+	ALSA_TRY(snd_pcm_drain(m_handle));
+	ALSA_TRY(snd_pcm_prepare(m_handle));
 }
 
 void AlsaSound::setPlaying(bool playing)
@@ -102,7 +106,7 @@ void AlsaSound::setPlaying(bool playing)
 	if (playing)
 	{
 		SoundSink::setPlaying(playing);
-		m_thread.run(callback, this);
+		m_thread.run(callback_bootstrap, this);
 	}
 	else
 	{

@@ -6,11 +6,15 @@ if (Boost_FOUND)
 	include_directories(${Boost_INCLUDE_DIR})
 endif()
 
+set(SOUNDTHREAD
+	soundthread.cpp
+	soundthread.hpp)
+
 if ("${CMAKE_SYSTEM}" MATCHES "Linux")
 	find_package(ALSA REQUIRED)
 	include(${ALSA_INCLUDE_DIR})
 
-	add_library(core-alsa-sound MODULE alsa.cpp alsa.hpp)
+	add_library(core-alsa-sound MODULE alsa.cpp alsa.hpp ${SOUNDTHREAD})
 	target_link_libraries(core-alsa-sound ${ALSA_LIBRARY})
 	
 	install(TARGETS core-alsa-sound

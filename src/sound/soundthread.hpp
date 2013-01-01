@@ -1,7 +1,7 @@
-#ifndef CORE_SOUNDTHREAD_HPP
-#define CORE_SOUNDTHREAD_HPP
+#ifndef SOUNDTHREAD_HPP
+#define SOUNDTHREAD_HPP
 
-#include "common.hpp"
+#include "core/common.hpp"
 
 namespace boost
 {
@@ -9,9 +9,7 @@ namespace boost
 	class mutex;
 }
 
-namespace core
-{
-	class COREAPI SoundThread
+	class SoundThread
 	{
 	public:
 		typedef void (*callback_t)(void*);
@@ -21,14 +19,13 @@ namespace core
 		void wait();
 	private:
 		boost::thread *m_thread;
-		boost::mutex *m_mtx_running;
-		volatile bool m_running;
+		boost::mutex m_mtx_running;
+		bool m_running;
 
 		void _wait_nomtx();
 		static void _job(SoundThread *t, callback_t f, void *data);
 		void _delthread();
 	};
-}
 
 #endif
 

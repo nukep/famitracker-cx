@@ -3,7 +3,7 @@
 
 #include <alsa/asoundlib.h>
 #include "core/soundsink.hpp"
-#include "core/soundthread.hpp"
+#include "soundthread.hpp"
 
 typedef core::SoundSink core_api_SoundSink;
 
@@ -22,11 +22,12 @@ public:
 
 	int sampleRate() const;
 private:
-	static void callback(void *);
+	void callback();
+	static void callback_bootstrap(void *);
 	snd_pcm_t * m_handle;
 	snd_pcm_uframes_t m_buffer_size, m_period_size;
 	int m_sampleRate;
-	core::SoundThread m_thread;
+	SoundThread m_thread;
 	_alsasound_threading * m_threading;
 	bool m_running;
 };

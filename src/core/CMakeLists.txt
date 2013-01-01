@@ -15,8 +15,6 @@ set(SRC
 
 	soundsink.cpp
 	soundsink.hpp
-	soundthread.cpp
-	soundthread.hpp
 
 	ringbuffer.hpp
 	time.hpp
