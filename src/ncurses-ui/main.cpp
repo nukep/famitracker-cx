@@ -736,6 +736,12 @@ static void tracker_update(SoundGen::rowframe_t rf, FtmDocument *doc, void *data
 
 	// Wait until the UI finishes printing before resuming
 	bh->block();
+
+	if (rf.halt_signal)
+	{
+		// the song stopped, so the program needs to end
+		s.tpq->postEvent(new TerminateEvent);
+	}
 }
 
 static void input_thread(Session *s)
