@@ -508,6 +508,8 @@ namespace gui
 		}
 		filetypepath = file.absoluteDir().absolutePath();
 		settings()->setValue(settingspath, filetypepath);
+
+		return path;
 	}
 
 	void MainWindow::save()

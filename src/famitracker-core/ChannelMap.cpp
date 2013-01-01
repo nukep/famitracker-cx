@@ -203,7 +203,12 @@ int CChannelMap::GetChipFromChannel(int channel) const
 	case CHANID_S5B_CH1:
 	case CHANID_S5B_CH2:
 	case CHANID_S5B_CH3: return SNDCHIP_S5B;
+
+	case CHANNELS:
+		break;
 	}
+	ftkr_Assert(0);
+	return SNDCHIP_NONE;
 }
 
 std::vector<int> CChannelMap::GetChannelsFromChip(int chip) const

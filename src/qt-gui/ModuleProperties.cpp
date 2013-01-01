@@ -14,6 +14,7 @@ namespace gui
 	{
 		switch (v)
 		{
+		default:
 		case VIBRATO_NEW: return 0;
 		case VIBRATO_OLD: return 1;
 		}
@@ -22,6 +23,7 @@ namespace gui
 	{
 		switch (idx)
 		{
+		default:
 		case 0: return VIBRATO_NEW;
 		case 1: return VIBRATO_OLD;
 		}

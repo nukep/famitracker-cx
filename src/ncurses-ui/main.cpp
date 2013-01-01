@@ -747,9 +747,10 @@ static void tracker_update(SoundGen::rowframe_t rf, FtmDocument *doc, void *data
 static void input_thread(Session *s)
 {
 	WINDOW *w = stdscr;
-	int c;
-	while (c = wgetch(w))
+	bool running = true;
+	while (running)
 	{
+		int c = wgetch(w);
 		// post to main thread-pool
 		s->tpq->postEvent(new KeyEvent(c));
 	}
@@ -786,6 +787,8 @@ int runSong(Session &s, const char *sound)
 
 	delete sink;
 	delete sg;
+
+	return 0;
 }
 
 int main(int argc, char *argv[])
@@ -847,8 +850,8 @@ int main(int argc, char *argv[])
 	initscr();
 	noecho();
 
-	runSong(s, sound);
+	int ret = runSong(s, sound);
 
 	endwin();			/* End curses mode		  */
-	return 0;
+	return ret;
 }
