@@ -9,8 +9,6 @@ set(SRC
 	io.cpp
 	io.hpp
 
-	module.cpp
-	module.hpp
 	types.hpp
 
 	soundsink.cpp
