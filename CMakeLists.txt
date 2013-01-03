@@ -18,6 +18,10 @@ option(INSTALL_PORTABLE "Optimize installation for portable packaging" OFF)
 
 option(UI_QT "Build the Qt GUI" ON)
 
+if (UNIX)
+	option(UI_NCURSES "Build the ncurses UI" ON)
+endif()
+
 set(CONFIG_H_DIR ${CMAKE_BINARY_DIR})
 
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/config.h.cmake ${CONFIG_H_DIR}/config.h)

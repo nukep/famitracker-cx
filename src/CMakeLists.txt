@@ -4,7 +4,7 @@ add_subdirectory("sound")
 
 add_subdirectory("console-play-ui")
 
-if (UNIX)
+if (UI_NCURSES)
 	add_subdirectory("ncurses-ui")
 endif()
 
