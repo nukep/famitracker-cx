@@ -38,7 +38,7 @@ namespace gui
 		action_Save->setIcon(QIcon::fromTheme("document-save"));
 		QObject::connect(actionSave_As, SIGNAL(triggered()), this, SLOT(saveAs()));
 		QObject::connect(action_Create_NSF, SIGNAL(triggered()), this, SLOT(unimplemented()));
-		QObject::connect(actionCreate_WAV, SIGNAL(triggered()), this, SLOT(createWAV()));
+		QObject::connect(actionCreate_WAV, SIGNAL(triggered()), this, SLOT(unimplemented()));
 		QObject::connect(actionImport_MIDI, SIGNAL(triggered()), this, SLOT(unimplemented()));
 		QObject::connect(action_Configuration, SIGNAL(triggered()), this, SLOT(unimplemented()));
 		QObject::connect(actionE_xit, SIGNAL(triggered()), this, SLOT(quit()));
