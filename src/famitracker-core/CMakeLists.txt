@@ -83,7 +83,7 @@ include_directories(${Boost_INCLUDE_DIR})
 add_definitions(-DFAMICORE_ISLIB)
 
 add_library(fami-core SHARED ${SRC})
-target_link_libraries(fami-core core ${Boost_LIBRARIES})
+target_link_libraries(fami-core famicx-common-core ${Boost_LIBRARIES})
 
 if (UNIX)
 	install(TARGETS fami-core
