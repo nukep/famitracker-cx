@@ -1,5 +1,6 @@
 #include <QApplication>
 #include "Settings.hpp"
+#include "config.h"
 
 namespace gui
 {
@@ -11,8 +12,15 @@ namespace gui
 
 	void init_settings()
 	{
+#ifdef INSTALL_PORTABLE
+		// for the portable build, the settings file should be in the application bundle
 		const QString file = QApplication::applicationDirPath() + "/settings.conf";
 		sett = new QSettings(file, QSettings::IniFormat);
+#else
+		// otherwise, make it a user setting
+		QString on = qApp->applicationName();
+		sett = new QSettings(QSettings::NativeFormat, QSettings::UserScope, on);
+#endif
 	}
 	void destroy_settings()
 	{
