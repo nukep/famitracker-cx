@@ -18,6 +18,10 @@ option(INSTALL_PORTABLE "Optimize installation for portable packaging" OFF)
 
 option(UI_QT "Build the Qt GUI" ON)
 
+set(CONFIG_H_DIR ${CMAKE_BINARY_DIR})
+
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/config.h.cmake ${CONFIG_H_DIR}/config.h)
+
 set(CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake-modules" CACHE STRING "")
 
 add_subdirectory("src")

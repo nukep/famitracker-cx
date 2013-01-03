@@ -78,6 +78,9 @@ include_directories(".")
 
 include_directories("..")
 
+# for config.h
+include_directories("${CONFIG_H_DIR}")
+
 QT4_ADD_RESOURCES(RES_SRC resources.qrc)
 
 QT4_WRAP_UI(UI_SRC ${UI_FILES})
