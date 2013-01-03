@@ -29,15 +29,15 @@ endif()
 
 add_definitions(-DCORE_ISLIB)
 
-add_library(core SHARED ${SRC})
-target_link_libraries(core ${CMAKE_DL_LIBS} ${Boost_LIBRARIES})
+add_library(famicx-common-core SHARED ${SRC})
+target_link_libraries(famicx-common-core ${CMAKE_DL_LIBS} ${Boost_LIBRARIES})
 
 if (UNIX)
-	install(TARGETS core
+	install(TARGETS famicx-common-core
 		LIBRARY DESTINATION lib
 	)
 else()
-	install(TARGETS core
+	install(TARGETS famicx-common-core
 		DESTINATION .
 	)
 endif()

@@ -11,12 +11,12 @@
 
 #if defined(UNIX)
 #	if defined(MACOSX)
-#		define SOUNDSINKLIB_FORMAT "libcore-%s-sound.dylib"
+#		define SOUNDSINKLIB_FORMAT "libfamicx-core-%s-sound.dylib"
 #	else
-#		define SOUNDSINKLIB_FORMAT "libcore-%s-sound.so"
+#		define SOUNDSINKLIB_FORMAT "libfamicx-core-%s-sound.so"
 #	endif
 #elif defined(WINDOWS)
-#	define SOUNDSINKLIB_FORMAT "core-%s-sound.dll"
+#	define SOUNDSINKLIB_FORMAT "famicx-core-%s-sound.dll"
 #else
 #	error Unimplemented
 #endif
