@@ -25,6 +25,7 @@ set(SRC
 	ModuleProperties.cpp
 	PatternView.cpp
 	FrameView.cpp
+	AboutDialog.cpp
 	
 	RowPages.cpp
 	RowPages.hpp
@@ -49,6 +50,7 @@ set(MOC_INC
 	ModuleProperties.hpp
 	PatternView.hpp
 	FrameView.hpp
+	AboutDialog.hpp
 
 	SequenceEditor.hpp
 	InstrumentEditorTypes.hpp
@@ -58,6 +60,7 @@ set(UI_FILES
 	mainwindow.ui
 	createwav.ui
 	moduleproperties.ui
+	about.ui
 )
 
 find_package(Qt4 REQUIRED QtCore QtGui)

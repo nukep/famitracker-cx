@@ -4,6 +4,7 @@
 #include "MainWindow.hpp"
 #include "CreateWAV.hpp"
 #include "ModuleProperties.hpp"
+#include "AboutDialog.hpp"
 #include "GUI.hpp"
 #include "Settings.hpp"
 #include "styles.hpp"
@@ -49,6 +50,9 @@ namespace gui
 		QObject::connect(action_ViewControlpanel, SIGNAL(toggled(bool)), this, SLOT(viewControlpanel(bool)));
 		QObject::connect(toolBar, SIGNAL(visibilityChanged(bool)), action_ViewToolbar, SLOT(setChecked(bool)));
 		QObject::connect(controlPanel, SIGNAL(visibilityChanged(bool)), this, SLOT(controlPanelVisibilityChanged()));
+
+		QObject::connect(action_About, SIGNAL(triggered()), this, SLOT(about()));
+		QObject::connect(actionAbout_Qt, SIGNAL(triggered()), qApp, SLOT(aboutQt()));
 
 		QObject::connect(songs, SIGNAL(activated(int)), this, SLOT(setSong(int)));
 
@@ -605,6 +609,13 @@ namespace gui
 		action_ViewControlpanel->setChecked(controlPanel->isVisible());
 		action_ViewControlpanel->blockSignals(false);
 		viewControlpanel(controlPanel->isVisible());
+	}
+
+	void MainWindow::about()
+	{
+		AboutDialog *d = new AboutDialog(this);
+		d->exec();
+		delete d;
 	}
 
 	void MainWindow::setSong_mw_cb()

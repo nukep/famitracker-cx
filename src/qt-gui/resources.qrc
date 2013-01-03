@@ -7,5 +7,6 @@
     </qresource>
     <qresource prefix="/">
         <file alias="appicon">res/famitracker.png</file>
+        <file alias="aboutBlurb">res/about.html</file>
     </qresource>
 </RCC>

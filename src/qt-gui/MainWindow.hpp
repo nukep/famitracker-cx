@@ -93,6 +93,9 @@ namespace gui
 		void viewStatusBar(bool);
 		void viewControlpanel(bool);
 		void controlPanelVisibilityChanged();
+
+		void about();
+
 		void setSong(int i);
 		void incrementPattern();
 		void decrementPattern();
