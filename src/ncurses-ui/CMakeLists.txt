@@ -8,8 +8,10 @@ if (Boost_FOUND)
 	include_directories(${Boost_INCLUDE_DIR})
 endif()
 
+include_directories("${CURSES_INCLUDE_DIR}")
+
 add_executable(famitracker-nc ../parse_arguments.cpp ../parse_arguments.hpp ../defaults.hpp main.cpp)
-target_link_libraries(famitracker-nc fami-core -lncurses)
+target_link_libraries(famitracker-nc fami-core "${CURSES_NCURSES_LIBRARY}")
 
 if (WIN32)
 	install(TARGETS famitracker-nc

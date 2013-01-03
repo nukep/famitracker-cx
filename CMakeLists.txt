@@ -18,7 +18,9 @@ option(INSTALL_PORTABLE "Optimize installation for portable packaging" OFF)
 
 option(UI_QT "Build the Qt GUI" ON)
 
-if (UNIX)
+set(CURSES_NEED_NCURSES TRUE)
+find_package(Curses)
+if (CURSES_FOUND)
 	option(UI_NCURSES "Build the ncurses UI" ON)
 endif()
 
