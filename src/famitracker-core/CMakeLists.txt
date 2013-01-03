@@ -76,9 +76,7 @@ endmacro()
 
 add_subdirectory("APU")
 
-add_definitions(-DBOOST_ALL_NO_LIB)	# turn off boost auto-linking
-find_package(Boost REQUIRED thread)
-include_directories(${Boost_INCLUDE_DIR})
+setup_boost()
 
 add_definitions(-DFAMICORE_ISLIB)
 

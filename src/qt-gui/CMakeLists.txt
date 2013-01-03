@@ -65,12 +65,8 @@ set(UI_FILES
 
 find_package(Qt4 REQUIRED QtCore QtGui)
 include(${QT_USE_FILE})
-setup_libs("${QT_LIBRARIES}")
 
-add_definitions(-DBOOST_ALL_NO_LIB)	# turn off boost auto-linking
-find_package(Boost REQUIRED thread)
-include_directories(${Boost_INCLUDE_DIR})
-setup_libs("${Boost_LIBRARIES}")
+setup_boost()
 
 # for the generated ui header files
 include_directories("${CMAKE_CURRENT_BINARY_DIR}")
