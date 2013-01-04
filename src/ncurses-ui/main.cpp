@@ -2,10 +2,7 @@
 #include <signal.h>
 #include <string.h>
 
-#include <queue>
 #include <boost/thread.hpp>
-#include <boost/thread/mutex.hpp>
-#include <boost/thread/condition.hpp>
 
 #include "famitracker-core/App.hpp"
 #include "famitracker-core/Document.hpp"
@@ -15,10 +12,7 @@
 #include "../parse_arguments.hpp"
 #include "../defaults.hpp"
 
-namespace ThreadPool
-{
-	class Queue;
-}
+#include "core/threadpool.hpp"
 
 class Session
 {
@@ -38,7 +32,7 @@ public:
 		SC_CHANNELS=0,
 		SC_COUNT
 	};
-	ThreadPool::Queue *tpq;
+	core::threadpool::Queue tpq;
 	FtmDocument *doc;
 	SoundGen *sgen;
 	int m_lastFrame;
@@ -155,158 +149,8 @@ private:
 	int m_specialColorPairs[SC_COUNT];
 };
 
-namespace ThreadPool
-{
-	class BlockHandle
-	{
-		friend class Event;
-		friend class Queue;
-	public:
-		BlockHandle() : m_isDone(false){}
-		void block()
-		{
-			m_mtx.lock();
-			while (!m_isDone)
-			{
-				m_cond.wait(m_mtx);
-			}
-			m_mtx.unlock();
-
-			delete this;
-		}
-	private:
-		boost::mutex m_mtx;
-		boost::condition m_cond;
-		bool m_isDone;
-
-		void setDone(bool yes)
-		{
-			m_mtx.lock();
-			m_isDone = yes;
-			m_cond.notify_all();
-			m_mtx.unlock();
-		}
-	};
-
-	class Event
-	{
-		friend class Queue;
-	public:
-		Event() : m_blockHandle(NULL){}
-		virtual ~Event(){}
-		virtual void run(Session &s) const = 0;
-	private:
-		BlockHandle *m_blockHandle;
-		void setBlockHandleDone()
-		{
-			if (m_blockHandle != NULL)
-			{
-				m_blockHandle->setDone(true);
-			}
-		}
-	};
-
-	class Queue
-	{
-	public:
-		Queue()
-			: m_doKeepRunning(true)
-		{}
-
-		void postEvent(Event *e)
-		{
-			m_mtx.lock();
-			if (m_doKeepRunning)
-			{
-				m_events.push(e);
-				m_cond.notify_all();
-			}
-			m_mtx.unlock();
-		}
-		BlockHandle * postEventWithBlockHandle(Event *e)
-		{
-			BlockHandle *h = new BlockHandle;
-
-			m_mtx.lock();
-			if (m_doKeepRunning)
-			{
-				e->m_blockHandle = h;
-				m_events.push(e);
-				m_cond.notify_all();
-			}
-			else
-			{
-				// block handle is functionally pointless, but we return one anyway
-				h->setDone(true);
-			}
-			m_mtx.unlock();
-
-			return h;
-		}
-
-		bool doKeepRunning()
-		{
-			m_mtx.lock();
-			bool r = m_doKeepRunning;
-			m_mtx.unlock();
-			return r;
-		}
-		void setDoKeepRunning(bool yes)
-		{
-			m_mtx.lock();
-			m_doKeepRunning = yes;
-			m_mtx.unlock();
-		}
-
-		void run(Session &s)
-		{
-			Event *e;
-
-			while (doKeepRunning())
-			{
-				e = pullEvent();
-				e->run(s);
-				e->setBlockHandleDone();
-				delete e;
-			}
-			// not running anymore
-			// dispose all events
-			m_mtx.lock();
-			while (!m_events.empty())
-			{
-				e = m_events.front();
-				m_events.pop();
-				e->setBlockHandleDone();
-				delete e;
-			}
-			m_mtx.unlock();
-		}
-
-	private:
-		std::queue<Event*> m_events;
-		boost::mutex m_mtx;
-		boost::condition m_cond;
-		bool m_doKeepRunning;
-
-		Event * pullEvent()
-		{
-			m_mtx.lock();
-
-			while (m_events.empty())
-			{
-				m_cond.wait(m_mtx);
-			}
-			Event *e = m_events.front();
-			m_events.pop();
-			m_mtx.unlock();
-			return e;
-		}
-	};
-}
-
 Session::Session()
 {
-	tpq = new ThreadPool::Queue;
 	m_colorPairCount = 0;
 	m_lastFrame = 0;
 	m_lastRowTop = 0;
@@ -321,7 +165,6 @@ Session::Session()
 }
 Session::~Session()
 {
-	delete tpq;
 }
 
 const char *default_sound=DEFAULT_SOUND;
@@ -668,17 +511,28 @@ void update(Session &s)
 	s.resetUpdateFlags();
 }
 
-class TerminateEvent : public ThreadPool::Event
+class Event : public core::threadpool::Event
+{
+public:
+	virtual void run(Session &s) const = 0;
+private:
+	void run(void *data) const
+	{
+		run(*((Session*)data));
+	}
+};
+
+class TerminateEvent : public Event
 {
 public:
 	void run(Session &s) const
 	{
 		s.sgen->stopTracker();
-		s.tpq->setDoKeepRunning(false);
+		s.tpq.setDoKeepRunning(false);
 	}
 };
 
-class UpdateEvent : public ThreadPool::Event
+class UpdateEvent : public Event
 {
 public:
 	UpdateEvent(SoundGen::rowframe_t rf) : m_rf(rf){}
@@ -696,7 +550,7 @@ private:
 	SoundGen::rowframe_t m_rf;
 };
 
-class KeyEvent : public ThreadPool::Event
+class KeyEvent : public Event
 {
 public:
 	KeyEvent(int k) : m_key(k){}
@@ -705,7 +559,7 @@ public:
 		if (m_key == 27 || m_key == 'q')
 		{
 			// quit the program
-			s.tpq->postEvent(new TerminateEvent);
+			s.tpq.postEvent(new TerminateEvent);
 		}
 	}
 private:
@@ -731,16 +585,16 @@ static void tracker_update(SoundGen::rowframe_t rf, FtmDocument *doc, void *data
 
 	Session &s = *((Session*)data);
 
-	ThreadPool::BlockHandle *bh;
-	bh = s.tpq->postEventWithBlockHandle(new UpdateEvent(rf));
+	core::threadpool::BlockHandle *bh;
+	bh = s.tpq.postEventWithBlockHandle(new UpdateEvent(rf));
 
 	// Wait until the UI finishes printing before resuming
-	bh->block();
+	core::threadpool::blockOnHandle(bh);
 
 	if (rf.halt_signal)
 	{
 		// the song stopped, so the program needs to end
-		s.tpq->postEvent(new TerminateEvent);
+		s.tpq.postEvent(new TerminateEvent);
 	}
 }
 
@@ -752,7 +606,7 @@ static void input_thread(Session *s)
 	{
 		int c = wgetch(w);
 		// post to main thread-pool
-		s->tpq->postEvent(new KeyEvent(c));
+		s->tpq.postEvent(new KeyEvent(c));
 	}
 }
 
@@ -779,7 +633,7 @@ int runSong(Session &s, const char *sound)
 	boost::thread *t = new boost::thread(input_thread, &s);
 
 	// Run the thread pool
-	s.tpq->run(s);
+	s.tpq.run(&s);
 
 	// Program is ending
 	sink->blockUntilStopped();
