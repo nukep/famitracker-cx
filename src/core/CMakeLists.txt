@@ -16,6 +16,9 @@ set(SRC
 
 	ringbuffer.hpp
 	time.hpp
+
+	threadpool.cpp
+	threadpool.hpp
 )
 
 setup_boost()
