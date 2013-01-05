@@ -202,28 +202,6 @@ namespace gui
 		patternView->updateStyles();
 	}
 
-	void MainWindow::sendUpdateEvent()
-	{
-		// called from tracker update thread
-
-		boost::unique_lock<boost::mutex> lock(m_mtx_updateEvent);
-
-		// post an event to the main thread
-		UpdateEvent *event = new UpdateEvent;
-		QApplication::postEvent(this, event);
-
-		// wait until the gui is finished updating before resuming
-		m_cond_updateEvent.wait(lock);
-	}
-	void MainWindow::sendIsPlayingSongEvent(stopsong_callback mainthread_callback, void *data, bool playing)
-	{
-		IsPlayingSongEvent *event = new IsPlayingSongEvent;
-		event->callback = mainthread_callback;
-		event->callback_data = data;
-		event->playing = playing;
-		QApplication::postEvent(this, event);
-	}
-
 	void MainWindow::updateEditMode()
 	{
 		bool b = gui::isEditing();
@@ -272,10 +250,23 @@ namespace gui
 	{
 		if (event->type() == UPDATEEVENT)
 		{
-			boost::unique_lock<boost::mutex> lock(m_mtx_updateEvent);
+			UpdateEvent *e = (UpdateEvent*)event;
+
+			e->mtx_updateEvent->lock();
 			updateFrameChannel();
 
-			m_cond_updateEvent.notify_one();
+			e->cond_updateEvent->notify_all();
+			e->mtx_updateEvent->unlock();
+			return true;
+		}
+		else if (event->type() == CALLBACKEVENT)
+		{
+			CallbackEvent *e = (CallbackEvent*)event;
+
+			if (e->callback != NULL)
+			{
+				(*e->callback)(this, e->callback_data);
+			}
 			return true;
 		}
 		else if (event->type() == ISPLAYINGSONGEVENT)
@@ -283,10 +274,6 @@ namespace gui
 			IsPlayingSongEvent *e = (IsPlayingSongEvent*)event;
 
 			setPlaying(e->playing);
-			if (e->callback != NULL)
-			{
-				(*e->callback)(this, e->callback_data);
-			}
 			return true;
 		}
 

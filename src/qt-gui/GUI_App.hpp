@@ -2,12 +2,20 @@
 #define _GUI_APP_HPP_
 
 #include <boost/thread/mutex.hpp>
+#include <boost/thread/condition.hpp>
+#include <boost/thread/condition.hpp>
 #include <vector>
 #include "DocInfo.hpp"
 #include "famitracker-core/SoundGen.hpp"
 #include "core/soundsink.hpp"
+#include "core/threadpool.hpp"
 
 class QApplication;
+
+namespace boost
+{
+	class thread;
+}
 
 namespace gui
 {
@@ -39,6 +47,11 @@ namespace gui
 		bool isPlaying();
 		bool isEditing();
 		bool canEdit(){ return isEditing() && (!isPlaying()); }
+
+		void setIsPlaying(bool playing);
+
+		void sendUpdateEvent();
+		void sendCallbackEvent(mainthread_callback_t cb, void *data);
 
 		void playSongConcurrent(mainthread_callback_t, void *data=NULL);
 		void playSongConcurrent(){ playSongConcurrent(NULL, NULL); }
@@ -102,6 +115,11 @@ namespace gui
 		bool edit_mode;
 
 		ThreadPool *threadPool;
+		core::threadpool::Queue m_tpq;
+		boost::thread * m_tpoolThread;
+
+		boost::mutex m_mtx_updateEvent;
+		boost::condition m_cond_updateEvent;
 	};
 }
 

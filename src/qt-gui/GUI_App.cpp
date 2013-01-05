@@ -78,7 +78,7 @@ namespace gui
 		}
 		dinfo->setVolumes(rf.volumes);
 
-		mw->sendUpdateEvent();
+		sendUpdateEvent();
 
 		if (rf.halt_signal)
 		{
@@ -201,6 +201,50 @@ namespace gui
 	bool App::isEditing()
 	{
 		return edit_mode;
+	}
+
+	void App::setIsPlaying(bool playing)
+	{
+		mtx_is_playing.lock();
+		is_playing = playing;
+		mtx_is_playing.unlock();
+
+		if (mw != NULL)
+		{
+			IsPlayingSongEvent *event = new IsPlayingSongEvent;
+			event->playing = playing;
+			QApplication::postEvent(mw, event);
+		}
+	}
+
+	void App::sendUpdateEvent()
+	{
+		// called from tracker update thread
+
+		if (mw == NULL)
+			return;
+
+		boost::unique_lock<boost::mutex> lock(m_mtx_updateEvent);
+
+		// post an event to the main thread
+		UpdateEvent *event = new UpdateEvent;
+		event->mtx_updateEvent = &m_mtx_updateEvent;
+		event->cond_updateEvent = &m_cond_updateEvent;
+		QApplication::postEvent(mw, event);
+
+		// wait until the gui is finished updating before resuming
+		m_cond_updateEvent.wait(lock);
+	}
+
+	void App::sendCallbackEvent(mainthread_callback_t cb, void *data)
+	{
+		if (mw == NULL)
+			return;
+
+		CallbackEvent *event = new CallbackEvent;
+		event->callback = cb;
+		event->callback_data = data;
+		QApplication::postEvent(mw, event);
 	}
 
 	void App::playSongConcurrent(mainthread_callback_t cb, void *data)

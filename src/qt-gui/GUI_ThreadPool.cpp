@@ -41,14 +41,9 @@ namespace gui
 
 		m_app->sgen->startTracker();
 
-		m_app->mtx_is_playing.lock();
-		m_app->is_playing = true;
-		m_app->mtx_is_playing.unlock();
+		m_app->setIsPlaying(true);
 
-		if (m_app->mw != NULL)
-		{
-			m_app->mw->sendIsPlayingSongEvent(cb, data, true);
-		}
+		m_app->sendCallbackEvent(cb, data);
 	}
 
 	void ThreadPool::stopsong_thread(mainthread_callback_t cb, void *data)
@@ -57,14 +52,9 @@ namespace gui
 		m_app->sink->blockUntilStopped();
 		m_app->sink->blockUntilTimerEmpty();
 
-		m_app->mtx_is_playing.lock();
-		m_app->is_playing = false;
-		m_app->mtx_is_playing.unlock();
+		m_app->setIsPlaying(false);
 
-		if (m_app->mw != NULL)
-		{
-			m_app->mw->sendIsPlayingSongEvent(cb, data, false);
-		}
+		m_app->sendCallbackEvent(cb, data);
 	}
 
 	void ThreadPool::stopsongtracker_thread(mainthread_callback_t cb, void *data)
@@ -72,14 +62,9 @@ namespace gui
 		m_app->sgen->stopTracker();
 		m_app->sgen->blockUntilTrackerStopped();
 
-		m_app->mtx_is_playing.lock();
-		m_app->is_playing = false;
-		m_app->mtx_is_playing.unlock();
+		m_app->setIsPlaying(false);
 
-		if (m_app->mw != NULL)
-		{
-			m_app->mw->sendIsPlayingSongEvent(cb, data, false);
-		}
+		m_app->sendCallbackEvent(cb, data);
 	}
 
 	void ThreadPool::auditionnote_thread(const threadpool_playing_task::audition_t &a)
@@ -105,10 +90,7 @@ namespace gui
 		delete m_app->sink;
 		m_app->sink = NULL;
 
-		if (m_app->mw != NULL)
-		{
-			m_app->mw->sendIsPlayingSongEvent(cb, data, isPlaying());
-		}
+		m_app->sendCallbackEvent(cb, data);
 	}
 
 	void ThreadPool::func_playing()

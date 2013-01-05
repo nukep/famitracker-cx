@@ -11,6 +11,7 @@ namespace gui
 {
 #define UPDATEEVENT QEvent::User
 #define ISPLAYINGSONGEVENT (QEvent::Type)((int)QEvent::User+1)
+#define CALLBACKEVENT (QEvent::Type)((int)QEvent::User+2)
 
 	class App;
 	class MainWindow;
@@ -22,13 +23,21 @@ namespace gui
 	{
 	public:
 		UpdateEvent() : QEvent(UPDATEEVENT){}
+		boost::mutex * mtx_updateEvent;
+		boost::condition * cond_updateEvent;
 	};
+	class CallbackEvent : public QEvent
+	{
+	public:
+		CallbackEvent() : QEvent(CALLBACKEVENT){}
+		stopsong_callback callback;
+		void *callback_data;
+	};
+
 	class IsPlayingSongEvent : public QEvent
 	{
 	public:
 		IsPlayingSongEvent() : QEvent(ISPLAYINGSONGEVENT){}
-		stopsong_callback callback;
-		void *callback_data;
 		bool playing;
 	};
 
@@ -46,8 +55,6 @@ namespace gui
 
 		void updateStyles();
 
-		void sendUpdateEvent();
-		void sendIsPlayingSongEvent(stopsong_callback, void *data, bool playing);
 		void updateEditMode();
 		void setPlaying(bool playing);
 
@@ -132,8 +139,6 @@ namespace gui
 	private:
 		App * m_app;
 		DocInfo * m_dinfo;
-		boost::mutex m_mtx_updateEvent;
-		boost::condition m_cond_updateEvent;
 		InstrumentEditor *m_instrumenteditor;
 		QComboBox *octave;
 		QAction ** m_recentFiles;
