@@ -6,6 +6,67 @@
 
 namespace gui
 {
+	namespace threadpool
+	{
+		void ConcurrentEvent::doCallback(App *a) const
+		{
+			a->sendCallbackEvent(m_cb, m_data);
+		}
+/*
+		void PlaySongEvent::run(App *a) const
+		{
+			const DocInfo *dinfo = a->activeDocInfo();
+
+			int row = m_startatrow0 ? 0 : dinfo->currentRow();
+
+			a->sgen->trackerController()->startAt(dinfo->currentFrame(), row);
+
+			a->sgen->startTracker();
+
+			a->setIsPlaying(true);
+		}
+
+		void StopSongEvent::run(App *a) const
+		{
+			a->sgen->stopTracker();
+			a->sink->blockUntilStopped();
+			a->sink->blockUntilTimerEmpty();
+
+			a->setIsPlaying(false);
+		}
+
+		void StopSongTrackerEvent::run(App *a) const
+		{
+			a->sgen->stopTracker();
+			a->sgen->blockUntilTrackerStopped();
+
+			a->setIsPlaying(false);
+		}
+
+		void AuditionEvent::run(App *a) const
+		{
+			if (m_playrow)
+			{
+				const DocInfo *dinfo = a->activeDocInfo();
+				a->sgen->auditionRow(dinfo->currentFrame(), dinfo->currentRow());
+			}
+			else
+			{
+				a->sgen->auditionNote(m_note, m_octave, m_inst, m_channel);
+			}
+		}
+
+		void HaltAuditionEvent::run(App *a) const
+		{
+			a->sgen->auditionHalt();
+		}
+
+		void DeleteSinkEvent::run(App *a) const
+		{
+			delete a->sink;
+			a->sink = NULL;
+		}*/
+	}
 	ThreadPool::ThreadPool(App *a)
 		: m_app(a)
 	{

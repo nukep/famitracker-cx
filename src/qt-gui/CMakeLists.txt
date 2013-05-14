@@ -12,6 +12,8 @@ set(SRC
 	GUI.hpp
 	GUI_App.cpp
 	GUI_App.hpp
+	GUI_Sound.cpp
+	GUI_Sound.cpp
 	GUI_ThreadPool.cpp
 	GUI_ThreadPool.hpp
 	DocInfo.cpp

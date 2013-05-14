@@ -115,8 +115,6 @@ namespace gui
 		bool edit_mode;
 
 		ThreadPool *threadPool;
-		core::threadpool::Queue m_tpq;
-		boost::thread * m_tpoolThread;
 
 		boost::mutex m_mtx_updateEvent;
 		boost::condition m_cond_updateEvent;

@@ -6,10 +6,94 @@
 #include <boost/thread/condition.hpp>
 #include <queue>
 #include "GUI_App.hpp"
+#include "core/threadpool.hpp"
 
 namespace gui
 {
 	class App;
+
+	namespace threadpool
+	{
+		class Event : public core::threadpool::Event
+		{
+		protected:
+			virtual void run(App *a) const = 0;
+
+			void run(void *data) const
+			{
+				run((App*)data);
+			}
+		};
+
+		class ConcurrentEvent : public Event
+		{
+		public:
+			ConcurrentEvent(mainthread_callback_t cb, void *data)
+				: m_cb(cb), m_data(data)
+			{}
+			ConcurrentEvent()
+				: m_cb(NULL), m_data(NULL)
+			{}
+
+		protected:
+			mainthread_callback_t m_cb;
+			void * m_data;
+
+			void run(void *data) const
+			{
+				Event::run(data);
+				doCallback((App*)data);
+			}
+		private:
+			void doCallback(App *) const;
+		};
+
+		class PlaySongEvent : public ConcurrentEvent
+		{
+		private:
+			void run(App *a) const;
+			bool m_startatrow0;
+		};
+
+		class StopSongEvent : public ConcurrentEvent
+		{
+		private:
+			void run(App *a) const;
+		};
+
+		class StopSongTrackerEvent : public ConcurrentEvent
+		{
+		private:
+			void run(App *a) const;
+		};
+
+		class AuditionEvent : public Event
+		{
+		private:
+			void run(App *a) const;
+
+			bool m_playrow;
+			int m_octave, m_note, m_inst, channel;
+		};
+
+		class HaltAuditionEvent : public Event
+		{
+		private:
+			void run(App *a) const;
+		};
+
+		class DeleteSinkEvent : public ConcurrentEvent
+		{
+		private:
+			void run(App *a) const;
+		};
+
+		class TerminateEvent : public Event
+		{
+		private:
+			void run(App *a) const;
+		};
+	}
 
 	enum
 	{
