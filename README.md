@@ -25,7 +25,7 @@ and OS X ports are completed.
 The software license is mixed GPL v2/New BSD.
 
 ![Screenshot 1](img/screenshot1.png)
-![Screenshot 2](screenshot2.png)
+![Screenshot 2](img/screenshot2.png)
 
 ## Post-Mortem
 ### Challenges
