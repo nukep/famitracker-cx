@@ -24,8 +24,8 @@ and OS X ports are completed.
 
 The software license is mixed GPL v2/New BSD.
 
-![](https://github.com/nukep/famitracker-cx/raw/master/img/screenshot1.png)
-![](https://github.com/nukep/famitracker-cx/raw/master/img/screenshot2.png)
+![Screenshot 1](img/screenshot1.png)
+![Screenshot 2](screenshot2.png)
 
 ## Post-Mortem
 ### Challenges
