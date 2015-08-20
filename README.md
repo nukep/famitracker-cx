@@ -40,11 +40,6 @@ The software license is mixed GPL v2/New BSD.
 * Using the `type_t` notation on structs and not typedefs.
 * Using global state to keep document data for the Qt GUI.
 * The sound sink implementations abused inheritence, leading to many audio bugs.
-* Using C++
- * It's unfortunately needed to use Qt and the original code base.
-   Many people tolerate C++---and it gives good results---but it's frankly
-   complicated and is hence a terrible language.
-   A language like C, given its simplicity, would have served better.
 
 ### If this project were attempted again
 Closer coordination with the original author (jsr) to organize the code base to
@@ -57,4 +52,3 @@ Ultimately, many open source projects suffer from organizational issues.
 This is a primary reason I think forks of projects are created instead of
 everyone contributing to a single project. That's why I created a fork
 for FamiTracker CX, but it was probably a misplaced reason.
-
